@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الطالب - جامعة وطنية</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="animations.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dashboard-body theme-blue-light">
+    <!-- Language Selector Dropdown -->
+    <div class="language-selector-dropdown">
+        <button class="language-toggle-btn" onclick="toggleLanguageMenu()" title="تغيير اللغة">
+            <i class="fas fa-globe"></i>
+            <span class="language-label" data-ar="اللغة" data-en="Language" data-fr="Langue" data-ku="زمان">اللغة</span>
+        </button>
+        <div class="language-menu" id="languageMenu">
+            <div class="language-menu-header" data-ar="اختر اللغة المفضلة" data-en="Choose Your Language" data-fr="Choisissez votre langue" data-ku="زمانی دڵخواز هەڵبژێرە">اختر اللغة المفضلة</div>
+            <div class="language-options">
+                <button class="language-option" onclick="changeLanguage('ar')" data-lang="ar">
+                    <span class="language-flag">🇸🇦</span>
+                    <span class="language-name" data-ar="العربية" data-en="Arabic" data-fr="Arabe">العربية</span>
+                </button>
+                <button class="language-option" onclick="changeLanguage('en')" data-lang="en">
+                    <span class="language-flag">🇺🇸</span>
+                    <span class="language-name" data-ar="الإنجليزية" data-en="English" data-fr="Anglais">الإنجليزية</span>
+                </button>
+                <button class="language-option" onclick="changeLanguage('fr')" data-lang="fr">
+                    <span class="language-flag">🇫🇷</span>
+                    <span class="language-name" data-ar="الفرنسية" data-en="French" data-fr="Français">الفرنسية</span>
+                </button>
+                <button class="language-option" onclick="changeLanguage('ku')" data-lang="ku">
+                    <span class="language-flag">🟨</span>
+                    <span class="language-name" data-ar="الكردية" data-en="Kurdish" data-fr="Kurde" data-ku="کوردی">الكردية</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Selector Dropdown -->
+    <div class="theme-selector-dropdown">
+        <button class="theme-toggle-btn" onclick="toggleThemeMenu()" title="تغيير الثيم">
+            <i class="fas fa-palette"></i>
+            <span class="theme-label" data-ar="الثيمات" data-en="Themes" data-fr="Thèmes" data-ku="تەیماکان">الثيمات</span>
+        </button>
+        <div class="theme-menu" id="themeMenu">
+            <div class="theme-menu-header" data-ar="اختر الثيم المفضل" data-en="Choose Your Theme" data-fr="Choisissez votre thème" data-ku="تێمای دڵخواز هەڵبژێرە">اختر الثيم المفضل</div>
+            <div class="theme-options">
+                <button class="theme-option" onclick="changeTheme('blue-light')" data-theme="blue-light">
+                    <span class="theme-color" style="background-color: #ffffff; border: 2px solid #ddd;"></span>
+                    <span class="theme-name" data-ar="أبيض" data-en="White" data-fr="Blanc" data-ku="سپی">أبيض</span>
+                </button>
+                <button class="theme-option" onclick="changeTheme('sky-blue')" data-theme="sky-blue">
+                    <span class="theme-color" style="background-color: #0ea5e9;"></span>
+                    <span class="theme-name" data-ar="أزرق سماوي" data-en="Sky Blue" data-fr="Bleu ciel" data-ku="شینی ئاسمانی">أزرق سماوي</span>
+                </button>
+                <button class="theme-option" onclick="changeTheme('purple')" data-theme="purple">
+                    <span class="theme-color" style="background-color: #6d28d9;"></span>
+                    <span class="theme-name" data-ar="بنفسجي" data-en="Purple" data-fr="Violet" data-ku="مۆر">بنفسجي</span>
+                </button>
+                <button class="theme-option" onclick="changeTheme('blue')" data-theme="blue">
+                    <span class="theme-color" style="background-color: #3b82f6;"></span>
+                    <span class="theme-name" data-ar="أزرق غامق" data-en="Dark Blue" data-fr="Bleu foncé" data-ku="شینی تیرە">أزرق غامق</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animated Background -->
+    <div class="animated-bg">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="logo-section">
+                <i class="fas fa-university"></i>
+                <h1 data-ar="جامعة وطنية - لوحة تحكم الطالب" data-en="Watania University - Student Dashboard" data-fr="Université Watania - Tableau de bord étudiant" data-ku="زانکۆی نیشتمانی - ڕووکاری خوێندکار">جامعة وطنية - لوحة تحكم الطالب</h1>
+            </div>
+            <div class="user-section">
+                <span class="welcome-text"><span data-ar="مرحباً،" data-en="Welcome," data-fr="Bienvenue," data-ku="بەخێربێیت،">مرحباً،</span> <strong id="studentName"></strong></span>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span data-ar="تسجيل الخروج" data-en="Logout" data-fr="Déconnexion" data-ku="دەرچوون">تسجيل الخروج</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
+        <div class="activities-section">
+            <h2 class="section-title">
+                <i class="fas fa-star"></i>
+                <span data-ar="الأنشطة المتاحة" data-en="Available Activities" data-fr="Activités disponibles" data-ku="چالاکیە بەردەستەکان">الأنشطة المتاحة</span>
+            </h2>
+
+            <div class="activities-grid">
+                <!-- Activity Card 1 -->
+                <div class="activity-card" onclick="openActivityForm('الأنشطة الطلابية')">
+                    <div class="activity-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 data-ar="الأنشطة الطلابية" data-en="Student Activities" data-fr="Activités étudiantes" data-ku="چالاکیی خوێندکاران">الأنشطة الطلابية</h3>
+                    <p data-ar="المشاركة في الفعاليات والأنشطة الطلابية المتنوعة" data-en="Participate in various student events and activities" data-fr="Participer à diverses activités et événements étudiants" data-ku="بەشداربوون لە چالاکی و ڕووداوە جۆراوجۆرە خوێندکاران">المشاركة في الفعاليات والأنشطة الطلابية المتنوعة</p>
+                    <button class="activity-btn">
+                        <span data-ar="التقديم" data-en="Apply" data-fr="Candidater" data-ku="داواکردن">التقديم</span>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+
+                <!-- Activity Card 2 -->
+                <div class="activity-card" onclick="openActivityForm('القسم الرياضي')">
+                    <div class="activity-icon">
+                        <i class="fas fa-running"></i>
+                    </div>
+                    <h3 data-ar="القسم الرياضي" data-en="Sports Department" data-fr="Département des sports" data-ku="بەشی وەرزشی">القسم الرياضي</h3>
+                    <p data-ar="الانضمام إلى الفرق الرياضية والمسابقات" data-en="Join sports teams and competitions" data-fr="Rejoindre les équipes sportives et les compétitions" data-ku="بەشداربوون لە تیم و یاری و پەیوەندیدانی وەرزشی">الانضمام إلى الفرق الرياضية والمسابقات</p>
+                    <button class="activity-btn">
+                        <span data-ar="التقديم" data-en="Apply" data-fr="Candidater" data-ku="داواکردن">التقديم</span>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+
+                <!-- Activity Card 3 -->
+                <div class="activity-card" onclick="openActivityForm('قسم المشاريع الهندسية')">
+                    <div class="activity-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h3 data-ar="قسم المشاريع الهندسية" data-en="Engineering Projects" data-fr="Projets d'ingénierie" data-ku="پڕۆژەکانی ئەندازیاری">قسم المشاريع الهندسية</h3>
+                    <p data-ar="المشاركة في مشاريع الهندسة والتكنولوجيا" data-en="Participate in engineering and technology projects" data-fr="Participer à des projets d'ingénierie et de technologie" data-ku="بەشداربوون لە پڕۆژەکانی ئەندازیاری و تەکنەلۆژی">المشاركة في مشاريع الهندسة والتكنولوجيا</p>
+                    <button class="activity-btn">
+                        <span data-ar="التقديم" data-en="Apply" data-fr="Candidater" data-ku="داواکردن">التقديم</span>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+
+                <!-- Activity Card 4 -->
+                <div class="activity-card" onclick="openActivityForm('المشاريع والابتكارات الطبية')">
+                    <div class="activity-icon">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <h3 data-ar="المشاريع والابتكارات الطبية" data-en="Medical Projects & Innovations" data-fr="Projets et innovations médicaux" data-ku="پڕۆژە و نوێکارییە پزیشکییەکان">المشاريع والابتكارات الطبية</h3>
+                    <p data-ar="الابتكارات والمشاريع في المجال الطبي" data-en="Innovations and projects in the medical field" data-fr="Innovations et projets dans le domaine médical" data-ku="نوێکاری و پڕۆژە لە بواری پزیشکی">الابتكارات والمشاريع في المجال الطبي</p>
+                    <button class="activity-btn">
+                        <span data-ar="التقديم" data-en="Apply" data-fr="Candidater" data-ku="داواکردن">التقديم</span>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+
+                <!-- Activity Card 5 -->
+                <div class="activity-card" onclick="openActivityForm('الأنشطة الثقافية الطبية')">
+                    <div class="activity-icon">
+                        <i class="fas fa-stethoscope"></i>
+                    </div>
+                    <h3 data-ar="الأنشطة الثقافية الطبية" data-en="Medical Cultural Activities" data-fr="Activités culturelles médicales" data-ku="چالاکییە کلتورییە پزیشکییەکان">الأنشطة الثقافية الطبية</h3>
+                    <p data-ar="الندوات والمحاضرات الطبية والتوعوية" data-en="Medical seminars and awareness lectures" data-fr="Séminaires médicaux et conférences de sensibilisation" data-ku="سیمینار و وانەی پزیشکی و ئاگادارکردنەوە">الندوات والمحاضرات الطبية والتوعوية</p>
+                    <button class="activity-btn">
+                        <span data-ar="التقديم" data-en="Apply" data-fr="Candidater" data-ku="داواکردن">التقديم</span>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+
+                <!-- Activity Card 6 -->
+                <div class="activity-card" onclick="openActivityForm('الأنشطة الفنية')">
+                    <div class="activity-icon">
+                        <i class="fas fa-palette"></i>
+                    </div>
+                    <h3 data-ar="الأنشطة الفنية" data-en="Artistic Activities" data-fr="Activités artistiques" data-ku="چالاکییە ھونەرییەکان">الأنشطة الفنية</h3>
+                    <p data-ar="المعارض والفعاليات الفنية والإبداعية" data-en="Art exhibitions and creative events" data-fr="Expositions d'art et événements créatifs" data-ku="پیشاندانی ھونەر و چالاکییە خەلاقانە">المعارض والفعاليات الفنية والإبداعية</p>
+                    <button class="activity-btn">
+                        <span data-ar="التقديم" data-en="Apply" data-fr="Candidater" data-ku="داواکردن">التقديم</span>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+
+                <!-- Activity Card 7 -->
+                <div class="activity-card" onclick="openActivityForm('الأنشطة الثقافية')">
+                    <div class="activity-icon">
+                        <i class="fas fa-book-reader"></i>
+                    </div>
+                    <h3 data-ar="الأنشطة الثقافية" data-en="Cultural Activities" data-fr="Activités culturelles" data-ku="چالاکییە کلتورییەکان">الأنشطة الثقافية</h3>
+                    <p data-ar="الفعاليات والأنشطة الثقافية المتنوعة" data-en="Various cultural events and activities" data-fr="Divers événements et activités culturels" data-ku="چالاکی و ڕووداوە کلتورییە جۆراوجۆر">الفعاليات والأنشطة الثقافية المتنوعة</p>
+                    <button class="activity-btn">
+                        <span data-ar="التقديم" data-en="Apply" data-fr="Candidater" data-ku="داواکردن">التقديم</span>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+
+                <!-- Activity Card 8 -->
+                <div class="activity-card" onclick="openActivityForm('الأنشطة التطوعية')">
+                    <div class="activity-icon">
+                        <i class="fas fa-hands-helping"></i>
+                    </div>
+                    <h3 data-ar="الأنشطة التطوعية" data-en="Volunteer Activities" data-fr="Activités bénévoles" data-ku="چالاکییە خۆبەخشییەکان">الأنشطة التطوعية</h3>
+                    <p data-ar="المشاركة في الأعمال التطوعية والخدمة المجتمعية" data-en="Participate in volunteer work and community service" data-fr="Participer à des travaux bénévoles et au service communautaire" data-ku="بەشداربوون لە خزمەتگوزارییە خۆبەخشی و کۆمەڵایەتی">المشاركة في الأعمال التطوعية والخدمة المجتمعية</p>
+                    <button class="activity-btn">
+                        <span data-ar="التقديم" data-en="Apply" data-fr="Candidater" data-ku="داواکردن">التقديم</span>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Applications Section -->
+        <div class="my-applications-section">
+            <h2 class="section-title">
+                <i class="fas fa-clipboard-list"></i>
+                <span data-ar="طلباتي المرسلة" data-en="My Applications" data-fr="Mes demandes" data-ku="داواکانی من">طلباتي المرسلة</span>
+            </h2>
+            <div id="myApplicationsList" class="applications-list"></div>
+        </div>
+    </main>
+
+    <!-- Activity Application Modal -->
+    <div class="modal" id="activityModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle" data-ar="تقديم طلب للنشاط" data-en="Submit Activity Request" data-fr="Soumettre une demande d'activité" data-ku="ناردنی داوا بۆ چالاکی">تقديم طلب للنشاط</h2>
+                <button class="close-btn" onclick="closeActivityForm()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form onsubmit="submitApplicationForm(event)" id="applicationForm">
+                <div class="input-group">
+                    <label data-ar="الاسم الكامل" data-en="Full Name" data-fr="Nom complet" data-ku="ناوی تەواو">الاسم الكامل</label>
+                    <input type="text" id="appName" required>
+                </div>
+
+                <div class="input-group">
+                    <label data-ar="رقم النشاط / الكود" data-en="Activity Number / Code" data-fr="Numéro d'activité / Code" data-ku="ژمارەی چالاکی / کۆد">رقم النشاط / الكود</label>
+                    <input type="text" id="appActivityNumber" placeholder="مثال: ACT-2024-001" data-placeholder-ar="مثال: ACT-2024-001" data-placeholder-ku="نمونە: ACT-2024-001" required>
+                </div>
+
+                <div class="input-group">
+                    <label data-ar="الكلية" data-ku="کۆلێژ">الكلية</label>
+                    <select id="appCollege" required>
+                        <option value="" data-ar="اختر الكلية" data-ku="کۆلێژەکە هەڵبژێرە">اختر الكلية</option>
+                        <option value="كلية الهندسة">كلية الهندسة</option>
+                        <option value="كلية الطب">كلية الطب</option>
+                        <option value="كلية الصيدلة">كلية الصيدلة</option>
+                        <option value="كلية طب الأسنان">كلية طب الأسنان</option>
+                        <option value="كلية العلوم">كلية العلوم</option>
+                        <option value="كلية الآداب">كلية الآداب</option>
+                        <option value="كلية الإدارة والاقتصاد">كلية الإدارة والاقتصاد</option>
+                        <option value="كلية القانون">كلية القانون</option>
+                        <option value="كلية التربية">كلية التربية</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label data-ar="القسم" data-ku="بەش">القسم</label>
+                    <input type="text" id="appDepartment" placeholder="مثال: هندسة الحاسوب" data-placeholder-ar="مثال: هندسة الحاسوب" data-placeholder-ku="نمونە: ئەندازیاری کۆمپیوتەر" required>
+                </div>
+
+                <div class="input-group">
+                    <label data-ar="التخصص" data-ku="تایبەتمەندی">التخصص</label>
+                    <input type="text" id="appSpecialization" placeholder="مثال: أمن المعلومات" data-placeholder-ar="مثال: أمن المعلومات" data-placeholder-ku="نمونە: ئاسایشی زانیاری" required>
+                </div>
+
+                <div class="input-group">
+                    <label data-ar="رقم الهاتف" data-ku="ژمارەی تەلەفۆن">رقم الهاتف</label>
+                    <input type="tel" id="appPhone" placeholder="07XX XXX XXXX" data-placeholder-ar="07XX XXX XXXX" data-placeholder-ku="07XX XXX XXXX" required>
+                </div>
+
+                <div class="input-group">
+                    <label data-ar="تفاصيل إضافية" data-ku="زانیاریی زیاتر">تفاصيل إضافية</label>
+                    <textarea id="appDetails" rows="4" placeholder="أي معلومات إضافية ترغب في مشاركتها..." data-placeholder-ar="أي معلومات إضافية ترغب في مشاركتها..." data-placeholder-ku="هەر زانیارییەکی تر کە دەتەوێت هاوبەشی بکەیت..."></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label data-ar="ملفات النشاط (اختياري)" data-en="Activity Files (optional)" data-fr="Fichiers d'activité (optionnel)" data-ku="فایلەکانی چالاکی (ئەرەزوو)">ملفات النشاط (اختياري)</label>
+                    <input type="file" id="appProjectFile" accept=".pdf">
+                    <small style="color: var(--text-secondary);" data-ar="يسمح فقط بملفات PDF" data-en="PDF files only" data-fr="PDF uniquement" data-ku="تەنها فایلەکانی PDF ڕێگەدراوە">يسمح فقط بملفات PDF</small>
+                </div>
+
+                <input type="hidden" id="activityType">
+
+                <div class="modal-actions">
+                    <button type="submit" class="submit-btn">
+                        <span data-ar="إرسال الطلب" data-ku="ناردنی داوا">إرسال الطلب</span>
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                    <button type="button" class="cancel-btn" onclick="closeActivityForm()">
+                        <span data-ar="إلغاء" data-ku="هەڵوەشاندنەوە">إلغاء</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Employee Request Details Modal -->
+    <div class="modal" id="employeeRequestModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 data-ar="تفاصيل الطلب من الموظف" data-en="Employee Request Details" data-fr="Détails de la demande de l'employé" data-ku="وردەکاریی داوا لە کارمەند">تفاصيل الطلب من الموظف</h2>
+                <button class="close-btn" onclick="closeEmployeeRequestModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="employeeRequestDetails" class="details-content"></div>
+            <div class="modal-actions">
+                <button class="message-btn" onclick="openMessageWithEmployee()" title="رد على الموظف" data-title-ar="رد على الموظف" data-title-ku="وەڵامدانەوە بۆ کارمەند">
+                    <i class="fas fa-comments"></i>
+                    <span data-ar="رد" data-en="Reply" data-fr="Répondre" data-ku="وەڵام">رد</span>
+                </button>
+                <button class="approve-btn" onclick="approveEmployeeRequest()">
+                    <i class="fas fa-check"></i>
+                    <span data-ar="قبول الطلب" data-en="Accept" data-fr="Accepter" data-ku="قبوڵکردن">قبول الطلب</span>
+                </button>
+                <button class="reject-btn" onclick="rejectEmployeeRequest()">
+                    <i class="fas fa-times"></i>
+                    <span data-ar="رفض الطلب" data-en="Reject" data-fr="Rejeter" data-ku="ڕەتکردنەوە">رفض الطلب</span>
+                </button>
+                <button class="cancel-btn" onclick="closeEmployeeRequestModal()">
+                    <span data-ar="إغلاق" data-en="Close" data-fr="Fermer" data-ku="داخستن">إغلاق</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <script src="translations.js"></script>
+    <script src="messaging-system.js"></script>
+    <script src="script.js"></script>
+    <script src="api-client.js"></script>
+    <script src="student-script.js"></script>
+    
+    <!-- All scripts loaded -->
+
+</body>
+</html>

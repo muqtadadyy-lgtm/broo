@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: university-activities
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: ./build.sh
+    startCommand: gunicorn university_activities.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DEBUG
+        value: "False"
+      - key: DB_ENGINE
+        value: postgres
+      - key: DB_NAME
+        fromDatabase:
+          name: university-activities-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: university-activities-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: university-activities-db
+          property: password
+      - key: DB_HOST
+        fromDatabase:
+          name: university-activities-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: university-activities-db
+          property: port
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+databases:
+  - name: university-activities-db
+    plan: free
+    databaseName: university_activities
+    user: university_activities
