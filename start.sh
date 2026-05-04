@@ -1,3 +1,16 @@
-#!/usr/bin/env bash
+#!/bin/bash
+set -e
+
 cd backend
-gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT
+
+# Install requirements if needed
+pip install -q -r requirements.txt
+
+# Run migrations
+python manage.py migrate --noinput
+
+# Collect static files
+python manage.py collectstatic --noinput
+
+# Start server
+gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --threads 2
