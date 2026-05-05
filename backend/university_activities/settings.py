@@ -48,6 +48,11 @@ CONN_MAX_AGE = 600  # Connection pooling
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = False
 
+# Database connection retry settings
+DATABASE_CONNECT_TIMEOUT = 10
+DATABASE_RETRY_ATTEMPTS = 3
+DATABASE_RETRY_DELAY = 1
+
 ROOT_URLCONF = "university_activities.urls"
 
 TEMPLATES = [

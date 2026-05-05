@@ -5,7 +5,14 @@ services:
     plan: free
     rootDir: backend
     buildCommand: ./build.sh
-    startCommand: gunicorn university_activities.wsgi:application
+    startCommand: gunicorn --workers 3 --timeout 120 --bind 0.0.0.0:$PORT --graceful-timeout 30 university_activities.wsgi:application
+    healthCheck:
+      path: /health/
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    autoDeploy: false
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9

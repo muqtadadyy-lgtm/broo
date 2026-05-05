@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.hashers import make_password, check_password
+from django.db import connection
 
 from .jwt_utils import create_access_token, jwt_required, get_jwt_identity
 from .models import (
@@ -36,6 +37,31 @@ def _parse_json(request: HttpRequest) -> dict:
 
 def _error(message: str, status: int = 400) -> JsonResponse:
     return JsonResponse({"success": False, "message": message}, status=status)
+
+
+@require_http_methods(["GET"])
+def health_check(request: HttpRequest) -> JsonResponse:
+    """
+    Health check endpoint for monitoring and load balancers.
+    Checks database connectivity and returns service status.
+    """
+    try:
+        # Test database connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            db_status = "healthy"
+    except Exception:
+        db_status = "unhealthy"
+    
+    overall_status = "healthy" if db_status == "healthy" else "unhealthy"
+    status_code = 200 if overall_status == "healthy" else 503
+    
+    return JsonResponse({
+        "status": overall_status,
+        "timestamp": timezone.now().isoformat(),
+        "database": db_status,
+        "version": "1.0.0"
+    }, status=status_code)
 
 
 def _ensure_default_activities() -> None:
