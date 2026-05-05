@@ -2,7 +2,7 @@ services:
   - type: web
     name: university-activities
     runtime: python
-    plan: free
+    plan: starter
     rootDir: backend
     buildCommand: ./build.sh
     startCommand: gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT --graceful-timeout 120 --max-requests 500 --max-requests-jitter 50 --preload university_activities.wsgi:application
@@ -48,6 +48,6 @@ services:
         value: .onrender.com
 databases:
   - name: university-activities-db
-    plan: free
+    plan: starter
     databaseName: university_activities
     user: university_activities
