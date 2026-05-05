@@ -93,6 +93,27 @@ def health_check(request: HttpRequest) -> JsonResponse:
     }
     
     return JsonResponse(response_data, status=status_code)
+    
+    # Always return 200 to prevent false failures during startup
+    # Only return 503 for critical database errors
+    critical_db_errors = ["connection", "timeout", "authentication"]
+    is_critical = any(error in str(db_error).lower() for error in critical_db_errors) if db_error else False
+    
+    overall_status = "healthy" if db_status == "healthy" else "degraded"
+    status_code = 503 if is_critical else 200
+    
+    response_data = {
+        "status": overall_status,
+        "timestamp": timezone.now().isoformat(),
+        "database": {
+            "status": db_status,
+            "error": db_error
+        },
+        "version": "1.0.0",
+        "uptime": "ready"
+    }
+    
+    return JsonResponse(response_data, status=status_code)
 
 
 def _ensure_default_activities() -> None:

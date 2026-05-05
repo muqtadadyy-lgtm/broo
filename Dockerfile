@@ -30,4 +30,4 @@ RUN python manage.py seed_super_employee
 EXPOSE 8000
 
 # Start command with better error handling and logging
-CMD ["sh", "-c", "if [ \"$PORT\" = \"\" ]; then export PORT=8080; fi && echo \"Starting on port $PORT\" && cd backend && python manage.py check --deploy && gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT --graceful-timeout 120 --max-requests 500 --max-requests-jitter 50 --preload --access-logfile - --error-logfile - university_activities.wsgi:application"]
+CMD ["sh", "-c", "if [ \"$PORT\" = \"\" ]; then export PORT=8080; fi && echo \"Starting on port $PORT\" && sleep 10 && cd backend && python manage.py check --deploy && gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT --graceful-timeout 120 --max-requests 500 --max-requests-jitter 50 --preload --access-logfile - --error-logfile - university_activities.wsgi:application"]
