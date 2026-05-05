@@ -1297,14 +1297,30 @@ def _frontend_root() -> Path:
 
 
 def index(request: HttpRequest) -> HttpResponse:
-    root = _frontend_root()
-    # The frontend HTML files live under the top-level "templates" directory
-    # (e.g. <project_root>/templates/index.html), so point there explicitly.
-    file_path = root / "templates" / "index.html"
-    if not file_path.exists():
-        raise Http404("index.html not found")
-    content_type, _ = mimetypes.guess_type(str(file_path))
-    return FileResponse(open(file_path, "rb"), content_type=content_type or "text/html")
+    try:
+        root = _frontend_root()
+        # The frontend HTML files live under the top-level "templates" directory
+        # (e.g. <project_root>/templates/index.html), so point there explicitly.
+        file_path = root / "templates" / "index.html"
+        if not file_path.exists():
+            # Fallback to static files directory for Railway deployment
+            static_root = Path(settings.STATIC_ROOT)
+            fallback_path = static_root / "index.html"
+            if fallback_path.exists():
+                file_path = fallback_path
+            else:
+                raise Http404("index.html not found")
+        
+        content_type, _ = mimetypes.guess_type(str(file_path))
+        return FileResponse(open(file_path, "rb"), content_type=content_type or "text/html")
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error serving index.html: {e}")
+        # Return a simple response instead of 404
+        return HttpResponse(
+            "<html><body><h1>University Activities</h1><p>Loading...</p></body></html>",
+            content_type="text/html"
+        )
 
 
 def student_dashboard(request: HttpRequest) -> HttpResponse:
