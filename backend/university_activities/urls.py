@@ -7,7 +7,10 @@ from django.http import JsonResponse
 from core import views as core_views
 
 def health_check(request):
-    return JsonResponse({"status": "ok"})
+    try:
+        return JsonResponse({"status": "ok"})
+    except Exception as e:
+        return JsonResponse({"status": "error", "error": str(e)})
 
 urlpatterns = (
     [
