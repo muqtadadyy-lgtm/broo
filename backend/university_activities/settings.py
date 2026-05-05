@@ -13,12 +13,8 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-change-me")
 
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-# Fix ALLOWED_HOSTS with .railway.app wildcard to accept all Railway subdomains
-ALLOWED_HOSTS = [
-    '.railway.app',  # Accept all Railway subdomains
-    'localhost',
-    '127.0.0.1',
-]
+# Quick fix to stop restart loop - will be refined later
+ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS_ENV = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS = [
