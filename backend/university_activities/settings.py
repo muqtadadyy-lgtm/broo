@@ -16,6 +16,14 @@ DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 ALLOWED_HOSTS_ENV = os.getenv("ALLOWED_HOSTS", "*")
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",") if host.strip()] or ["*"]
 
+# Ensure Railway domains are always allowed
+railway_domains = [
+    "university-activities-production.up.railway.app",
+    "localhost",
+    "127.0.0.1"
+]
+ALLOWED_HOSTS.extend(railway_domains)
+
 CSRF_TRUSTED_ORIGINS_ENV = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS = [
     origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(",") if origin.strip()
