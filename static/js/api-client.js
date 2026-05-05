@@ -7,13 +7,13 @@ function getBackendURL() {
     const currentHost = window.location.hostname;
     const currentPort = window.location.port;
     
-    // If accessing from network (not localhost), use the same host
+    // If accessing from network (not localhost), use the same host with relative path
     if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-        return `http://${currentHost}:8080/api`;
+        return `/api`;
     }
     
     // Default to localhost with correct port
-    return 'http://localhost:8080/api';
+    return '/api';
 }
 
 const API_BASE_URL = getBackendURL();
