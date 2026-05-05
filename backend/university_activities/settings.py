@@ -91,3 +91,8 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://university-activities-production-3ec2.up.railway.app",
+    "https://*.railway.app",
+]
