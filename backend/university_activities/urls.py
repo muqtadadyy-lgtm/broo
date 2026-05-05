@@ -14,6 +14,7 @@ urlpatterns = (
         path("admin/", admin.site.urls),
         path("api/", include("core.urls")),
         path("health/", health_check, name="health_check"),
+        path("health", health_check, name="health_check_no_slash"),
         path("", core_views.index, name="index"),
         path("index.html", core_views.index, name="index_html"),
         path("student-dashboard.html", core_views.student_dashboard, name="student_dashboard"),
