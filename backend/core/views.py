@@ -1297,30 +1297,113 @@ def _frontend_root() -> Path:
 
 
 def index(request: HttpRequest) -> HttpResponse:
-    try:
-        root = _frontend_root()
-        # The frontend HTML files live under the top-level "templates" directory
-        # (e.g. <project_root>/templates/index.html), so point there explicitly.
-        file_path = root / "templates" / "index.html"
-        if not file_path.exists():
-            # Fallback to static files directory for Railway deployment
-            static_root = Path(settings.STATIC_ROOT)
-            fallback_path = static_root / "index.html"
-            if fallback_path.exists():
-                file_path = fallback_path
-            else:
-                raise Http404("index.html not found")
-        
-        content_type, _ = mimetypes.guess_type(str(file_path))
-        return FileResponse(open(file_path, "rb"), content_type=content_type or "text/html")
-    except Exception as e:
-        # Log the error for debugging
-        print(f"Error serving index.html: {e}")
-        # Return a simple response instead of 404
-        return HttpResponse(
-            "<html><body><h1>University Activities</h1><p>Loading...</p></body></html>",
-            content_type="text/html"
-        )
+    """
+    Serve the main index.html file with multiple fallback paths for different deployment environments.
+    """
+    # Define multiple candidate paths to find index.html
+    candidate_paths = [
+        # Local development paths
+        Path(settings.BASE_DIR).parent / "templates" / "index.html",
+        Path(settings.BASE_DIR).parent / "index.html",
+        # Railway deployment paths
+        Path(settings.STATIC_ROOT) / "index.html",
+        Path("/app") / "backend" / "staticfiles" / "index.html",
+        Path("/app") / "backend" / "templates" / "index.html",
+        Path("/app") / "templates" / "index.html",
+        # Render deployment paths
+        Path(settings.BASE_DIR) / "staticfiles" / "index.html",
+        Path(settings.BASE_DIR) / "templates" / "index.html",
+    ]
+    
+    # Try to find and serve index.html from any of the candidate paths
+    for file_path in candidate_paths:
+        try:
+            if file_path.exists() and file_path.is_file():
+                content_type, _ = mimetypes.guess_type(str(file_path))
+                return FileResponse(open(file_path, "rb"), content_type=content_type or "text/html")
+        except Exception as e:
+            print(f"Error trying path {file_path}: {e}")
+            continue
+    
+    # If no index.html found, serve a built-in HTML page
+    html_content = """
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أنشطة الجامعة</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        .status {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 25px;
+            font-weight: bold;
+        }
+        .links {
+            margin-top: 30px;
+        }
+        .links a {
+            display: inline-block;
+            margin: 10px;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: background 0.3s;
+        }
+        .links a:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 أنشطة الجامعة</h1>
+        <p>نظام إدارة الأنشطة الطلابية والموظفين</p>
+        <div class="status">✅ النظام يعمل بنجاح</div>
+        <div class="links">
+            <a href="/api/">📋 API</a>
+            <a href="/admin/">⚙️ لوحة التحكم</a>
+            <a href="/health/">💚 حالة النظام</a>
+        </div>
+    </div>
+</body>
+</html>
+"""
+    return HttpResponse(html_content, content_type="text/html")
 
 
 def student_dashboard(request: HttpRequest) -> HttpResponse:
