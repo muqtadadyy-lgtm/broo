@@ -19,6 +19,7 @@ ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",") if host.s
 # Ensure Railway domains are always allowed
 railway_domains = [
     "university-activities-production.up.railway.app",
+    "healthcheck.railway.app",
     "localhost",
     "127.0.0.1"
 ]
