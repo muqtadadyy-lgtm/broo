@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: university-activities
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r ../requirements.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: Postgres-ifoq
+          property: DATABASE_URL
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: .railway.app
+
+databases:
+  - name: Postgres-ifoq
+    plan: free
