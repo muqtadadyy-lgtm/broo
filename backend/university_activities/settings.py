@@ -13,17 +13,9 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-change-me")
 
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
-ALLOWED_HOSTS_ENV = os.getenv("ALLOWED_HOSTS", "*")
-ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",") if host.strip()] or ["*"]
-
-# Ensure Railway domains are always allowed
-railway_domains = [
-    "university-activities-production.up.railway.app",
-    "healthcheck.railway.app",
-    "localhost",
-    "127.0.0.1"
-]
-ALLOWED_HOSTS.extend(railway_domains)
+# Professional dynamic ALLOWED_HOSTS using environment variables
+ALLOWED_HOSTS_ENV = os.getenv("ALLOWED_HOSTS", "university-activities-production.up.railway.app,healthcheck.railway.app,localhost,127.0.0.1")
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",") if host.strip()]
 
 CSRF_TRUSTED_ORIGINS_ENV = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS = [
