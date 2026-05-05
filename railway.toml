@@ -1,0 +1,19 @@
+[build]
+builder = "dockerfile"
+
+[deploy]
+healthcheckPath = "/health/"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+[variables]
+PYTHON_VERSION = "3.11.9"
+DEBUG = "False"
+DB_ENGINE = "postgres"
+
+[[services]]
+name = "university-activities"
+
+[services.variables]
+ALLOWED_HOSTS = ".onrender.com,.up.railway.app,university-activities-production.up.railway.app"
