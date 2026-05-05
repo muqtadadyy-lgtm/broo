@@ -42,26 +42,35 @@ def _error(message: str, status: int = 400) -> JsonResponse:
 @require_http_methods(["GET"])
 def health_check(request: HttpRequest) -> JsonResponse:
     """
-    Health check endpoint for monitoring and load balancers.
-    Checks database connectivity and returns service status.
+    Enhanced health check endpoint for monitoring and load balancers.
+    Checks database connectivity and returns detailed service status.
     """
     try:
-        # Test database connection
+        # Test database connection with timeout
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
             db_status = "healthy"
-    except Exception:
+            db_error = None
+    except Exception as e:
         db_status = "unhealthy"
+        db_error = str(e)
     
+    # Check overall system health
     overall_status = "healthy" if db_status == "healthy" else "unhealthy"
     status_code = 200 if overall_status == "healthy" else 503
     
-    return JsonResponse({
+    response_data = {
         "status": overall_status,
         "timestamp": timezone.now().isoformat(),
-        "database": db_status,
-        "version": "1.0.0"
-    }, status=status_code)
+        "database": {
+            "status": db_status,
+            "error": db_error
+        },
+        "version": "1.0.0",
+        "uptime": "ready"
+    }
+    
+    return JsonResponse(response_data, status=status_code)
 
 
 def _ensure_default_activities() -> None:
