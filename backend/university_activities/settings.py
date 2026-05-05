@@ -161,9 +161,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # CORS configuration
 CORS_ALLOWED_ORIGINS_ENV = os.getenv("CORS_ALLOWED_ORIGINS", "")
 CORS_ALLOWED_ORIGINS = [
+    "https://university-activities-production.up.railway.app",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "https://university-activities-production.up.railway.app",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+] + [
     origin.strip() for origin in CORS_ALLOWED_ORIGINS_ENV.split(",") if origin.strip()
 ]
-CORS_ALLOW_ALL_ORIGINS = not CORS_ALLOWED_ORIGINS
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Allow embedding pages and media within same-origin iframes
 X_FRAME_OPTIONS = "SAMEORIGIN"
