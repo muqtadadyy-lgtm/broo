@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     default-libmysqlclient-dev \
     pkg-config \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
