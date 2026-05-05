@@ -11,11 +11,14 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-change-me")
 
-DEBUG = os.getenv("DEBUG", "True").lower() == "true"
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-# Professional dynamic ALLOWED_HOSTS using environment variables
-ALLOWED_HOSTS_ENV = os.getenv("ALLOWED_HOSTS", "university-activities-production.up.railway.app,healthcheck.railway.app,localhost,127.0.0.1")
-ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",") if host.strip()]
+# Fix ALLOWED_HOSTS with .railway.app wildcard to accept all Railway subdomains
+ALLOWED_HOSTS = [
+    '.railway.app',  # Accept all Railway subdomains
+    'localhost',
+    '127.0.0.1',
+]
 
 CSRF_TRUSTED_ORIGINS_ENV = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS = [
