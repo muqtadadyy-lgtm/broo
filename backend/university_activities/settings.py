@@ -101,6 +101,14 @@ elif DB_ENGINE in ("postgres", "postgresql"):
             "HOST": os.getenv("DB_HOST", "127.0.0.1"),
             "PORT": os.getenv("DB_PORT", "5432"),
             "CONN_MAX_AGE": CONN_MAX_AGE,
+            "OPTIONS": {
+                "connect_timeout": DATABASE_CONNECT_TIMEOUT,
+                "server_side_binding": True,
+                "sslmode": "prefer",
+                "sslcert": None,
+                "sslkey": None,
+                "sslcrl": None,
+            },
         }
     }
 else:
