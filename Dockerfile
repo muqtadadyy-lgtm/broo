@@ -32,4 +32,4 @@ EXPOSE 8080
 # Railway will provide PORT environment variable dynamically
 
 # Railway will use this CMD if Start Command is not set - v2
-CMD ["sh", "-c", "cd backend && exec gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT university_activities.wsgi:application"]
+CMD ["sh", "-c", "exec gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT university_activities.wsgi:application"]
