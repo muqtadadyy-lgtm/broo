@@ -4,13 +4,13 @@ builder = "dockerfile"
 [deploy]
 healthcheckPath = "/health/"
 healthcheckTimeout = 300
-restartPolicyType = "on_failure"
+restartPolicyType = "always"
 restartPolicyMaxRetries = 10
 
 [variables]
 PYTHON_VERSION = "3.11.9"
 DEBUG = "False"
-DB_ENGINE = "postgres"
+DB_ENGINE = "sqlite"
 
 [[services]]
 name = "university-activities"
