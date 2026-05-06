@@ -29,5 +29,8 @@ RUN python manage.py seed_super_employee
 # Expose port
 EXPOSE 8000
 
-# Start command - simplified for Railway stability
-CMD ["sh", "-c", "cd backend && gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT university_activities.wsgi:application"]
+# Create startup script
+RUN echo '#!/bin/sh\ncd /app/backend && exec gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT university_activities.wsgi:application' > /app/start.sh && chmod +x /app/start.sh
+
+# Start command - use exec to replace shell with gunicorn
+CMD ["/app/start.sh"]
