@@ -3,8 +3,7 @@ builder = "dockerfile"
 # Force redeploy to pick up latest Dockerfile PORT fixes
 
 [deploy]
-restartPolicyType = "always"
-restartPolicyMaxRetries = 10
+# Railway handles restarts automatically
 
 [variables]
 PYTHON_VERSION = "3.11.9"
