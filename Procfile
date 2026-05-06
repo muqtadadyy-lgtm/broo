@@ -1,1 +1,1 @@
-web: gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT
+web: cd backend && gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT
