@@ -29,8 +29,7 @@ RUN python manage.py seed_super_employee
 # Expose port (Railway will map this)
 EXPOSE 8080
 
-# Set default PORT if not provided
-ENV PORT=8080
+# Railway will provide PORT environment variable dynamically
 
 # Create startup script with proper PORT handling
 RUN echo '#!/bin/sh\nPORT=${PORT:-8080}\necho "Starting gunicorn on port $PORT"\ncd /app/backend && exec gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT university_activities.wsgi:application' > /app/start.sh && chmod +x /app/start.sh
