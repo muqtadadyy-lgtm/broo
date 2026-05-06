@@ -13,6 +13,3 @@ DB_ENGINE = "sqlite"
 [[services]]
 name = "university-activities"
 type = "web"
-
-[services.variables]
-ALLOWED_HOSTS = ".onrender.com,.up.railway.app,university-activities-production.up.railway.app"
