@@ -80,7 +80,7 @@ async function apiRequest(endpoint, options = {}) {
         console.error('API Error:', error);
         // Check for network errors
         if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
-            throw new Error('فشل الاتصال بالخادم. تأكد من أن Backend يعمل على المنفذ 8080');
+            throw new Error('فشل الاتصال بالخادم. تأكد من أن Backend يعمل بشكل صحيح');
         }
         throw error;
     }

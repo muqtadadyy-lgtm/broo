@@ -44,12 +44,12 @@ python manage.py seed_super_employee
 echo.
 echo ============================================
 echo   Server is starting...
-echo   Open browser: http://localhost:8080
+echo   Open browser: http://localhost:$PORT
 echo   Super Employee Login: user / user123
 echo ============================================
 echo.
 
 :: Start the server
-python manage.py runserver 0.0.0.0:8080
+python manage.py runserver 0.0.0.0:$PORT
 
 pause
