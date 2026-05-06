@@ -250,7 +250,7 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
 .empty-state p {margin:0;font-size:14px}
 
 /* Message Button Styles */
-.message-btn {background:linear-gradient(135deg,var(--accent-color),var(--primary-light));color:white;padding:14px 20px;border:none;border-radius:12px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;transition:all 0.3s ease;min-height: 48px;}
+.message-btn {background:linear-gradient(135deg,var(--accent-color),var(--primary-light));color:white;padding:12px 20px;border:none;border-radius:10px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;transition:all 0.3s ease}
 .message-btn:hover {transform:translateY(-2px);box-shadow:0 8px 25px rgba(59,130,246,0.4)}
 .message-btn i {font-size:16px}
 
@@ -280,7 +280,7 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
 .role-selector span {display:flex;align-items:center;gap:8px;color:var(--text-secondary);transition:all 0.3s ease}
 .role-selector span i {font-size:20px}
 
-.submit-btn {width:100%;padding:16px 20px;background:linear-gradient(135deg,var(--primary-color),var(--accent-color));border:none;border-radius:15px;color:white;font-family:'Cairo',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.3s ease;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 5px 20px rgba(74,158,255,0.3);position:relative;overflow:hidden;min-height: 50px;}
+.submit-btn {width:100%;padding:18px;background:linear-gradient(135deg,var(--primary-color),var(--accent-color));border:none;border-radius:15px;color:white;font-family:'Cairo',sans-serif;font-size:18px;font-weight:700;cursor:pointer;transition:all 0.3s ease;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 5px 20px rgba(74,158,255,0.3);position:relative;overflow:hidden}
 .submit-btn::before {content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);transition:left 0.5s ease}
 .submit-btn:hover::before {left:100%}
 .submit-btn:hover {transform:translateY(-3px);box-shadow:0 10px 30px rgba(74,158,255,0.5)}
@@ -296,7 +296,7 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
 .logo-section {display:flex;align-items:center;gap:15px}
 .logo-section i {font-size:40px;color:var(--accent-color);animation:pulse 2s ease infinite}
 .logo-section h1 {font-size:24px;font-weight:700;color:var(--text-primary)}
-.user-section {display:flex;align-items:center;gap:10px; flex-wrap: wrap; justify-content: flex-end;}
+.user-section {display:flex;align-items:center;gap:20px}
 .welcome-text {color:var(--text-secondary);font-size:16px}
 .welcome-text strong {color:var(--accent-color);font-weight:700}
 .logout-btn {padding:12px 25px;background:linear-gradient(135deg,var(--error-color),#dc2626);border:none;border-radius:12px;color:white;font-family:'Cairo',sans-serif;font-size:16px;font-weight:600;cursor:pointer;transition:all 0.3s ease;display:flex;align-items:center;gap:8px}
@@ -327,8 +327,8 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
 .modal-header h2 {font-size:24px;font-weight:700;color:var(--text-primary)}
 .close-btn {width:40px;height:40px;border:none;background:var(--error-color);border-radius:50%;color:white;font-size:20px;cursor:pointer;transition:all 0.3s ease;display:flex;align-items:center;justify-content:center}
 .close-btn:hover {transform:rotate(90deg) scale(1.1);box-shadow:0 5px 20px rgba(239,68,68,0.4)}
-.modal-actions {display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
-.modal-actions button {flex:1;padding:15px;border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-size:16px;font-weight:600;cursor:pointer;transition:all 0.3s ease;display:flex;align-items:center;justify-content:center;gap:8px}
+.modal-actions {display:flex;gap:15px;margin-top:30px;position:sticky;bottom:0;background:var(--card-bg);padding:20px 0;border-top:1px solid var(--border-color);backdrop-filter:blur(10px);z-index:1000}
+.modal-actions button {flex:1;padding:15px;border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-size:16px;font-weight:600;cursor:pointer;transition:all 0.3s ease;display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;position:relative;z-index:1001}
 .cancel-btn {background:var(--border-color);color:var(--text-primary)}
 .cancel-btn:hover {background:var(--primary-light);transform:translateY(-2px)}
 .approve-btn {background:linear-gradient(135deg,var(--success-color),#059669);color:white}
@@ -337,7 +337,7 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
 .reject-btn:hover {transform:translateY(-2px);box-shadow:0 5px 20px rgba(239,68,68,0.4)}
 .danger-btn {background:linear-gradient(135deg,#ef4444,#b91c1c);color:white}
 .danger-btn:hover {transform:translateY(-2px);box-shadow:0 5px 20px rgba(239,68,68,0.45)}
-.ghost-btn {background:var(--card-bg);color:var(--text-primary);border:2px solid var(--border-color);padding:14px 20px;border-radius:12px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;transition:all 0.3s ease;min-height: 48px;}
+.ghost-btn {background:var(--card-bg);color:var(--text-primary);border:2px solid var(--border-color);padding:12px 18px;border-radius:12px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;transition:all 0.3s ease}
 .ghost-btn:hover {border-color:var(--accent-color);color:var(--accent-color);transform:translateY(-2px);box-shadow:0 6px 18px rgba(74,158,255,0.25)}
 .ghost-btn i {color:inherit}
 .hidden-section {display:none}
@@ -487,8 +487,11 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
     .activity-card {padding: 15px;}
     .stats-card {padding: 15px;}
     .btn {padding: 12px 20px; font-size: 14px;}
-    .modal-actions {flex-direction: column; gap: 10px;}
-    .modal-actions button {width: 100%;}
+    .modal-actions {flex-direction: column; gap: 8px; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 12px; border-top: 2px solid var(--border-color); z-index: 1000; backdrop-filter: blur(10px); box-shadow: 0 -5px 20px rgba(0,0,0,0.3);}
+    .modal-actions button {width: 100%; min-height: 55px; font-size: 14px; position: relative; z-index: 1001; touch-action: manipulation; -webkit-tap-highlight-color: transparent;}
+    .modal-content {padding-bottom: 140px; max-height: 75vh; border-radius: 20px 20px 0 0;}
+    .modal {padding-bottom: 0;}
+    .modal-content {margin-bottom: 0; border-radius: 20px 20px 0 0;}
 }
 
 /* Tablet responsiveness */
@@ -528,16 +531,8 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
     .activity-card {padding: 12px;}
     .stats-card {padding: 12px;}
     .header-content h1 {font-size: 18px;}
-    .user-section {flex-direction: column; gap: 8px; align-items: stretch;}
-    .logout-btn {width: 100%; justify-content: center; min-height: 48px;}
-    .submit-btn, .ghost-btn, .message-btn {width: 100%; justify-content: center; margin-bottom: 8px;}
-    .header-content {flex-direction: column; text-align: center; padding: 15px; gap: 15px;}
-    .logo-section {margin-bottom: 10px;}
-    .modal-actions {flex-direction: column; gap: 8px;}
-    .modal-actions button {width: 100%; min-height: 50px; margin-bottom: 5px;}
-    .modal-content {padding: 20px; width: 95vw; max-width: 95vw;}
-    .modal-header {flex-direction: column; text-align: center; gap: 10px;}
-    .modal-header h2 {font-size: 18px;}
+    .user-section {flex-direction: column; gap: 10px;}
+    .logout-btn {width: 100%; justify-content: center;}
 }
 
 
