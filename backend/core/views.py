@@ -1468,6 +1468,11 @@ def get_active_announcement(request: HttpRequest) -> JsonResponse:
         })
     except Announcement.DoesNotExist:
         return JsonResponse({"success": True, "announcement": None})
+    except Exception as e:
+        return JsonResponse({
+            "success": False,
+            "error": f"Database error: {str(e)}"
+        })
 
 
 @csrf_exempt
