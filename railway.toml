@@ -9,6 +9,7 @@ restartPolicyMaxRetries = 10
 PYTHON_VERSION = "3.11.9"
 DEBUG = "False"
 DB_ENGINE = "sqlite"
+PORT = "8080"
 
 [[services]]
 name = "university-activities"

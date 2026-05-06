@@ -26,11 +26,14 @@ RUN python manage.py migrate --fake-initial
 RUN python manage.py collectstatic --noinput
 RUN python manage.py seed_super_employee
 
-# Expose port
-EXPOSE 8000
+# Expose port (Railway will map this)
+EXPOSE 8080
 
-# Create startup script
-RUN echo '#!/bin/sh\ncd /app/backend && exec gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT university_activities.wsgi:application' > /app/start.sh && chmod +x /app/start.sh
+# Set default PORT if not provided
+ENV PORT=8080
+
+# Create startup script with proper PORT handling
+RUN echo '#!/bin/sh\nPORT=${PORT:-8080}\necho "Starting gunicorn on port $PORT"\ncd /app/backend && exec gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT university_activities.wsgi:application' > /app/start.sh && chmod +x /app/start.sh
 
 # Start command - use exec to replace shell with gunicorn
 CMD ["/app/start.sh"]
