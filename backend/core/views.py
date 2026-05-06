@@ -209,9 +209,9 @@ def register(request: HttpRequest) -> JsonResponse:
     if User.objects.filter(email=data["email"]).exists():
         return _error("البريد الإلكتروني موجود بالفعل", status=400)
 
-    # منع إنشاء أي حسابات غير حساب الطالب من الواجهة العامة
-    if data["role"] != "student":
-        return _error("غير مصرح بإنشاء حسابات غير طلابية", status=403)
+    # السماح بإنشاء حسابات طلاب وموظفين
+    if data["role"] not in ["student", "employee"]:
+        return _error("الدور غير صالح. يجب أن يكون 'student' أو 'employee'", status=403)
 
     try:
         user = User(
@@ -219,7 +219,7 @@ def register(request: HttpRequest) -> JsonResponse:
             username=data["username"],
             email=data["email"],
             password_hash=make_password(data["password"]),
-            role="student",
+            role=data["role"],
         )
         user.save()
     except Exception as exc:  # pragma: no cover - defensive
