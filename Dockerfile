@@ -29,5 +29,5 @@ RUN python manage.py seed_super_employee
 # Expose port
 EXPOSE 8000
 
-# Start command with better error handling and logging
-CMD ["sh", "-c", "if [ \"$PORT\" = \"\" ]; then export PORT=8080; fi && echo \"Starting on port $PORT\" && sleep 10 && cd backend && python manage.py check --deploy && gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT --graceful-timeout 120 --max-requests 500 --max-requests-jitter 50 --preload --access-logfile - --error-logfile - university_activities.wsgi:application"]
+# Start command optimized for Railway process management
+CMD ["sh", "-c", "if [ \"$PORT\" = \"\" ]; then export PORT=8080; fi && echo \"Starting on port $PORT\" && sleep 5 && cd backend && python manage.py check --deploy && gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT --graceful-timeout 120 --max-requests 1000 --max-requests-jitter 100 --preload --access-logfile - --error-logfile - --keep-alive 2 --max-requests 10000 university_activities.wsgi:application"]
