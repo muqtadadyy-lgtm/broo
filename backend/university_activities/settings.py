@@ -79,7 +79,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "university_activities.wsgi.application"
 ASGI_APPLICATION = "university_activities.asgi.application"
 
-# Database configuration: default to MySQL via environment, fallback to SQLite
+# Database configuration: default to SQLite for Railway compatibility
 DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").lower()
 if DB_ENGINE in ("mysql", "mariadb"):
     DATABASES = {
@@ -117,6 +117,7 @@ elif DB_ENGINE in ("postgres", "postgresql"):
         }
     }
 else:
+    # Force SQLite for Railway deployment to avoid PostgreSQL connection issues
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
