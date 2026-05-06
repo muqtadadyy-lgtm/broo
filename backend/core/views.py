@@ -539,7 +539,7 @@ def get_all_applications(request: HttpRequest) -> JsonResponse:
                 "status": app.status,
                 "submittedAt": app.submitted_at.isoformat(),
                 "updatedAt": app.updated_at.isoformat(),
-                "projectFile": request.build_absolute_uri(app.project_file.url) if app.project_file else None,
+                "projectFile": app.project_file.url if app.project_file else None,
             }
         )
 
