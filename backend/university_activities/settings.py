@@ -79,8 +79,10 @@ TEMPLATES = [
 WSGI_APPLICATION = "university_activities.wsgi.application"
 ASGI_APPLICATION = "university_activities.asgi.application"
 
-# Database configuration: default to SQLite for Railway compatibility
-DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").lower()
+# Database configuration: FORCE SQLite for Railway deployment
+# Override any Railway environment variables
+DB_ENGINE = "sqlite"  # Force SQLite regardless of environment variables
+
 if DB_ENGINE in ("mysql", "mariadb"):
     DATABASES = {
         "default": {
