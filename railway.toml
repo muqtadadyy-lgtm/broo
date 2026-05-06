@@ -1,5 +1,6 @@
 [build]
 builder = "dockerfile"
+# Force redeploy to pick up latest Dockerfile PORT fixes
 
 [deploy]
 restartPolicyType = "always"
