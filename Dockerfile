@@ -32,7 +32,7 @@ EXPOSE 8080
 # Railway will provide PORT environment variable dynamically
 
 # Create startup script with proper PORT handling
-RUN echo '#!/bin/sh\necho "Starting gunicorn on port $PORT"\ncd /app/backend && exec gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT university_activities.wsgi:application' > /app/start.sh && chmod +x /app/start.sh
+RUN echo '#!/bin/sh\necho "PORT value: $PORT"\necho "Starting gunicorn on port $PORT"\ncd /app/backend && exec gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT university_activities.wsgi:application' > /app/start.sh && chmod +x /app/start.sh
 
 # Start command - use exec to replace shell with gunicorn
 CMD ["/app/start.sh"]
