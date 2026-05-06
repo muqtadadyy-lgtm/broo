@@ -225,15 +225,6 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="modal-actions">
-                <button type="submit" class="submit-btn">
-                    <span data-ar="إرسال الطلب" data-ku="ناردنی داوا">إرسال الطلب</span>
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-                <button type="button" class="cancel-btn" onclick="closeActivityForm()">
-                    <span data-ar="إلغاء" data-ku="هەڵوەشاندنەوە">إلغاء</span>
-                </button>
-            </div>
             <form onsubmit="submitApplicationForm(event)" id="applicationForm">
                 <div class="input-group">
                     <label data-ar="الاسم الكامل" data-en="Full Name" data-fr="Nom complet" data-ku="ناوی تەواو">الاسم الكامل</label>
@@ -288,6 +279,15 @@
                 </div>
 
                 <input type="hidden" id="activityType">
+                <div class="modal-actions">
+                    <button type="submit" class="submit-btn">
+                        <span data-ar="إرسال الطلب" data-ku="ناردنی داوا">إرسال الطلب</span>
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                    <button type="button" class="cancel-btn" onclick="closeActivityForm()">
+                        <span data-ar="إلغاء" data-ku="هەڵوەشاندنەوە">إلغاء</span>
+                    </button>
+                </div>
             </form>
         </div>
     </div>
