@@ -19,12 +19,26 @@ def health_check(request):
         logger.error(f"Health check failed: {str(e)}")
         return JsonResponse({"status": "error", "error": str(e)})
 
+def ready_check(request):
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f"Ready check requested: {request.method} {request.path}")
+        response = JsonResponse({"status": "ready"})
+        logger.info("Ready check successful")
+        return response
+    except Exception as e:
+        logger.error(f"Ready check failed: {str(e)}")
+        return JsonResponse({"status": "error", "error": str(e)})
+
 urlpatterns = (
     [
         path("admin/", admin.site.urls),
         path("api/", include("core.urls")),
         path("health/", health_check, name="health_check"),
         path("health", health_check, name="health_check_no_slash"),
+        path("ready", ready_check, name="ready_check"),
         path("", core_views.index, name="index"),
         path("index.html", core_views.index, name="index_html"),
         path("student-dashboard.html", core_views.student_dashboard, name="student_dashboard"),
