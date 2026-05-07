@@ -286,3 +286,19 @@ LOGGING = {
         },
     },
 }
+
+# Emergency database initialization - ensure tables exist
+try:
+    from django.core.management import execute_from_command_line
+    import sys
+    from django.db import connection
+    
+    # Check if users table exists
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
+        if not cursor.fetchone():
+            print("EMERGENCY: Users table not found, running migrations...")
+            execute_from_command_line(['manage.py', 'migrate', '--fake-initial'])
+            print("EMERGENCY: Migrations completed")
+except Exception as e:
+    print(f"EMERGENCY: Failed to initialize database: {e}")
