@@ -25,11 +25,10 @@ urlpatterns = (
     [
         path("admin/", admin.site.urls),
         path("api/", include("core.urls")),
-        path("", health, name="health"),
         path("health/", health_check, name="health_check"),
         path("health", health_check, name="health_check_no_slash"),
         path("ready", ready_check, name="ready_check"),
-        path("", root_endpoint, name="root"),
+        path("", core_views.index, name="index_html"),
         path("index.html", core_views.index, name="index_html"),
         path("student-dashboard.html", core_views.student_dashboard, name="student_dashboard"),
         path("employee-dashboard.html", core_views.employee_dashboard, name="employee_dashboard"),

@@ -15,7 +15,7 @@ name = "university-activities"
 type = "web"
 
 [services.health_check]
-path = "/"
+path = "/health/"
 grace_period_seconds = 120
 restart_policy_type = "on_failure"
 restart_policy_max_retries = 3
