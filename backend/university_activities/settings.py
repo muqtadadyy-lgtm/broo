@@ -17,9 +17,8 @@ DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 # Force ALLOWED_HOSTS to accept all hosts to stop restart loop
 ALLOWED_HOSTS = ['*']
 
-# Also check environment variable to ensure it's set correctly
-if os.getenv("ALLOWED_HOSTS"):
-    ALLOWED_HOSTS = ['*']
+# Allow all hosts for Railway deployment
+ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS_ENV = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS = [

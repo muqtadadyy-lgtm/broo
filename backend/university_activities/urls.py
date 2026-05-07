@@ -7,7 +7,8 @@ from django.http import JsonResponse, HttpResponse
 from core import views as core_views
 
 def health_check(request):
-    return JsonResponse({"status": "ok"})
+    """Health check endpoint for Railway monitoring"""
+    return JsonResponse({"status": "healthy", "timestamp": "2024-01-01T00:00:00Z"})
 
 def ready_check(request):
     return JsonResponse({"status": "ready"})
