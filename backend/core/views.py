@@ -103,10 +103,14 @@ def health_check(request: HttpRequest) -> JsonResponse:
         db_status = f"error: {str(e)}"
 
     try:
-        # Test if tables exist
-        from .models import User
-        user_count = User.objects.count()
-        tables_status = f"ok ({user_count} users)"
+        # Test if tables exist - SAFE CHECK
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
+            if cursor.fetchone():
+                tables_status = "ok (users table exists)"
+            else:
+                tables_status = "warning (users table missing)"
     except Exception as e:
         tables_status = f"error: {str(e)}"
 
