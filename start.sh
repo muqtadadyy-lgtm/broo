@@ -23,6 +23,7 @@ python manage.py showmigrations || echo "Cannot show migrations"
 # Skip super user creation in startup to prevent Railway restart loop
 # Super user will be created manually or through admin panel
 
+echo "=== STARTING GUNICORN - NO SUPER USER CREATION ==="
 echo "=== Starting Gunicorn Server on port $PORT ==="
 echo "=== PORT: $PORT ==="
 echo "=== Starting with enhanced logging ==="
