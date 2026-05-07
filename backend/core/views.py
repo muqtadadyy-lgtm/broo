@@ -232,6 +232,7 @@ def register(request: HttpRequest) -> JsonResponse:
         return _error("الدور غير صالح. يجب أن يكون 'student' أو 'employee'", status=403)
 
     try:
+        print(f"[REGISTER] Creating user with data: {data}")
         user = User(
             full_name=data["fullName"],
             username=data["username"],
@@ -239,8 +240,13 @@ def register(request: HttpRequest) -> JsonResponse:
             password_hash=make_password(data["password"]),
             role=data["role"],
         )
+        print(f"[REGISTER] User object created: {user}")
         user.save()
+        print(f"[REGISTER] User saved successfully with ID: {user.id}")
     except Exception as exc:  # pragma: no cover - defensive
+        print(f"[REGISTER] Error creating user: {exc}")
+        import traceback
+        traceback.print_exc()
         return _error(f"حدث خطأ: {exc}", status=500)
 
     return JsonResponse(
