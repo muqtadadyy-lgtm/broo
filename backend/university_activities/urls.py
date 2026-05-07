@@ -23,7 +23,7 @@ def root_endpoint(request):
 
 urlpatterns = (
     [
-        path("admin/", admin.site.urls),
+        # DISABLED: admin/ - django.contrib.admin app removed to prevent Super User creation
         path("api/", include("core.urls")),
         path("health/", health_check, name="health_check"),
         path("health", health_check, name="health_check_no_slash"),

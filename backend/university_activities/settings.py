@@ -38,7 +38,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    # DISABLED: django.contrib.admin - causes Super User creation in post-migrate
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
