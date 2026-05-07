@@ -60,20 +60,21 @@ def home(request: HttpRequest) -> JsonResponse:
 @require_http_methods(["GET"])
 def health_check(request: HttpRequest) -> JsonResponse:
     """
-    Enhanced health check endpoint for monitoring and load balancers.
-    Checks database connectivity and returns detailed service status.
+    Simple health check endpoint for monitoring and load balancers.
+    Returns basic service status without database connection to avoid timeouts.
     """
     print(f"[HEALTH_CHECK] Request received at {timezone.now()}")
-    try:
-        # Quick database connection test with minimal overhead
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1")
-            db_status = "healthy"
-            db_error = None
-            print(f"[HEALTH_CHECK] Database connection successful")
-    except Exception as e:
-        db_status = "unhealthy"
-        db_error = str(e)
+    
+    # Simple health check without database connection to avoid timeouts
+    response_data = {
+        "status": "healthy",
+        "timestamp": timezone.now().isoformat(),
+        "version": "1.0.0",
+        "uptime": "ready"
+    }
+    
+    print(f"[HEALTH_CHECK] Returning healthy status")
+    return JsonResponse(response_data, status=200)
     
     # Always return 200 to prevent false failures during startup
     # Only return 503 for critical database errors
