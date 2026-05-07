@@ -81,6 +81,7 @@ ASGI_APPLICATION = "university_activities.asgi.application"
 # Database configuration: FORCE SQLite for Railway deployment
 # Override any Railway environment variables
 DB_ENGINE = "sqlite"  # Force SQLite regardless of environment variables
+os.environ["DB_ENGINE"] = "sqlite"  # Force environment variable too
 
 if DB_ENGINE in ("mysql", "mariadb"):
     DATABASES = {
