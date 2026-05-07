@@ -25,6 +25,18 @@ CSRF_TRUSTED_ORIGINS = [
     origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(",") if origin.strip()
 ]
 
+# CORS settings for Railway deployment
+CORS_ALLOWED_ORIGINS = [
+    "https://university-activities-production.up.railway.app",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
