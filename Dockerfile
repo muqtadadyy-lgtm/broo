@@ -1,12 +1,9 @@
 FROM python:3.11.9-slim
 
-# Force rebuild to remove postgresql-client completely
-ARG RAILWAY_REBUILD=1
-
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     default-libmysqlclient-dev \
     pkg-config \
@@ -27,11 +24,9 @@ WORKDIR /app/backend
 # Create logs directory
 RUN mkdir -p logs
 
-# Run Django commands with logging
-RUN echo "=== Running migrations ===" && python manage.py migrate --fake-initial || echo "Migrations failed"
-RUN echo "=== Collecting static files ===" && python manage.py collectstatic --noinput || echo "Static collection failed"
-RUN echo "=== Creating super employee ===" && python manage.py seed_super_employee || echo "Super employee creation failed"
-RUN echo "=== Django setup completed ==="
+# Run Django commands
+RUN python manage.py migrate --fake-initial
+RUN python manage.py collectstatic --noinput
 
 # Expose port (Railway will map this)
 EXPOSE 8080
