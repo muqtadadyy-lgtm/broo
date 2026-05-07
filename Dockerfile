@@ -1,5 +1,8 @@
 FROM python:3.11.9-slim
 
+# Force rebuild to remove postgresql-client completely
+ARG RAILWAY_REBUILD=1
+
 WORKDIR /app
 
 # Install system dependencies
@@ -20,10 +23,11 @@ COPY . .
 # Change to backend directory
 WORKDIR /app/backend
 
-# Run Django commands
-RUN python manage.py migrate --fake-initial
-RUN python manage.py collectstatic --noinput
-RUN python manage.py seed_super_employee
+# Run Django commands with logging
+RUN echo "=== Running migrations ===" && python manage.py migrate --fake-initial
+RUN echo "=== Collecting static files ===" && python manage.py collectstatic --noinput
+RUN echo "=== Creating super employee ===" && python manage.py seed_super_employee
+RUN echo "=== Django setup completed ==="
 
 # Expose port (Railway will map this)
 EXPOSE 8080
