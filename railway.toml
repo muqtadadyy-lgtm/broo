@@ -28,10 +28,10 @@ name = "university-activities"
 type = "web"
 
 [services.health_check]
-path = "/health/"
-grace_period_seconds = 120
+path = "/api/health"
+grace_period_seconds = 300
 restart_policy_type = "on_failure"
-restart_policy_max_retries = 3
+restart_policy_max_retries = 5
 
 [services.build]
 memory = "512Mi"

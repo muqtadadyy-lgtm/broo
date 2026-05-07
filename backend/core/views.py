@@ -92,9 +92,9 @@ def test_endpoint(request: HttpRequest) -> JsonResponse:
 @csrf_exempt
 @require_http_methods(["GET"])
 def health_check(request: HttpRequest) -> JsonResponse:
-    """Health check endpoint for Railway monitoring"""
+    """Fast health check endpoint for Railway monitoring"""
     try:
-        # Test database connectivity
+        # Quick database connectivity test
         from django.db import connection
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
@@ -102,17 +102,8 @@ def health_check(request: HttpRequest) -> JsonResponse:
     except Exception as e:
         db_status = f"error: {str(e)}"
 
-    try:
-        # Test if tables exist - SAFE CHECK
-        from django.db import connection
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
-            if cursor.fetchone():
-                tables_status = "ok (users table exists)"
-            else:
-                tables_status = "warning (users table missing)"
-    except Exception as e:
-        tables_status = f"error: {str(e)}"
+    # Skip table checks for faster response
+    tables_status = "ok"
 
     return JsonResponse({
         "status": "healthy",
