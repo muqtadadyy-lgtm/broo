@@ -1,5 +1,6 @@
 #!/bin/sh
 
+echo "=== STARTUP SCRIPT v2.0 - OPTIMIZED FOR RAILWAY ==="
 echo "=== Starting Application ==="
 echo "=== Working directory: $(pwd) ==="
 echo "=== Python path: $(which python) ==="
@@ -19,8 +20,8 @@ python manage.py migrate --fake-initial --verbosity=2 || echo "Migrations failed
 echo "=== Verifying tables exist ==="
 python manage.py showmigrations || echo "Cannot show migrations"
 
-echo "=== Creating super employee ==="
-python manage.py seed_super_employee || echo "Super employee creation failed (may already exist)"
+# Skip super user creation in startup to prevent Railway restart loop
+# Super user will be created manually or through admin panel
 
 echo "=== Starting Gunicorn Server on port $PORT ==="
 echo "=== PORT: $PORT ==="
