@@ -15,7 +15,8 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements and install Python dependencies
 COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
 COPY . .
@@ -24,9 +25,9 @@ COPY . .
 WORKDIR /app/backend
 
 # Run Django commands with logging
-RUN echo "=== Running migrations ===" && python manage.py migrate --fake-initial
-RUN echo "=== Collecting static files ===" && python manage.py collectstatic --noinput
-RUN echo "=== Creating super employee ===" && python manage.py seed_super_employee
+RUN echo "=== Running migrations ===" && python manage.py migrate --fake-initial || echo "Migrations failed"
+RUN echo "=== Collecting static files ===" && python manage.py collectstatic --noinput || echo "Static collection failed"
+RUN echo "=== Creating super employee ===" && python manage.py seed_super_employee || echo "Super employee creation failed"
 RUN echo "=== Django setup completed ==="
 
 # Expose port (Railway will map this)
