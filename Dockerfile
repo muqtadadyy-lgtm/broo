@@ -24,14 +24,8 @@ WORKDIR /app/backend
 # Create logs directory
 RUN mkdir -p logs
 
-# Run Django commands
-RUN echo "=== Creating database directory ===" && mkdir -p /tmp && chmod 777 /tmp
-RUN echo "=== Creating database file ===" && touch /tmp/db.sqlite3 && chmod 666 /tmp/db.sqlite3
-RUN echo "=== Running migrations ===" && python manage.py migrate --fake-initial --verbosity=2
-RUN echo "=== Verifying tables ===" && python manage.py showmigrations --verbosity=2
+# Collect static files at build time
 RUN echo "=== Collecting static files ===" && python manage.py collectstatic --noinput
-RUN echo "=== Creating super employee ===" && python manage.py seed_super_employee
-RUN echo "=== Final verification ===" && python manage.py check --verbosity=2
 
 # Expose port (Railway will map this)
 EXPOSE 8080
@@ -39,4 +33,4 @@ EXPOSE 8080
 # Railway will provide PORT environment variable dynamically
 
 # Railway will use this CMD if Start Command is not set - v3
-CMD ["sh", "-c", "exec gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT university_activities.wsgi:application"]
+CMD ["sh", "-c", "echo '=== Starting Application ===' && mkdir -p /tmp && chmod 777 /tmp && echo '=== Running Migrations ===' && python manage.py migrate --fake-initial --verbosity=2 && echo '=== Creating Super User ===' && python manage.py seed_super_employee && echo '=== Starting Gunicorn ===' && exec gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT university_activities.wsgi:application"]
