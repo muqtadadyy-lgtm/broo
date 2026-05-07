@@ -1320,14 +1320,6 @@ def get_message_thread(request: HttpRequest) -> JsonResponse:
 # ==================== HEALTH & FRONTEND ROUTES ====================
 
 
-def health_check(request: HttpRequest) -> JsonResponse:
-    return JsonResponse(
-        {
-            "status": "healthy",
-            "message": "University Activities Backend API is running (Django)",
-            "timestamp": timezone.now().isoformat(),
-        }
-    )
 
 
 def _frontend_root() -> Path:
