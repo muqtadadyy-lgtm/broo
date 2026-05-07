@@ -207,6 +207,7 @@ class Message(models.Model):
     text = models.TextField()
     attachment = models.FileField(upload_to="message_files/", null=True, blank=True)
     is_read = models.BooleanField(default=False)
+    is_system_notification = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:

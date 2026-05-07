@@ -237,7 +237,12 @@ def register(request: HttpRequest) -> JsonResponse:
 @require_http_methods(["POST"])
 def login(request: HttpRequest) -> JsonResponse:
     data = _parse_json(request)
+    print(f"[LOGIN] Received data: {data}")
+    print(f"[LOGIN] Request body: {request.body}")
+    print(f"[LOGIN] Content type: {request.content_type}")
+    
     if not all(field in data for field in ["username", "password", "role"]):
+        print(f"[LOGIN] Missing fields. Available fields: {list(data.keys())}")
         return _error("جميع الحقول مطلوبة", status=400)
 
     try:
@@ -583,6 +588,19 @@ def update_application_status(request: HttpRequest, application_id: int) -> Json
 
     app.status = new_status
     app.updated_at = timezone.now()
+    
+    # Send notification to student when status changes
+    try:
+        Message.objects.create(
+            application=app,
+            sender=user,
+            receiver=app.user,
+            text=f"طلبك للنشاط '{app.activity.title}' تم {new_status}.",
+            is_system_notification=True
+        )
+    except Exception as exc:
+        print(f"[NOTIFICATION] Failed to send notification: {exc}")
+    
     try:
         app.save()
     except Exception as exc:  # pragma: no cover - defensive
@@ -802,6 +820,17 @@ def respond_to_employee_request(
     if not employee_request.student_id:
         employee_request.student_id = user_id
 
+    # Send notification to employee when student responds
+    try:
+        Message.objects.create(
+            sender=user,
+            receiver=employee_request.employee,
+            text=f"الطالب {user.full_name} قام بـ {new_status} طلبك للنشاط.",
+            is_system_notification=True
+        )
+    except Exception as exc:
+        print(f"[NOTIFICATION] Failed to send notification: {exc}")
+    
     try:
         employee_request.save()
     except Exception as exc:  # pragma: no cover - defensive
