@@ -1,5 +1,6 @@
 import os
-from django.core.management import execute_from_command_line
+import sys
+from django.core.management import call_command
 from django.http import JsonResponse
 from django.utils import timezone
 
@@ -17,12 +18,12 @@ class DatabaseInitializationMiddleware:
                 
                 # Run migrations
                 print("[MIDDLEWARE] Running migrations...")
-                execute_from_command_line(['manage.py', 'migrate', '--fake-initial'])
+                call_command('migrate', verbosity=2, fake_initial=True)
                 
                 # Create super user if needed
                 print("[MIDDLEWARE] Creating super user...")
                 try:
-                    execute_from_command_line(['manage.py', 'seed_super_employee'])
+                    call_command('seed_super_employee')
                 except:
                     pass  # Super user might already exist
                 
@@ -31,6 +32,8 @@ class DatabaseInitializationMiddleware:
                 
             except Exception as e:
                 print(f"[MIDDLEWARE] Database initialization failed: {e}")
+                import traceback
+                traceback.print_exc()
                 # Return error response if initialization fails
                 if request.path.startswith('/api/'):
                     return JsonResponse({
