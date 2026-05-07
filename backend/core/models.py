@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+from django.contrib.auth.models import AbstractBaseUser
 
 
 class User(models.Model):
@@ -36,6 +37,15 @@ class User(models.Model):
     def save(self, *args, **kwargs):
         self.updated_at = timezone.now()
         super().save(*args, **kwargs)
+
+    # Django authentication requirements
+    @property
+    def is_anonymous(self):
+        return False
+
+    @property
+    def is_authenticated(self):
+        return True
 
     def __str__(self) -> str:  # pragma: no cover - debug representation only
         return f"{self.username} ({self.role})"
