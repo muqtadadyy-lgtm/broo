@@ -63,12 +63,14 @@ def health_check(request: HttpRequest) -> JsonResponse:
     Enhanced health check endpoint for monitoring and load balancers.
     Checks database connectivity and returns detailed service status.
     """
+    print(f"[HEALTH_CHECK] Request received at {timezone.now()}")
     try:
         # Quick database connection test with minimal overhead
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
             db_status = "healthy"
             db_error = None
+            print(f"[HEALTH_CHECK] Database connection successful")
     except Exception as e:
         db_status = "unhealthy"
         db_error = str(e)
@@ -92,9 +94,8 @@ def health_check(request: HttpRequest) -> JsonResponse:
         "uptime": "ready"
     }
     
+    print(f"[HEALTH_CHECK] Returning status: {overall_status}, code: {status_code}")
     return JsonResponse(response_data, status=status_code)
-    
-    # Always return 200 to prevent false failures during startup
     # Only return 503 for critical database errors
     critical_db_errors = ["connection", "timeout", "authentication"]
     is_critical = any(error in str(db_error).lower() for error in critical_db_errors) if db_error else False
