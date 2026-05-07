@@ -11,7 +11,7 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-change-me")
 
-DEBUG = os.getenv("DEBUG", "True").lower() == "true"  # Enable debug temporarily to see errors
+DEBUG = False  # Production mode - disable debug for Railway stability
 
 # Quick fix to stop restart loop - will be refined later
 # Force ALLOWED_HOSTS to accept all hosts to stop restart loop
