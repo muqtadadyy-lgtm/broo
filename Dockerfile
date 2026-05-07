@@ -32,5 +32,5 @@ EXPOSE 8080
 
 # Railway will provide PORT environment variable dynamically
 
-# Railway will use this CMD if Start Command is not set - v3
-CMD ["sh", "-c", "echo '=== Starting Application ===' && mkdir -p /tmp && chmod 777 /tmp && echo '=== Running Migrations ===' && python manage.py migrate --fake-initial --verbosity=2 && echo '=== Creating Super User ===' && python manage.py seed_super_employee && echo '=== Starting Gunicorn ===' && exec gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT university_activities.wsgi:application"]
+# Railway will use this CMD if Start Command is not set - v12.0 FINAL
+CMD ["sh", "-c", "echo '=== RAILWAY PORT: '$PORT' ===' && python manage.py migrate --noinput && gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT"]
