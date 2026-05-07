@@ -16,7 +16,7 @@ class User(models.Model):
     # Django authentication requirements
     USERNAME_FIELD = 'username'
     EMAIL_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'email']
+    REQUIRED_FIELDS = ['email']
 
     class Meta:
         db_table = "users"
