@@ -210,10 +210,12 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'logs', 'django_debug.log'),
             'formatter': 'verbose',
+            'encoding': 'utf-8',
+            'mode': 'a',
         },
     },
     'root': {
-        'handlers': ['console', 'file'],
+        'handlers': ['console'],
         'level': 'DEBUG',
     },
     'loggers': {
