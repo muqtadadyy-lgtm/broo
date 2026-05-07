@@ -24,12 +24,8 @@ class DatabaseInitializationMiddleware:
                     print("[MIDDLEWARE] FORCE: Running migrations NOW...")
                     call_command('migrate', verbosity=2, fake_initial=True, interactive=False)
                     
-                    # FORCE CREATE SUPER USER
-                    print("[MIDDLEWARE] FORCE: Creating super user...")
-                    try:
-                        call_command('seed_super_employee', interactive=False)
-                    except:
-                        pass  # Super user might already exist
+                    # SKIP SUPER USER CREATION TO PREVENT RAILWAY RESTART LOOP
+                    print("[MIDDLEWARE] SKIP: Super user creation disabled for Railway stability")
                     
                     print("[MIDDLEWARE] FORCE: Database initialization COMPLETED")
                     
