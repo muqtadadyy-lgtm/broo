@@ -11,29 +11,10 @@ class Command(BaseCommand):
     help = "Seed a single super employee (if none exists)"
 
     def handle(self, *args, **options):
-        existing = User.objects.filter(role="super_employee").first()
-        if existing:
-            self.stdout.write(
-                self.style.WARNING(
-                    "Super employee already exists: %s" % existing.username
-                )
-            )
-            return
-
-        username = os.getenv("SUPER_EMPLOYEE_USERNAME", "user")
-        email = os.getenv("SUPER_EMPLOYEE_EMAIL", "user@watania.edu.iq")
-        full_name = os.getenv("SUPER_EMPLOYEE_FULL_NAME", "المسؤول الرئيسي")
-        password = os.getenv("SUPER_EMPLOYEE_PASSWORD", "user123")
-
-        with transaction.atomic():
-            user = User.objects.create(
-                full_name=full_name,
-                username=username,
-                email=email,
-                password_hash=make_password(password),
-                role="super_employee",
-            )
-
+        # DISABLED: Super user creation disabled to prevent Railway restart loop
         self.stdout.write(
-            self.style.SUCCESS("Super employee created: %s" % user.username)
+            self.style.WARNING(
+                "Super user creation DISABLED for Railway stability"
+            )
         )
+        return
