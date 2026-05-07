@@ -15,10 +15,10 @@ name = "university-activities"
 type = "web"
 
 [services.health_check]
-path = "/health"
-grace_period_seconds = 600
-restart_policy_type = "never"
-restart_policy_max_retries = 0
+path = "/"
+grace_period_seconds = 120
+restart_policy_type = "on_failure"
+restart_policy_max_retries = 3
 
 [services.build]
 nixpacks_plan = "nixpacks.toml"
