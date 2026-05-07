@@ -10,33 +10,41 @@ class DatabaseInitializationMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # Check if database needs initialization on every request
+        # AGGRESSIVE DATABASE CHECK - Force initialization on EVERY request
         try:
             from django.db import connection
             
-            # Check if users table exists
+            # ALWAYS check if users table exists
             with connection.cursor() as cursor:
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
                 if not cursor.fetchone():
-                    print(f"[MIDDLEWARE] Users table not found, running migrations for {request.path}...")
+                    print(f"[MIDDLEWARE] CRITICAL: Users table missing! FORCING migrations for {request.path}...")
                     
-                    # Run migrations
-                    print("[MIDDLEWARE] Running migrations...")
-                    call_command('migrate', verbosity=2, fake_initial=True)
+                    # FORCE RUN MIGRATIONS
+                    print("[MIDDLEWARE] FORCE: Running migrations NOW...")
+                    call_command('migrate', verbosity=2, fake_initial=True, interactive=False)
                     
-                    # Create super user if needed
-                    print("[MIDDLEWARE] Creating super user...")
+                    # FORCE CREATE SUPER USER
+                    print("[MIDDLEWARE] FORCE: Creating super user...")
                     try:
-                        call_command('seed_super_employee')
+                        call_command('seed_super_employee', interactive=False)
                     except:
                         pass  # Super user might already exist
                     
-                    print("[MIDDLEWARE] Database initialization completed")
+                    print("[MIDDLEWARE] FORCE: Database initialization COMPLETED")
+                    
+                    # VERIFY TABLES EXIST
+                    with connection.cursor() as verify_cursor:
+                        verify_cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
+                        if verify_cursor.fetchone():
+                            print("[MIDDLEWARE] SUCCESS: Users table now exists!")
+                        else:
+                            print("[MIDDLEWARE] FAILED: Users table still missing!")
                 else:
-                    print(f"[MIDDLEWARE] Database already initialized for {request.path}")
+                    print(f"[MIDDLEWARE] OK: Database ready for {request.path}")
                     
         except Exception as e:
-            print(f"[MIDDLEWARE] Database check failed: {e}")
+            print(f"[MIDDLEWARE] CRITICAL ERROR: {e}")
             import traceback
             traceback.print_exc()
             # Return error response if it's an API request
