@@ -10,6 +10,10 @@ class DatabaseInitializationMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Skip middleware for health check requests to prevent delay
+        if request.path in ['/health/', '/api/health/', '/health', '/api/health']:
+            return self.get_response(request)
+        
         # AGGRESSIVE DATABASE CHECK - Force initialization on EVERY request
         try:
             from django.db import connection
