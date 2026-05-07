@@ -25,9 +25,11 @@ WORKDIR /app/backend
 RUN mkdir -p logs
 
 # Run Django commands
-RUN python manage.py migrate --fake-initial
-RUN python manage.py collectstatic --noinput
-RUN python manage.py seed_super_employee
+RUN echo "=== Creating database directory ===" && mkdir -p /tmp && chmod 777 /tmp
+RUN echo "=== Running migrations ===" && python manage.py migrate --fake-initial
+RUN echo "=== Collecting static files ===" && python manage.py collectstatic --noinput
+RUN echo "=== Creating super employee ===" && python manage.py seed_super_employee
+RUN echo "=== Verifying database ===" && python manage.py showmigrations
 
 # Expose port (Railway will map this)
 EXPOSE 8080

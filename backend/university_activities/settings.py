@@ -131,10 +131,13 @@ elif DB_ENGINE in ("postgres", "postgresql"):
     }
 else:
     # Force SQLite for Railway deployment to avoid PostgreSQL connection issues
+    # Use Railway's persistent storage directory
+    import os
+    db_path = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", "/tmp") + "/db.sqlite3"
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": db_path,
         }
     }
 
