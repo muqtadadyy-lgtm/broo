@@ -27,6 +27,7 @@ RUN mkdir -p logs
 # Run Django commands
 RUN python manage.py migrate --fake-initial
 RUN python manage.py collectstatic --noinput
+RUN python manage.py seed_super_employee
 
 # Expose port (Railway will map this)
 EXPOSE 8080

@@ -282,7 +282,10 @@ def login(request: HttpRequest) -> JsonResponse:
             }
         )
     except Exception as exc:  # pragma: no cover - defensive
-        return _error(f"حدث خطأ: {exc}", status=500)
+        import traceback
+        error_details = f"حدث خطأ: {exc}\n{traceback.format_exc()}"
+        print(f"[LOGIN] Critical error: {error_details}")
+        return _error(f"حدث خطأ في المصادقة: {str(exc)}", status=500)
 
 
 @csrf_exempt
