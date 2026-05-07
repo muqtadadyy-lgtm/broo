@@ -2,6 +2,19 @@
 builder = "dockerfile"
 # Force redeploy to pick up latest Dockerfile PORT fixes
 
+[watch]
+# Trigger redeploy when these paths change
+paths = [
+    "backend/core/views.py",
+    "backend/core/models.py",
+    "backend/core/urls.py",
+    "backend/university_activities/settings.py",
+    "static/js/*.js",
+    "templates/*.html",
+    "Dockerfile",
+    "railway.toml"
+]
+
 [deploy]
 # Railway handles restarts automatically
 

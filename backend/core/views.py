@@ -236,14 +236,18 @@ def register(request: HttpRequest) -> JsonResponse:
 @csrf_exempt
 @require_http_methods(["POST"])
 def login(request: HttpRequest) -> JsonResponse:
-    data = _parse_json(request)
-    print(f"[LOGIN] Received data: {data}")
-    print(f"[LOGIN] Request body: {request.body}")
-    print(f"[LOGIN] Content type: {request.content_type}")
-    
-    if not all(field in data for field in ["username", "password", "role"]):
-        print(f"[LOGIN] Missing fields. Available fields: {list(data.keys())}")
-        return _error("جميع الحقول مطلوبة", status=400)
+    try:
+        data = _parse_json(request)
+        print(f"[LOGIN] Received data: {data}")
+        print(f"[LOGIN] Request body: {request.body}")
+        print(f"[LOGIN] Content type: {request.content_type}")
+        
+        if not all(field in data for field in ["username", "password", "role"]):
+            print(f"[LOGIN] Missing fields. Available fields: {list(data.keys())}")
+            return _error("جميع الحقول مطلوبة", status=400)
+    except Exception as e:
+        print(f"[LOGIN] Exception occurred: {str(e)}")
+        return _error(f"حدث خطأ في الخادم: {str(e)}", status=500)
 
     try:
         print(f"[LOGIN] Attempting login for username: {data.get('username', 'N/A')}, role: {data.get('role', 'N/A')}")
