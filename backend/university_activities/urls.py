@@ -6,6 +6,10 @@ from django.http import JsonResponse, HttpResponse
 
 from core import views as core_views
 
+def health(request):
+    """Simple health endpoint for Railway validation"""
+    return JsonResponse({"status": "healthy"})
+
 def health_check(request):
     """Health check endpoint for Railway monitoring"""
     return JsonResponse({"status": "healthy", "timestamp": "2024-01-01T00:00:00Z"})
@@ -21,6 +25,7 @@ urlpatterns = (
     [
         path("admin/", admin.site.urls),
         path("api/", include("core.urls")),
+        path("", health, name="health"),
         path("health/", health_check, name="health_check"),
         path("health", health_check, name="health_check_no_slash"),
         path("ready", ready_check, name="ready_check"),
