@@ -17,3 +17,6 @@ type = "web"
 [services.health_check]
 path = "/health"
 grace_period_seconds = 10
+
+[services.start_command]
+command = "exec gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT university_activities.wsgi:application"
