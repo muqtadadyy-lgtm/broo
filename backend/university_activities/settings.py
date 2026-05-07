@@ -136,6 +136,10 @@ else:
     db_dir = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", "/tmp")
     db_path = os.path.join(db_dir, "db.sqlite3")
     
+    print(f"[DATABASE] Using SQLite database at: {db_path}")
+    print(f"[DATABASE] Database directory exists: {os.path.exists(db_dir)}")
+    print(f"[DATABASE] Database file exists: {os.path.exists(db_path)}")
+    
     # Ensure database directory exists
     os.makedirs(db_dir, exist_ok=True)
     

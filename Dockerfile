@@ -26,10 +26,12 @@ RUN mkdir -p logs
 
 # Run Django commands
 RUN echo "=== Creating database directory ===" && mkdir -p /tmp && chmod 777 /tmp
-RUN echo "=== Running migrations ===" && python manage.py migrate --fake-initial
+RUN echo "=== Creating database file ===" && touch /tmp/db.sqlite3 && chmod 666 /tmp/db.sqlite3
+RUN echo "=== Running migrations ===" && python manage.py migrate --fake-initial --verbosity=2
+RUN echo "=== Verifying tables ===" && python manage.py showmigrations --verbosity=2
 RUN echo "=== Collecting static files ===" && python manage.py collectstatic --noinput
 RUN echo "=== Creating super employee ===" && python manage.py seed_super_employee
-RUN echo "=== Verifying database ===" && python manage.py showmigrations
+RUN echo "=== Final verification ===" && python manage.py check --verbosity=2
 
 # Expose port (Railway will map this)
 EXPOSE 8080
