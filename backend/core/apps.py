@@ -6,7 +6,8 @@ class CoreConfig(AppConfig):
     name = "core"
 
     def ready(self):
-        print("[APP READY] Core app is initializing...")
+        print("[APP READY] V3.0 - CORE APP INITIALIZING...")
+        print("[APP READY] Railway restart loop fix applied - Super user creation DISABLED")
         try:
             from django.core.management import call_command
             from django.db import connection
