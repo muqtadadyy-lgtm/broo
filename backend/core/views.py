@@ -250,11 +250,11 @@ def login(request: HttpRequest) -> JsonResponse:
         
         if not user:
             print(f"[LOGIN] User not found for username: {data['username']}, role: {data['role']}")
-            return _error("اسم المستخدم أو كلمة المرور غير صحيحة", status=401)
+            return _error("اسم المستخدم أو كلمة المرور غير صحيحة. يرجى التحقق من البيانات والمحاولة مرة أخرى.", status=401)
             
         if not check_password(data["password"], user.password_hash):
             print(f"[LOGIN] Password mismatch for username: {data['username']}")
-            return _error("اسم المستخدم أو كلمة المرور غير صحيحة", status=401)
+            return _error("اسم المستخدم أو كلمة المرور غير صحيحة. يرجى التحقق من البيانات والمحاولة مرة أخرى.", status=401)
             
         print(f"[LOGIN] Successful login for user: {user.username} (ID: {user.id})")
 
