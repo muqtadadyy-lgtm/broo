@@ -12,6 +12,11 @@ class User(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(default=timezone.now)
 
+    # Django authentication requirements
+    USERNAME_FIELD = 'username'
+    EMAIL_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'email']
+
     class Meta:
         db_table = "users"
         indexes = [
