@@ -202,19 +202,24 @@ def _ensure_default_activities() -> None:
 @csrf_exempt
 @require_http_methods(["POST"])
 def register(request: HttpRequest) -> JsonResponse:
-    # Emergency database check - ensure tables exist
+    # IMMEDIATE DATABASE CHECK - Force migrations before any User operations
+    print("[REGISTER] Starting immediate database check...")
     try:
-        from django.core.management import execute_from_command_line
+        from django.core.management import call_command
         from django.db import connection
         
         with connection.cursor() as cursor:
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
             if not cursor.fetchone():
-                print("EMERGENCY in view: Running migrations...")
-                execute_from_command_line(['manage.py', 'migrate', '--fake-initial'])
-                print("EMERGENCY in view: Migrations completed")
+                print("[REGISTER] CRITICAL: Users table missing! Running migrations NOW...")
+                call_command('migrate', verbosity=2, fake_initial=True)
+                print("[REGISTER] CRITICAL: Migrations FORCED completed")
+            else:
+                print("[REGISTER] Database check passed - users table exists")
     except Exception as e:
-        print(f"EMERGENCY in view: Migration failed: {e}")
+        print(f"[REGISTER] CRITICAL: Database check failed: {e}")
+        import traceback
+        traceback.print_exc()
     
     data = _parse_json(request)
     required_fields = ["fullName", "username", "email", "password", "role"]
