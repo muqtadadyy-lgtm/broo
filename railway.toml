@@ -37,4 +37,4 @@ restart_policy_max_retries = 3
 memory = "512Mi"
 
 [services.start_command]
-command = "gunicorn --workers 1 --worker-class sync --timeout 900 --keep-alive 5 --max-requests 500 --max-requests-jitter 25 --bind 0.0.0.0:$PORT --access-logfile - --error-logfile - --log-level debug university_activities.wsgi:application"
+command = "cd backend && python manage.py migrate --verbosity=2 && python manage.py seed_super_employee && gunicorn --workers 1 --worker-class sync --timeout 300 --bind 0.0.0.0:$PORT --access-logfile - --error-logfile - --log-level debug university_activities.wsgi:application"
