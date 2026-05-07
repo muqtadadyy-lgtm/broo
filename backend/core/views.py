@@ -202,6 +202,20 @@ def _ensure_default_activities() -> None:
 @csrf_exempt
 @require_http_methods(["POST"])
 def register(request: HttpRequest) -> JsonResponse:
+    # Emergency database check - ensure tables exist
+    try:
+        from django.core.management import execute_from_command_line
+        from django.db import connection
+        
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
+            if not cursor.fetchone():
+                print("EMERGENCY in view: Running migrations...")
+                execute_from_command_line(['manage.py', 'migrate', '--fake-initial'])
+                print("EMERGENCY in view: Migrations completed")
+    except Exception as e:
+        print(f"EMERGENCY in view: Migration failed: {e}")
+    
     data = _parse_json(request)
     required_fields = ["fullName", "username", "email", "password", "role"]
     if not all(field in data for field in required_fields):
@@ -238,6 +252,20 @@ def register(request: HttpRequest) -> JsonResponse:
 @csrf_exempt
 @require_http_methods(["POST"])
 def login(request: HttpRequest) -> JsonResponse:
+    # Emergency database check - ensure tables exist
+    try:
+        from django.core.management import execute_from_command_line
+        from django.db import connection
+        
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
+            if not cursor.fetchone():
+                print("EMERGENCY in login: Running migrations...")
+                execute_from_command_line(['manage.py', 'migrate', '--fake-initial'])
+                print("EMERGENCY in login: Migrations completed")
+    except Exception as e:
+        print(f"EMERGENCY in login: Migration failed: {e}")
+    
     try:
         data = _parse_json(request)
         print(f"[LOGIN] Received data: {data}")
