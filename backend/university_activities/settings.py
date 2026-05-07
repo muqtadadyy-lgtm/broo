@@ -40,8 +40,8 @@ CORS_ALLOW_CREDENTIALS = True
 INSTALLED_APPS = [
     # DISABLED: django.contrib.admin - causes Super User creation in post-migrate
     # DISABLED: django.contrib.auth - causes Super User creation in post-migrate
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
+    # DISABLED: django.contrib.contenttypes - causes post-migrate handlers
+    # DISABLED: django.contrib.sessions - causes post-migrate handlers
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
@@ -51,7 +51,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
+    # DISABLED: django.contrib.sessions.middleware.SessionMiddleware - sessions app removed
     "django.middleware.common.CommonMiddleware",
     # DISABLED: django.contrib.auth.middleware.AuthenticationMiddleware - auth app removed
     "django.contrib.messages.middleware.MessageMiddleware",
