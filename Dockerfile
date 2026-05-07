@@ -35,5 +35,5 @@ EXPOSE 8080
 
 # Railway will provide PORT environment variable dynamically
 
-# Production CMD - run migrations and start gunicorn directly
+# Production CMD - run migrations and start gunicorn with Railway PORT
 CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT"]
