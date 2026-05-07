@@ -56,6 +56,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "core.middleware.DatabaseInitializationMiddleware",
 ]
 
 # Performance optimization
@@ -131,17 +132,37 @@ elif DB_ENGINE in ("postgres", "postgresql"):
     }
 else:
     # Force SQLite for Railway deployment to avoid PostgreSQL connection issues
-    # Use Railway's persistent storage directory
+    # Use application working directory for simplicity
     import os
-    db_dir = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", "/tmp")
-    db_path = os.path.join(db_dir, "db.sqlite3")
     
-    print(f"[DATABASE] Using SQLite database at: {db_path}")
-    print(f"[DATABASE] Database directory exists: {os.path.exists(db_dir)}")
-    print(f"[DATABASE] Database file exists: {os.path.exists(db_path)}")
+    # Try multiple paths for database
+    possible_paths = [
+        "/app/backend/db.sqlite3",
+        "/tmp/db.sqlite3", 
+        "./db.sqlite3"
+    ]
     
-    # Ensure database directory exists
-    os.makedirs(db_dir, exist_ok=True)
+    db_path = None
+    for path in possible_paths:
+        try:
+            # Test if we can create/write to this path
+            test_dir = os.path.dirname(path)
+            os.makedirs(test_dir, exist_ok=True)
+            test_file = path + ".test"
+            with open(test_file, 'w') as f:
+                f.write("test")
+            os.remove(test_file)
+            db_path = path
+            print(f"[DATABASE] Successfully using path: {path}")
+            break
+        except Exception as e:
+            print(f"[DATABASE] Cannot use path {path}: {e}")
+            continue
+    
+    if not db_path:
+        # Fallback to in-memory database for debugging
+        db_path = ":memory:"
+        print("[DATABASE] Using in-memory database as fallback")
     
     DATABASES = {
         "default": {
