@@ -13,3 +13,7 @@ DB_ENGINE = "sqlite"
 [[services]]
 name = "university-activities"
 type = "web"
+
+[services.health_check]
+path = "/health"
+grace_period_seconds = 10
