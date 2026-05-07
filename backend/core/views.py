@@ -43,18 +43,50 @@ def _error(message: str, status: int = 400) -> JsonResponse:
 def home(request: HttpRequest) -> JsonResponse:
     """
     Home endpoint for root path / - returns API status.
-    This ensures the Railway deployment shows something at the root URL.
+    This ensures Railway deployment shows something at root URL.
     """
-    return JsonResponse({
-        "status": "running",
-        "message": "University Activities API is running 🚀",
-        "endpoints": {
-            "api": "/api/",
-            "health": "/health/",
-            "admin": "/admin/"
-        },
-        "documentation": "Use /api/ endpoints for all operations"
-    })
+    try:
+        return JsonResponse({
+            "status": "running",
+            "message": "University Activities API is running 🚀",
+            "timestamp": timezone.now().isoformat(),
+            "debug": settings.DEBUG,
+            "endpoints": {
+                "api": "/api/",
+                "health": "/health/",
+                "admin": "/admin/",
+                "test": "/test/"
+            },
+            "documentation": "Use /api/ endpoints for all operations"
+        })
+    except Exception as e:
+        return JsonResponse({
+            "status": "error",
+            "message": f"Home endpoint error: {str(e)}",
+            "timestamp": timezone.now().isoformat()
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def test_endpoint(request: HttpRequest) -> JsonResponse:
+    """
+    Simple test endpoint to verify basic functionality
+    """
+    try:
+        return JsonResponse({
+            "status": "ok",
+            "message": "Test endpoint working",
+            "timestamp": timezone.now().isoformat(),
+            "method": request.method,
+            "path": request.path
+        })
+    except Exception as e:
+        return JsonResponse({
+            "status": "error",
+            "message": f"Test endpoint error: {str(e)}",
+            "timestamp": timezone.now().isoformat()
+        }, status=500)
 
 
 @csrf_exempt

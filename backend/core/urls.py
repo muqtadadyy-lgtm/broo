@@ -31,6 +31,7 @@ urlpatterns = [
     path("messages", views.send_message, name="send_message"),
     path("messages/thread", views.get_message_thread, name="get_message_thread"),
     path("health", views.health_check, name="health_check"),
+    path("test", views.test_endpoint, name="test_endpoint"),
     path("announcements/active", views.get_active_announcement, name="get_active_announcement"),
     path("announcements", views.create_announcement, name="create_announcement"),
     path("announcements/<int:announcement_id>", views.update_announcement, name="update_announcement"),
