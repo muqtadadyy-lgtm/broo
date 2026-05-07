@@ -241,12 +241,22 @@ def login(request: HttpRequest) -> JsonResponse:
         return _error("جميع الحقول مطلوبة", status=400)
 
     try:
+        print(f"[LOGIN] Attempting login for username: {data.get('username', 'N/A')}, role: {data.get('role', 'N/A')}")
+        
         user = User.objects.filter(
             username=data["username"],
             role=data["role"],
         ).first()
-        if not user or not check_password(data["password"], user.password_hash):
+        
+        if not user:
+            print(f"[LOGIN] User not found for username: {data['username']}, role: {data['role']}")
             return _error("اسم المستخدم أو كلمة المرور غير صحيحة", status=401)
+            
+        if not check_password(data["password"], user.password_hash):
+            print(f"[LOGIN] Password mismatch for username: {data['username']}")
+            return _error("اسم المستخدم أو كلمة المرور غير صحيحة", status=401)
+            
+        print(f"[LOGIN] Successful login for user: {user.username} (ID: {user.id})")
 
         access_token = create_access_token(user.id)
         return JsonResponse(
