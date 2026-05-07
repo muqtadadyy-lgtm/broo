@@ -54,7 +54,20 @@ async function apiRequest(endpoint, options = {}) {
         
         if (!response.ok) {
             console.error(`API Error: ${response.status} ${response.statusText}`);
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            
+            // Try to get error message from response
+            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            
+            try {
+                const errorData = await response.json();
+                if (errorData.message) {
+                    errorMessage = errorData.message;
+                }
+            } catch (e) {
+                // If we can't parse JSON, use the default error message
+            }
+            
+            throw new Error(errorMessage);
         }
         
         // Check if response is JSON
