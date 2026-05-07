@@ -133,11 +133,19 @@ else:
     # Force SQLite for Railway deployment to avoid PostgreSQL connection issues
     # Use Railway's persistent storage directory
     import os
-    db_path = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", "/tmp") + "/db.sqlite3"
+    db_dir = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", "/tmp")
+    db_path = os.path.join(db_dir, "db.sqlite3")
+    
+    # Ensure database directory exists
+    os.makedirs(db_dir, exist_ok=True)
+    
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": db_path,
+            "OPTIONS": {
+                "timeout": 20,
+            }
         }
     }
 

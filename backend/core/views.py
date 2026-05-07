@@ -57,65 +57,35 @@ def home(request: HttpRequest) -> JsonResponse:
     })
 
 
+@csrf_exempt
 @require_http_methods(["GET"])
 def health_check(request: HttpRequest) -> JsonResponse:
-    """
-    Simple health check endpoint for monitoring and load balancers.
-    Returns basic service status without database connection to avoid timeouts.
-    """
-    print(f"[HEALTH_CHECK] Request received at {timezone.now()}")
-    
-    # Simple health check without database connection to avoid timeouts
-    response_data = {
+    """Health check endpoint for Railway monitoring"""
+    try:
+        # Test database connectivity
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+
+    try:
+        # Test if tables exist
+        from .models import User
+        user_count = User.objects.count()
+        tables_status = f"ok ({user_count} users)"
+    except Exception as e:
+        tables_status = f"error: {str(e)}"
+
+    return JsonResponse({
         "status": "healthy",
         "timestamp": timezone.now().isoformat(),
+        "database": db_status,
+        "tables": tables_status,
         "version": "1.0.0",
         "uptime": "ready"
-    }
-    
-    print(f"[HEALTH_CHECK] Returning healthy status")
-    return JsonResponse(response_data, status=200)
-    
-    # Always return 200 to prevent false failures during startup
-    # Only return 503 for critical database errors
-    critical_db_errors = ["connection", "timeout", "authentication"]
-    is_critical = any(error in str(db_error).lower() for error in critical_db_errors) if db_error else False
-    
-    overall_status = "healthy" if db_status == "healthy" else "degraded"
-    status_code = 503 if is_critical else 200
-    
-    response_data = {
-        "status": overall_status,
-        "timestamp": timezone.now().isoformat(),
-        "database": {
-            "status": db_status,
-            "error": db_error
-        },
-        "version": "1.0.0",
-        "uptime": "ready"
-    }
-    
-    print(f"[HEALTH_CHECK] Returning status: {overall_status}, code: {status_code}")
-    return JsonResponse(response_data, status=status_code)
-    # Only return 503 for critical database errors
-    critical_db_errors = ["connection", "timeout", "authentication"]
-    is_critical = any(error in str(db_error).lower() for error in critical_db_errors) if db_error else False
-    
-    overall_status = "healthy" if db_status == "healthy" else "degraded"
-    status_code = 503 if is_critical else 200
-    
-    response_data = {
-        "status": overall_status,
-        "timestamp": timezone.now().isoformat(),
-        "database": {
-            "status": db_status,
-            "error": db_error
-        },
-        "version": "1.0.0",
-        "uptime": "ready"
-    }
-    
-    return JsonResponse(response_data, status=status_code)
+    })
 
 
 def _ensure_default_activities() -> None:
