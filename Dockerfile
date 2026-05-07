@@ -24,6 +24,9 @@ COPY . .
 # Change to backend directory
 WORKDIR /app/backend
 
+# Create logs directory
+RUN mkdir -p logs
+
 # Run Django commands with logging
 RUN echo "=== Running migrations ===" && python manage.py migrate --fake-initial || echo "Migrations failed"
 RUN echo "=== Collecting static files ===" && python manage.py collectstatic --noinput || echo "Static collection failed"
