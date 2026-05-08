@@ -153,68 +153,29 @@
         <div class="filter-section">
             <h2 class="section-title">
                 <i class="fas fa-filter"></i>
-                <span data-ar="تصفية الطلبات المتقدم" data-en="Advanced Filter" data-fr="Filtre avancé" data-ku="فلتەری پێشکەوتوو">تصفية الطلبات المتقدم</span>
+                <span data-ar="تصفية الطلبات" data-en="Filter Requests" data-fr="Filtrer les demandes" data-ku="فلتەرکردنی داواکانی">تصفية الطلبات</span>
             </h2>
             <div class="filter-controls">
-                <div class="filter-row">
-                    <select id="activityFilter" onchange="filterApplications()">
-                        <option value="" data-ar="جميع الأنشطة" data-en="All Activities" data-fr="Toutes les activités" data-ku="هەموو چالاکییەکان">جميع الأنشطة</option>
-                        <option value="الأنشطة الطلابية">الأنشطة الطلابية</option>
-                        <option value="القسم الرياضي">القسم الرياضي</option>
-                        <option value="قسم المشاريع الهندسية">قسم المشاريع الهندسية</option>
-                        <option value="المشاريع والابتكارات الطبية">المشاريع والابتكارات الطبية</option>
-                        <option value="الأنشطة الثقافية الطبية">الأنشطة الثقافية الطبية</option>
-                        <option value="الأنشطة الفنية">الأنشطة الفنية</option>
-                        <option value="الأنشطة الثقافية">الأنشطة الثقافية</option>
-                        <option value="الأنشطة التطوعية">الأنشطة التطوعية</option>
-                    </select>
+                <select id="activityFilter" onchange="filterApplications()">
+                    <option value="" data-ar="جميع الأنشطة" data-en="All Activities" data-fr="Toutes les activités" data-ku="هەموو چالاکییەکان">جميع الأنشطة</option>
+                    <option value="الأنشطة الطلابية">الأنشطة الطلابية</option>
+                    <option value="القسم الرياضي">القسم الرياضي</option>
+                    <option value="قسم المشاريع الهندسية">قسم المشاريع الهندسية</option>
+                    <option value="المشاريع والابتكارات الطبية">المشاريع والابتكارات الطبية</option>
+                    <option value="الأنشطة الثقافية الطبية">الأنشطة الثقافية الطبية</option>
+                    <option value="الأنشطة الفنية">الأنشطة الفنية</option>
+                    <option value="الأنشطة الثقافية">الأنشطة الثقافية</option>
+                    <option value="الأنشطة التطوعية">الأنشطة التطوعية</option>
+                </select>
 
-                    <select id="statusFilter" onchange="filterApplications()">
-                        <option value="" data-ar="جميع الحالات" data-en="All Statuses" data-fr="Tous les statuts" data-ku="هەموو بارودۆخان">جميع الحالات</option>
-                        <option value="قيد الانتظار">قيد الانتظار</option>
-                        <option value="مقبول">مقبول</option>
-                        <option value="مرفوض">مرفوض</option>
-                    </select>
+                <select id="statusFilter" onchange="filterApplications()">
+                    <option value="" data-ar="جميع الحالات" data-en="All Statuses" data-fr="Tous les statuts" data-ku="هەموو بارودۆخان">جميع الحالات</option>
+                    <option value="قيد الانتظار">قيد الانتظار</option>
+                    <option value="مقبول">مقبول</option>
+                    <option value="مرفوض">مرفوض</option>
+                </select>
 
-                    <select id="collegeFilter" onchange="filterApplications()">
-                        <option value="" data-ar="جميع الكليات" data-en="All Colleges" data-fr="Tous les collèges" data-ku="هەموو کۆلێژان">جميع الكليات</option>
-                        <option value="كلية الطب">كلية الطب</option>
-                        <option value="كلية الهندسة">كلية الهندسة</option>
-                        <option value="كلية العلوم">كلية العلوم</option>
-                        <option value="كلية الإدارة">كلية الإدارة</option>
-                        <option value="كلية القانون">كلية القانون</option>
-                        <option value="كلية التربية">كلية التربية</option>
-                    </select>
-
-                    <select id="sortBy" onchange="filterApplications()">
-                        <option value="submittedAt" data-ar="تاريخ التقديم" data-en="Submission Date" data-fr="Date de soumission" data-ku="بەرواری پێشکەشکردن">تاريخ التقديم</option>
-                        <option value="studentName" data-ar="اسم الطالب" data-en="Student Name" data-fr="Nom de l'étudiant" data-ku="ناوی خوێندکار">اسم الطالب</option>
-                        <option value="activityType" data-ar="نوع النشاط" data-en="Activity Type" data-fr="Type d'activité" data-ku="جۆری چالاکی">نوع النشاط</option>
-                        <option value="status" data-ar="الحالة" data-en="Status" data-fr="Statut" data-ku="بارودۆخ">الحالة</option>
-                    </select>
-
-                    <select id="sortOrder" onchange="filterApplications()">
-                        <option value="desc" data-ar="الأحدث أولاً" data-en="Newest First" data-fr="Le plus récent d'abord" data-ku="نوێترین سەرەتا">الأحدث أولاً</option>
-                        <option value="asc" data-ar="الأقدم أولاً" data-en="Oldest First" data-fr="Le plus ancien d'abord" data-ku="کۆنترین سەرەتا">الأقدم أولاً</option>
-                    </select>
-                </div>
-                
-                <div class="filter-row">
-                    <input type="text" id="searchInput" placeholder="البحث باسم الطالب أو رقم النشاط..." data-placeholder-ar="البحث باسم الطالب أو رقم النشاط..." data-placeholder-en="Search by student name or activity number..." data-placeholder-fr="Rechercher par nom d'étudiant ou numéro d'activité..." data-placeholder-ku="گەڕان بە ناوی خوێندکار یان ژمارەی چالاکی..." onkeyup="filterApplications()">
-                    
-                    <input type="date" id="dateFromFilter" onchange="filterApplications()" title="من تاريخ">
-                    <input type="date" id="dateToFilter" onchange="filterApplications()" title="إلى تاريخ">
-                    
-                    <button class="ghost-btn" onclick="resetFilters()" title="إعادة تعيين الفلاتر">
-                        <i class="fas fa-undo"></i>
-                        <span data-ar="إعادة تعيين" data-en="Reset" data-fr="Réinitialiser" data-ku="دووبارە دانان">إعادة تعيين</span>
-                    </button>
-                    
-                    <button class="submit-btn" onclick="exportApplications()" title="تصدير البيانات">
-                        <i class="fas fa-download"></i>
-                        <span data-ar="تصدير" data-en="Export" data-fr="Exporter" data-ku="هەنارد">تصدير</span>
-                    </button>
-                </div>
+                <input type="text" id="searchInput" placeholder="البحث باسم الطالب..." data-placeholder-ar="البحث باسم الطالب..." data-placeholder-en="Search by student name..." data-placeholder-fr="Rechercher par nom d'étudiant..." data-placeholder-ku="گەڕان بە ناوی خوێندکار..." onkeyup="filterApplications()">
             </div>
         </div>
 

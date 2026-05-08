@@ -91,54 +91,6 @@ def test_endpoint(request: HttpRequest) -> JsonResponse:
 
 @csrf_exempt
 @require_http_methods(["GET"])
-def create_super_employee_emergency(request: HttpRequest) -> JsonResponse:
-    """
-    Emergency endpoint to create super employee account
-    This is a temporary fix for Railway deployment issues
-    """
-    try:
-        from django.contrib.auth.hashers import make_password
-        
-        # Check if super employee already exists
-        if User.objects.filter(username='user', role='super_employee').exists():
-            return JsonResponse({
-                "success": True,
-                "message": "الموظف الرئيسي موجود بالفعل",
-                "credentials": {
-                    "username": "user",
-                    "password": "user123"
-                }
-            })
-        
-        # Create super employee
-        user = User.objects.create(
-            username='user',
-            email='user@watania.edu.iq',
-            full_name='المسؤول الرئيسي',
-            password_hash=make_password('user123'),
-            role='super_employee'
-        )
-        
-        return JsonResponse({
-            "success": True,
-            "message": "تم إنشاء الموظف الرئيسي بنجاح",
-            "credentials": {
-                "username": "user",
-                "password": "user123"
-            },
-            "user_id": user.id
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            "success": False,
-            "message": f"خطأ: {str(e)}",
-            "timestamp": timezone.now().isoformat()
-        }, status=500)
-
-
-@csrf_exempt
-@require_http_methods(["GET"])
 def health_check(request: HttpRequest) -> JsonResponse:
     """Ultra-fast health check endpoint for Railway monitoring"""
     # Skip all database checks for maximum speed
@@ -336,12 +288,10 @@ def login(request: HttpRequest) -> JsonResponse:
         
         print(f"[LOGIN] Attempting login for username: {username} (auto-detect role)")
         
-        # Auto-detect user role - try all roles in order: student, employee, super_employee
+        # Auto-detect user role - try all roles in order: student, employee
         user = User.objects.filter(username=username, role="student").first()
         if not user:
             user = User.objects.filter(username=username, role="employee").first()
-        if not user:
-            user = User.objects.filter(username=username, role="super_employee").first()
         
         if not user:
             print(f"[LOGIN] User not found for username: {username}")
@@ -627,7 +577,7 @@ def get_all_applications(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     applications = Application.objects.all().order_by("-submitted_at")
@@ -666,7 +616,7 @@ def update_application_status(request: HttpRequest, application_id: int) -> Json
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     data = _parse_json(request)
@@ -738,7 +688,7 @@ def get_statistics(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     total = Application.objects.count()
@@ -772,7 +722,7 @@ def send_employee_request(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     data = _parse_json(request)
@@ -844,7 +794,7 @@ def get_employee_sent_requests(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     requests_qs = EmployeeRequest.objects.filter(employee_id=user_id).select_related(
@@ -943,7 +893,7 @@ def get_employee_request_statistics(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     base_qs = EmployeeRequest.objects.filter(employee_id=user_id)
@@ -1041,7 +991,7 @@ def get_employee_activities(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     regs = ActivityRegistration.objects.select_related("user")
@@ -1093,7 +1043,7 @@ def add_activity(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     data = _parse_json(request)

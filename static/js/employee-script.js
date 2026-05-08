@@ -13,7 +13,7 @@ window.addEventListener('DOMContentLoaded', () => {
     currentUser = user;
     currentUserRole = user?.role || null;
     
-    if (!user || (user.role !== 'employee' && user.role !== 'super_employee')) {
+    if (!user || user.role !== 'employee') {
         window.location.href = 'index.html';
         return;
     }
@@ -36,7 +36,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     const supervisorInboxBtn = document.getElementById('supervisorInboxBtn');
     if (supervisorInboxBtn) {
-        supervisorInboxBtn.style.display = (user.role === 'employee' || user.role === 'super_employee') ? 'inline-flex' : 'none';
+        supervisorInboxBtn.style.display = (user.role === 'employee') ? 'inline-flex' : 'none';
     }
     
     // Load theme
@@ -124,14 +124,9 @@ async function loadApplications() {
 function filterApplications() {
     const activityFilter = document.getElementById('activityFilter').value;
     const statusFilter = document.getElementById('statusFilter').value;
-    const collegeFilter = document.getElementById('collegeFilter').value;
-    const sortBy = document.getElementById('sortBy').value;
-    const sortOrder = document.getElementById('sortOrder').value;
     const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-    const dateFrom = document.getElementById('dateFromFilter').value;
-    const dateTo = document.getElementById('dateToFilter').value;
     
-    let filtered = [...allApplications];
+    let filtered = allApplications;
     
     // Filter by activity type
     if (activityFilter) {
@@ -143,171 +138,14 @@ function filterApplications() {
         filtered = filtered.filter(app => app.status === statusFilter);
     }
     
-    // Filter by college
-    if (collegeFilter) {
-        filtered = filtered.filter(app => app.college === collegeFilter);
-    }
-    
-    // Filter by search query (student name or activity number)
+    // Filter by search query
     if (searchQuery) {
         filtered = filtered.filter(app => 
-            app.studentName.toLowerCase().includes(searchQuery) ||
-            (app.activityNumber && app.activityNumber.toLowerCase().includes(searchQuery)) ||
-            (app.phone && app.phone.includes(searchQuery))
+            app.studentName.toLowerCase().includes(searchQuery)
         );
     }
-    
-    // Filter by date range
-    if (dateFrom) {
-        const fromDate = new Date(dateFrom);
-        filtered = filtered.filter(app => {
-            const appDate = new Date(app.submittedAt);
-            return appDate >= fromDate;
-        });
-    }
-    
-    if (dateTo) {
-        const toDate = new Date(dateTo);
-        toDate.setHours(23, 59, 59, 999); // Include the entire day
-        filtered = filtered.filter(app => {
-            const appDate = new Date(app.submittedAt);
-            return appDate <= toDate;
-        });
-    }
-    
-    // Sort applications
-    filtered.sort((a, b) => {
-        let aValue, bValue;
-        
-        switch(sortBy) {
-            case 'studentName':
-                aValue = a.studentName.toLowerCase();
-                bValue = b.studentName.toLowerCase();
-                break;
-            case 'activityType':
-                aValue = a.activityType.toLowerCase();
-                bValue = b.activityType.toLowerCase();
-                break;
-            case 'status':
-                aValue = a.status.toLowerCase();
-                bValue = b.status.toLowerCase();
-                break;
-            case 'submittedAt':
-            default:
-                aValue = new Date(a.submittedAt);
-                bValue = new Date(b.submittedAt);
-                break;
-        }
-        
-        if (sortOrder === 'asc') {
-            return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
-        } else {
-            return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
-        }
-    });
-    
     console.log('Filtered applications:', filtered.length, filtered);
     displayApplications(filtered);
-    updateFilterSummary(filtered.length);
-}
-
-function resetFilters() {
-    document.getElementById('activityFilter').value = '';
-    document.getElementById('statusFilter').value = '';
-    document.getElementById('collegeFilter').value = '';
-    document.getElementById('sortBy').value = 'submittedAt';
-    document.getElementById('sortOrder').value = 'desc';
-    document.getElementById('searchInput').value = '';
-    document.getElementById('dateFromFilter').value = '';
-    document.getElementById('dateToFilter').value = '';
-    
-    filterApplications();
-    showNotification('تم إعادة تعيين الفلاتر', 'info');
-}
-
-function updateFilterSummary(count) {
-    const total = allApplications.length;
-    const summary = `عرض ${count} من ${total} طلب`;
-    
-    // Update or create summary element
-    let summaryEl = document.getElementById('filterSummary');
-    if (!summaryEl) {
-        summaryEl = document.createElement('div');
-        summaryEl.id = 'filterSummary';
-        summaryEl.className = 'filter-summary';
-        const listContainer = document.getElementById('applicationsList');
-        listContainer.parentNode.insertBefore(summaryEl, listContainer);
-    }
-    
-    summaryEl.textContent = summary;
-}
-
-function exportApplications() {
-    const activityFilter = document.getElementById('activityFilter').value;
-    const statusFilter = document.getElementById('statusFilter').value;
-    const collegeFilter = document.getElementById('collegeFilter').value;
-    const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-    const dateFrom = document.getElementById('dateFromFilter').value;
-    const dateTo = document.getElementById('dateToFilter').value;
-    
-    let filtered = [...allApplications];
-    
-    // Apply same filters as filterApplications()
-    if (activityFilter) {
-        filtered = filtered.filter(app => app.activityType === activityFilter);
-    }
-    if (statusFilter) {
-        filtered = filtered.filter(app => app.status === statusFilter);
-    }
-    if (collegeFilter) {
-        filtered = filtered.filter(app => app.college === collegeFilter);
-    }
-    if (searchQuery) {
-        filtered = filtered.filter(app => 
-            app.studentName.toLowerCase().includes(searchQuery) ||
-            (app.activityNumber && app.activityNumber.toLowerCase().includes(searchQuery))
-        );
-    }
-    if (dateFrom) {
-        const fromDate = new Date(dateFrom);
-        filtered = filtered.filter(app => new Date(app.submittedAt) >= fromDate);
-    }
-    if (dateTo) {
-        const toDate = new Date(dateTo);
-        toDate.setHours(23, 59, 59, 999);
-        filtered = filtered.filter(app => new Date(app.submittedAt) <= toDate);
-    }
-    
-    // Create CSV content
-    const headers = ['اسم الطالب', 'نوع النشاط', 'رقم النشاط', 'الكلية', 'القسم', 'التخصص', 'الهاتف', 'الحالة', 'تاريخ التقديم', 'تفاصيل إضافية'];
-    const csvContent = [
-        headers.join(','),
-        ...filtered.map(app => [
-            `"${app.studentName}"`,
-            `"${app.activityType}"`,
-            `"${app.activityNumber}"`,
-            `"${app.college}"`,
-            `"${app.department}"`,
-            `"${app.specialization}"`,
-            `"${app.phone}"`,
-            `"${app.status}"`,
-            `"${new Date(app.submittedAt).toLocaleDateString('ar-IQ')}"`,
-            `"${(app.details || '').replace(/"/g, '"')}"`
-        ].join(','))
-    ].join('\n');
-    
-    // Create and download file
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `applications_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    showNotification(`تم تصدير ${filtered.length} طلب بنجاح`, 'success');
 }
 
 function displayApplications(applications) {
