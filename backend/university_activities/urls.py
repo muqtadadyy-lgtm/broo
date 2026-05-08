@@ -18,8 +18,8 @@ def ready_check(request):
     return JsonResponse({"status": "ready"})
 
 def root_endpoint(request):
-    """Simple root endpoint for Railway validation"""
-    return HttpResponse("OK")
+    """Root endpoint serving index.html"""
+    return core_views.index(request)
 
 urlpatterns = (
     [
