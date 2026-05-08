@@ -11,8 +11,8 @@ def health(request):
     return JsonResponse({"status": "healthy"})
 
 def health_check(request):
-    """Health check endpoint for Railway monitoring"""
-    return JsonResponse({"status": "healthy", "timestamp": "2024-01-01T00:00:00Z"})
+    """Simple health endpoint for Railway health check"""
+    return HttpResponse("healthy")
 
 def ready_check(request):
     return JsonResponse({"status": "ready"})

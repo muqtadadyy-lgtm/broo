@@ -59,7 +59,7 @@ MIDDLEWARE = [
     # DISABLED: django.contrib.auth.middleware.AuthenticationMiddleware - auth app removed
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "core.middleware.DatabaseInitializationMiddleware",
+    # REMOVED: DatabaseInitializationMiddleware - causing Railway restart loops
 ]
 
 # Performance optimization
