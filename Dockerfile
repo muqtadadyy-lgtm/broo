@@ -24,8 +24,8 @@ WORKDIR /app/backend
 # Create logs directory
 RUN mkdir -p logs
 
-# Collect static files at build time
-RUN echo "=== Collecting static files ===" && python manage.py collectstatic --noinput
+# DISABLED: Collect static files at build time - requires auth app
+# RUN echo "=== Collecting static files ===" && python manage.py collectstatic --noinput
 
 # Expose port (Railway will map this)
 EXPOSE 8080
