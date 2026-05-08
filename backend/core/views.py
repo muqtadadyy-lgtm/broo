@@ -280,10 +280,18 @@ def login(request: HttpRequest) -> JsonResponse:
     try:
         print(f"[LOGIN] Attempting login for username: {data.get('username', 'N/A')}, role: {data.get('role', 'N/A')}")
         
-        user = User.objects.filter(
-            username=data["username"],
-            role=data["role"],
-        ).first()
+        # First try to find user by username only (more flexible)
+        user = User.objects.filter(username=data["username"]).first()
+        
+        # If user found, check if role matches or if it's a super_employee trying employee login
+        if user:
+            print(f"[LOGIN] Found user: {user.username} with role: {user.role}")
+            print(f"[LOGIN] Requested role: {data['role']}")
+            
+            # Allow super_employee to login as employee (backward compatibility)
+            if user.role != data["role"] and not (user.role == "super_employee" and data["role"] == "employee"):
+                print(f"[LOGIN] Role mismatch for username: {data['username']}")
+                return JsonResponse({"success": False, "message": "الدور المحدد لا يتابق مع دور المستخدم. يرجى التحقق من اختيار الدور الصحيح."}, status=401)
         
         if not user:
             print(f"[LOGIN] User not found for username: {data['username']}, role: {data['role']}")
