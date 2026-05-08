@@ -1,0 +1,24 @@
+FORCE GUNICORN V30.0 - Force Railway to use latest railway.toml with gunicorn
+
+CRITICAL: Railway still using old V25.0 code despite V29.0 gunicorn changes!
+PROBLEM: Railway shows 'ULTIMATE CACHE BUST V25.0' instead of 'PRODUCTION DEPLOYMENT V29.0'
+
+EVIDENCE: Railway logs still show:
+=== ULTIMATE CACHE BUST V25.0 ===
+=== RAILWAY FORCED TO USE LATEST CODE ===
+
+EXPECTED: Railway should show:
+=== PRODUCTION DEPLOYMENT V29.0 ===
+=== USING GUNICORN FOR PRODUCTION ===
+
+ISSUE: Railway is using cached railway.toml from before V29.0 changes
+- Gunicorn production server not applied yet
+- Still using development server (runserver)
+- Railway caching system still blocking latest changes
+
+SOLUTION: Create new force rebuild marker to break Railway's railway.toml cache
+- Railway must rebuild and use the latest railway.toml with gunicorn
+- This should finally apply the production gunicorn server
+- Replace development server with production WSGI server
+
+EXPECTED RESULT: Railway should now use gunicorn production server and stop restart loops!
