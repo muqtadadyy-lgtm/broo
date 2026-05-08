@@ -288,10 +288,12 @@ def login(request: HttpRequest) -> JsonResponse:
         
         print(f"[LOGIN] Attempting login for username: {username} (auto-detect role)")
         
-        # Auto-detect user role - try all roles in order: student, employee
+        # Auto-detect user role - try all roles in order: student, employee, super_employee
         user = User.objects.filter(username=username, role="student").first()
         if not user:
             user = User.objects.filter(username=username, role="employee").first()
+        if not user:
+            user = User.objects.filter(username=username, role="super_employee").first()
         
         if not user:
             print(f"[LOGIN] User not found for username: {username}")
@@ -577,7 +579,7 @@ def get_all_applications(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee",):
+    if user.role not in ("employee", "super_employee"):
         return _error("غير مصرح لك", status=403)
 
     applications = Application.objects.all().order_by("-submitted_at")
@@ -616,7 +618,7 @@ def update_application_status(request: HttpRequest, application_id: int) -> Json
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee",):
+    if user.role not in ("employee", "super_employee"):
         return _error("غير مصرح لك", status=403)
 
     data = _parse_json(request)
@@ -688,7 +690,7 @@ def get_statistics(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee",):
+    if user.role not in ("employee", "super_employee"):
         return _error("غير مصرح لك", status=403)
 
     total = Application.objects.count()
@@ -722,7 +724,7 @@ def send_employee_request(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee",):
+    if user.role not in ("employee", "super_employee"):
         return _error("غير مصرح لك", status=403)
 
     data = _parse_json(request)
@@ -794,7 +796,7 @@ def get_employee_sent_requests(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee",):
+    if user.role not in ("employee", "super_employee"):
         return _error("غير مصرح لك", status=403)
 
     requests_qs = EmployeeRequest.objects.filter(employee_id=user_id).select_related(
@@ -893,7 +895,7 @@ def get_employee_request_statistics(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee",):
+    if user.role not in ("employee", "super_employee"):
         return _error("غير مصرح لك", status=403)
 
     base_qs = EmployeeRequest.objects.filter(employee_id=user_id)
@@ -991,7 +993,7 @@ def get_employee_activities(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee",):
+    if user.role not in ("employee", "super_employee"):
         return _error("غير مصرح لك", status=403)
 
     regs = ActivityRegistration.objects.select_related("user")
@@ -1043,7 +1045,7 @@ def add_activity(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee",):
+    if user.role not in ("employee", "super_employee"):
         return _error("غير مصرح لك", status=403)
 
     data = _parse_json(request)

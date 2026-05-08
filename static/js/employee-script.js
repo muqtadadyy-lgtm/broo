@@ -13,7 +13,7 @@ window.addEventListener('DOMContentLoaded', () => {
     currentUser = user;
     currentUserRole = user?.role || null;
     
-    if (!user || user.role !== 'employee') {
+    if (!user || (user.role !== 'employee' && user.role !== 'super_employee')) {
         window.location.href = 'index.html';
         return;
     }
@@ -36,7 +36,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     const supervisorInboxBtn = document.getElementById('supervisorInboxBtn');
     if (supervisorInboxBtn) {
-        supervisorInboxBtn.style.display = (user.role === 'employee') ? 'inline-flex' : 'none';
+        supervisorInboxBtn.style.display = (user.role === 'employee' || user.role === 'super_employee') ? 'inline-flex' : 'none';
     }
     
     // Load theme
