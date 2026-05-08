@@ -57,6 +57,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     # DISABLED: django.contrib.auth.middleware.AuthenticationMiddleware - auth app removed
+    "core.middleware.CustomAuthLoggingMiddleware",  # Custom auth logging to prevent unauthorized warnings
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # REMOVED: DatabaseInitializationMiddleware - causing Railway restart loops
@@ -277,6 +278,16 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
+        'django.request': {
+            'handlers': ['console', 'file'],
+            'level': 'WARNING',  # Reduce verbosity for request logging
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['console', 'file'],
+            'level': 'ERROR',  # Only show security errors
+            'propagate': False,
+        },
         'university_activities': {
             'handlers': ['console', 'file'],
             'level': 'INFO',
@@ -286,6 +297,17 @@ LOGGING = {
             'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': False,
+        },
+        'core.middleware': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+    # Suppress specific log messages that cause noise
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
         },
     },
 }

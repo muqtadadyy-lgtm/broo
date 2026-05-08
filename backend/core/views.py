@@ -250,48 +250,44 @@ def register(request: HttpRequest) -> JsonResponse:
 @csrf_exempt
 @require_http_methods(["POST"])
 def login(request: HttpRequest) -> JsonResponse:
-    # Emergency database check - ensure tables exist
+    # Early validation to prevent unauthorized warnings
     try:
-        from django.core.management import execute_from_command_line
+        data = _parse_json(request)
+        if not data or not all(field in data for field in ["username", "password", "role"]):
+            print(f"[LOGIN] Invalid request data received")
+            return _error("جميع الحقول مطلوبة", status=400)
+    except Exception as e:
+        print(f"[LOGIN] JSON parsing error: {str(e)}")
+        return _error("بيانات الطلب غير صالحة", status=400)
+    
+    # Database check with better error handling
+    try:
         from django.db import connection
         
         with connection.cursor() as cursor:
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
             if not cursor.fetchone():
-                print("EMERGENCY in login: Running migrations...")
-                execute_from_command_line(['manage.py', 'migrate', '--fake-initial'])
-                print("EMERGENCY in login: Migrations completed")
+                print("[LOGIN] Database not initialized - returning service unavailable")
+                return JsonResponse({
+                    "success": False, 
+                    "message": "الخدمة غير متاحة حاليا، يرجى المحاولة بعد قليل"
+                }, status=503)
     except Exception as e:
-        print(f"EMERGENCY in login: Migration failed: {e}")
+        print(f"[LOGIN] Database check failed: {e}")
+        return JsonResponse({
+            "success": False, 
+            "message": "خطأ في قاعدة البيانات، يرجى المحاولة بعد قليل"
+        }, status=503)
     
-    try:
-        data = _parse_json(request)
-        print(f"[LOGIN] Received data: {data}")
-        print(f"[LOGIN] Request body: {request.body}")
-        print(f"[LOGIN] Content type: {request.content_type}")
-        
-        if not all(field in data for field in ["username", "password", "role"]):
-            print(f"[LOGIN] Missing fields. Available fields: {list(data.keys())}")
-            return _error("جميع الحقول مطلوبة", status=400)
-    except Exception as e:
-        print(f"[LOGIN] Exception occurred: {str(e)}")
-        return _error(f"حدث خطأ في الخادم: {str(e)}", status=500)
+    print(f"[LOGIN] Processing login for: {data.get('username', 'N/A')}")
 
     try:
         print(f"[LOGIN] Attempting login for username: {data.get('username', 'N/A')}, role: {data.get('role', 'N/A')}")
         
-        # First try to find user by username only (more flexible)
-        user = User.objects.filter(username=data["username"]).first()
-        
-        # If user found, check if role matches or if it's a super_employee trying employee login
-        if user:
-            print(f"[LOGIN] Found user: {user.username} with role: {user.role}")
-            print(f"[LOGIN] Requested role: {data['role']}")
-            
-            # Allow super_employee to login as employee (backward compatibility)
-            if user.role != data["role"] and not (user.role == "super_employee" and data["role"] == "employee"):
-                print(f"[LOGIN] Role mismatch for username: {data['username']}")
-                return JsonResponse({"success": False, "message": "الدور المحدد لا يتابق مع دور المستخدم. يرجى التحقق من اختيار الدور الصحيح."}, status=401)
+        user = User.objects.filter(
+            username=data["username"],
+            role=data["role"],
+        ).first()
         
         if not user:
             print(f"[LOGIN] User not found for username: {data['username']}, role: {data['role']}")
