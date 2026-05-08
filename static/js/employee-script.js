@@ -95,14 +95,27 @@ async function updateStatistics() {
 // Load and Display Applications
 async function loadApplications() {
     console.log('Loading applications...');
-    const apiResult = await apiGetAllApplications();
-    
-    if (apiResult.success && apiResult.applications) {
-        allApplications = apiResult.applications;
-        console.log('Applications loaded:', allApplications.length, allApplications);
-    } else {
+    try {
+        const apiResult = await apiGetAllApplications();
+        console.log('API Result:', apiResult);
+        
+        if (apiResult.success && apiResult.applications) {
+            allApplications = apiResult.applications;
+            console.log('Applications loaded successfully:', allApplications.length, allApplications);
+            
+            // Show success message
+            if (allApplications.length > 0) {
+                showNotification(`تم تحميل ${allApplications.length} طلب`, 'success');
+            }
+        } else {
+            allApplications = [];
+            console.log('No applications found or error:', apiResult.message);
+            showNotification('لا توجد طلبات حالياً', 'info');
+        }
+    } catch (error) {
+        console.error('Error loading applications:', error);
         allApplications = [];
-        console.log('No applications found or error:', apiResult.message);
+        showNotification('حدث خطأ في تحميل الطلبات', 'error');
     }
     
     filterApplications();
@@ -139,11 +152,18 @@ function displayApplications(applications) {
     const container = document.getElementById('applicationsList');
     console.log('Displaying applications:', applications.length);
     
+    if (!container) {
+        console.error('Applications container not found!');
+        return;
+    }
+    
     if (applications.length === 0) {
         container.innerHTML = `
             <div class="application-item">
-                <p style="text-align: center; color: var(--text-secondary);">
-                    <i class="fas fa-inbox"></i> لا توجد طلبات
+                <p style="text-align: center; color: var(--text-secondary); padding: 40px;">
+                    <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 15px; display: block;"></i> 
+                    <div>لا توجد طلبات حالياً</div>
+                    <small>سيتم عرض الطلبات هنا عند تقديمها</small>
                 </p>
             </div>
         `;
@@ -161,60 +181,52 @@ function displayApplications(applications) {
             <div class="app-row-content">
                 <div class="app-detail-item">
                     <strong><i class="fas fa-clipboard"></i> نوع النشاط:</strong>
-                    ${app.activityType}
+                    ${app.activityType || 'غير محدد'}
                 </div>
                 <div class="app-detail-item">
                     <strong><i class="fas fa-hashtag"></i> رقم النشاط:</strong>
-                    ${app.activityNumber}
+                    ${app.activityNumber || 'غير محدد'}
                 </div>
                 <div class="app-detail-item">
                     <strong><i class="fas fa-university"></i> الكلية:</strong>
-                    ${app.college}
+                    ${app.college || 'غير محدد'}
                 </div>
                 <div class="app-detail-item">
                     <strong><i class="fas fa-phone"></i> الهاتف:</strong>
-                    ${app.phone}
+                    ${app.phone || 'غير محدد'}
                 </div>
                 <div class="app-detail-item">
                     <strong><i class="fas fa-calendar"></i> تاريخ التقديم:</strong>
-                    ${new Date(app.submittedAt).toLocaleDateString('ar-IQ')}
+                    ${app.submittedAt ? new Date(app.submittedAt).toLocaleDateString('ar-IQ') : 'غير محدد'}
                 </div>
             </div>
         </div>
     `).join('');
     
-    // Add event listeners for mobile compatibility
-    let touchHandled = false;
+    // Add event listeners for click functionality
+    const rows = container.querySelectorAll('.clickable-row');
+    console.log('Adding event listeners to', rows.length, 'rows');
     
-    console.log('Adding event listeners to', container.querySelectorAll('.clickable-row').length, 'rows');
-    
-    container.querySelectorAll('.clickable-row').forEach((row, index) => {
+    rows.forEach((row, index) => {
         const handleClick = (e) => {
             console.log('Click event on row', index);
-            if (touchHandled) {
-                touchHandled = false;
-                return;
-            }
+            e.preventDefault();
             const appId = row.getAttribute('data-app-id');
             console.log('Row clicked, app ID:', appId);
-            showApplicationDetails(appId);
+            if (appId) {
+                showApplicationDetails(parseInt(appId));
+            }
         };
         
-        row.addEventListener('touchstart', () => {
-            console.log('Touch start on row', index);
-            touchHandled = false;
-        });
-        
-        row.addEventListener('touchend', (e) => {
-            console.log('Touch end on row', index);
-            e.preventDefault();
-            touchHandled = true;
-            const appId = row.getAttribute('data-app-id');
-            console.log('Row touched, app ID:', appId);
-            showApplicationDetails(appId);
-        });
-        
         row.addEventListener('click', handleClick);
+        
+        // Add keyboard support
+        row.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleClick(e);
+            }
+        });
     });
 }
 
@@ -231,67 +243,100 @@ function showApplicationDetails(applicationId) {
     
     console.log('Application found:', app);
     
-    const detailsContent = document.getElementById('applicationDetails');
-    detailsContent.innerHTML = `
-        <div class="detail-row">
-            <div class="detail-label">اسم الطالب:</div>
-            <div class="detail-value">${app.studentName}</div>
-        </div>
-        <div class="detail-row">
-            <div class="detail-label">نوع النشاط:</div>
-            <div class="detail-value">${app.activityType}</div>
-        </div>
-        <div class="detail-row">
-            <div class="detail-label">رقم النشاط:</div>
-            <div class="detail-value">${app.activityNumber}</div>
-        </div>
-        <div class="detail-row">
-            <div class="detail-label">الكلية:</div>
-            <div class="detail-value">${app.college}</div>
-        </div>
-        <div class="detail-row">
-            <div class="detail-label">القسم:</div>
-            <div class="detail-value">${app.department}</div>
-        </div>
-        <div class="detail-row">
-            <div class="detail-label">التخصص:</div>
-            <div class="detail-value">${app.specialization}</div>
-        </div>
-        <div class="detail-row">
-            <div class="detail-label">رقم الهاتف:</div>
-            <div class="detail-value">${app.phone}</div>
-        </div>
-        <div class="detail-row">
-            <div class="detail-label">تفاصيل إضافية:</div>
-            <div class="detail-value">${app.details || 'لا توجد تفاصيل إضافية'}</div>
-        </div>
-        <div class="detail-row">
-            <div class="detail-label">الحالة:</div>
-            <div class="detail-value">
-                <span class="status-badge status-${app.status === 'قيد الانتظار' ? 'pending' : app.status === 'مقبول' ? 'approved' : 'rejected'}">
-                    ${app.status}
-                </span>
+    const detailsHtml = `
+        <div class="detail-section">
+            <h3><i class="fas fa-user"></i> معلومات الطالب</h3>
+            <div class="detail-row">
+                <div class="detail-label">اسم الطالب:</div>
+                <div class="detail-value">${app.studentName}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">البريد الإلكتروني:</div>
+                <div class="detail-value">${app.studentEmail}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">الكلية:</div>
+                <div class="detail-value">${app.college}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">القسم:</div>
+                <div class="detail-value">${app.department}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">التخصص:</div>
+                <div class="detail-value">${app.specialization}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">رقم الهاتف:</div>
+                <div class="detail-value">${app.phone}</div>
             </div>
         </div>
-        <div class="detail-row">
-            <div class="detail-label">تاريخ التقديم:</div>
-            <div class="detail-value">${new Date(app.submittedAt).toLocaleString('ar-IQ')}</div>
-        </div>
-        <div class="detail-row">
-            <div class="detail-label">آخر تحديث:</div>
-            <div class="detail-value">${new Date(app.updatedAt).toLocaleString('ar-IQ')}</div>
-        </div>
-        ${app.projectFile ? `
-        <div class="detail-row">
-            <div class="detail-label">الملف المرفق:</div>
-            <div class="detail-value">
-                <button class="link-btn" onclick="openPdfViewer('${app.projectFile}','ملف الطلب')">
-                    <i class="fas fa-file-pdf"></i> عرض الملف
-                </button>
+        
+        <div class="detail-section">
+            <h3><i class="fas fa-tasks"></i> معلومات النشاط</h3>
+            <div class="detail-row">
+                <div class="detail-label">النشاط:</div>
+                <div class="detail-value">${app.activityTitle}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">القسم:</div>
+                <div class="detail-value">${app.activityCategory || 'غير محدد'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">الوصف:</div>
+                <div class="detail-value">${app.activityDescription || 'لا يوجد وصف'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">تاريخ البدء:</div>
+                <div class="detail-value">${app.activityStartDate ? new Date(app.activityStartDate).toLocaleDateString('ar-IQ') : 'غير محدد'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">تاريخ الانتهاء:</div>
+                <div class="detail-value">${app.activityEndDate ? new Date(app.activityEndDate).toLocaleDateString('ar-IQ') : 'غير محدد'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">المكان:</div>
+                <div class="detail-value">${app.activityLocation || 'غير محدد'}</div>
             </div>
         </div>
-        ` : ''}
+        
+        <div class="detail-section">
+            <h3><i class="fas fa-file-alt"></i> تفاصيل الطلب</h3>
+            <div class="detail-row">
+                <div class="detail-label">تفاصيل إضافية:</div>
+                <div class="detail-value">${app.details || 'لا توجد تفاصيل إضافية'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">الحالة:</div>
+                <div class="detail-value">
+                    <span class="status-badge status-${app.status === 'قيد الانتظار' ? 'pending' : app.status === 'مقبول' ? 'approved' : 'rejected'}">
+                        ${app.status}
+                    </span>
+                </div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">تاريخ التقديم:</div>
+                <div class="detail-value">${new Date(app.submittedAt).toLocaleString('ar-IQ')}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">آخر تحديث:</div>
+                <div class="detail-value">${new Date(app.updatedAt).toLocaleString('ar-IQ')}</div>
+            </div>
+            ${app.projectFile ? `
+            <div class="detail-row">
+                <div class="detail-label">الملف المرفق:</div>
+                <div class="detail-value">
+                    <button class="link-btn" onclick="openPdfViewer('${app.projectFile}','ملف الطلب')">
+                        <i class="fas fa-file-pdf"></i> عرض الملف
+                    </button>
+                </div>
+            </div>
+            ` : ''}
+        </div>
     `;
+
+    const detailsContent = document.getElementById('applicationDetails');
+    detailsContent.innerHTML = detailsHtml;
 
     const deleteBtn = document.getElementById('deleteApplicationBtn');
     if (deleteBtn) {
@@ -304,6 +349,61 @@ function showApplicationDetails(applicationId) {
 function closeDetailsModal() {
     document.getElementById('detailsModal').classList.remove('active');
     currentApplicationId = null;
+}
+
+// Message with Student (Activity Owner)
+function openMessageWithStudent() {
+    if (!currentApplicationId) return;
+    
+    const app = allApplications.find(a => a.id === currentApplicationId);
+    if (!app) return;
+    
+    // Open messaging modal with student
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>مراسلة الطالب - ${app.studentName}</h2>
+                <button class="close-btn" onclick="this.closest('.modal').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="message-info">
+                    <p><strong>النشاط:</strong> ${app.activityTitle}</p>
+                    <p><strong>الطالب:</strong> ${app.studentName}</p>
+                    <p><strong>البريد الإلكتروني:</strong> ${app.studentEmail}</p>
+                </div>
+                <div class="message-form">
+                    <textarea id="messageText" placeholder="اكتب رسالتك هنا..." rows="4"></textarea>
+                    <button class="submit-btn" onclick="sendMessageToStudent()">
+                        <i class="fas fa-paper-plane"></i> إرسال الرسالة
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// Send message to student
+async function sendMessageToStudent() {
+    const messageText = document.getElementById('messageText').value.trim();
+    if (!messageText) {
+        showNotification('الرجاء كتابة رسالة', 'error');
+        return;
+    }
+    
+    const app = allApplications.find(a => a.id === currentApplicationId);
+    const result = await apiSendMessage(currentApplicationId, app.studentId, messageText);
+    
+    if (result.success) {
+        showNotification('تم إرسال الرسالة بنجاح', 'success');
+        document.querySelector('.modal.active').remove();
+    } else {
+        showNotification(result.message || 'فشل إرسال الرسالة', 'error');
+    }
 }
 
 // Approve Application
