@@ -1,0 +1,17 @@
+FORCE SHOW LOGS V24.0 - Railway must show container startup logs
+This file forces Railway to rebuild and ensure container logs are visible
+
+PROBLEM: Service unavailable persists with NO startup logs visible
+ISSUE: Railway may be using cached Dockerfile or container fails immediately
+
+SOLUTION: Force rebuild with explicit logging and simpler startup
+- Add explicit logging that should be visible
+- Simplify startup to isolate the issue
+- Force Railway to show exactly what's happening during container startup
+
+Railway must now show:
+=== FORCE SHOW LOGS V24.0 ===
+=== CONTAINER IS STARTING ===
+=== DOCKERFILE CMD IS RUNNING ===
+
+If these logs don't appear, Railway is not using the updated Dockerfile.
