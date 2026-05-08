@@ -197,9 +197,10 @@ def register(request: HttpRequest) -> JsonResponse:
         with connection.cursor() as cursor:
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
             if not cursor.fetchone():
-                print("[REGISTER] CRITICAL: Users table missing! Running migrations NOW...")
-                call_command('migrate', verbosity=2, fake_initial=True)
-                print("[REGISTER] CRITICAL: Migrations FORCED completed")
+                print("[REGISTER] CRITICAL: Users table missing! SKIPPING runtime migrations to prevent restart loop")
+                print("[REGISTER] Migrations should only run during startup, not runtime")
+                # DISABLED: Runtime migrations cause Railway restart loops
+                # Database should be initialized during container startup only
             else:
                 print("[REGISTER] Database check passed - users table exists")
     except Exception as e:

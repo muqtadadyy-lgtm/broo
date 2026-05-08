@@ -1,0 +1,13 @@
+RAILWAY RUNTIME MIGRATIONS FIX V32.0
+
+FIXING CONTAINER RESTART LOOP:
+- Disabled runtime migrations in register view
+- Runtime migrations cause Railway restart loops
+- Database should only be initialized during startup
+- This prevents container termination and restart loops
+
+EXPECTED RESULT:
+- Container starts and stays stable
+- No more runtime migrations during requests
+- Health checks pass successfully
+- Railway deployment becomes stable
