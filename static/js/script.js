@@ -298,18 +298,21 @@ async function handleLogin(event) {
     
     const username = document.getElementById('loginUsername').value;
     const password = document.getElementById('loginPassword').value;
-    const role = document.querySelector('input[name="loginRole"]:checked').value;
     
-    // Try backend API first
-    const result = await apiLogin({ username, password, role });
+    // Try backend API without role - backend will auto-detect
+    const result = await apiLogin({ username, password });
     
     if (result.success) {
         showNotification('تم تسجيل الدخول بنجاح', 'success');
         setTimeout(() => {
-            if (role === 'student') {
+            // Redirect based on user role from server response
+            if (result.user && result.user.role === 'student') {
                 window.location.href = 'student-dashboard.html';
-            } else if (role === 'employee') {
+            } else if (result.user && result.user.role === 'employee') {
                 window.location.href = 'employee-dashboard.html';
+            } else {
+                // Fallback to student dashboard
+                window.location.href = 'student-dashboard.html';
             }
         }, 1000);
     } else {
@@ -326,7 +329,6 @@ async function handleRegister(event) {
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
     const confirmPassword = document.getElementById('registerConfirmPassword').value;
-    const role = document.querySelector('input[name="registerRole"]:checked').value;
     
     // Validation
     if (password !== confirmPassword) {
@@ -339,12 +341,12 @@ async function handleRegister(event) {
         return;
     }
     
+    // Send registration without role - backend will default to student
     const userData = {
         fullName,
         username,
         email,
-        password,
-        role
+        password
     };
     if (typeof activeAnnouncement !== 'undefined' && activeAnnouncement && activeAnnouncement.requireAck) {
         if (!hasAnnouncementAck(activeAnnouncement.version || '1')) {

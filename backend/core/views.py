@@ -209,7 +209,7 @@ def register(request: HttpRequest) -> JsonResponse:
         traceback.print_exc()
     
     data = _parse_json(request)
-    required_fields = ["fullName", "username", "email", "password", "role"]
+    required_fields = ["fullName", "username", "email", "password"]
     if not all(field in data for field in required_fields):
         return _error("جميع الحقول مطلوبة", status=400)
 
@@ -219,8 +219,9 @@ def register(request: HttpRequest) -> JsonResponse:
     if User.objects.filter(email=data["email"]).exists():
         return _error("البريد الإلكتروني موجود بالفعل", status=400)
 
-    # السماح بإنشاء حسابات طلاب وموظفين
-    if data["role"] not in ["student", "employee"]:
+    # Default to student role if not provided
+    role = data.get("role", "student")
+    if role not in ["student", "employee"]:
         return _error("الدور غير صالح. يجب أن يكون 'student' أو 'employee'", status=403)
 
     try:
@@ -230,7 +231,7 @@ def register(request: HttpRequest) -> JsonResponse:
             username=data["username"],
             email=data["email"],
             password_hash=make_password(data["password"]),
-            role=data["role"],
+            role=role,
         )
         print(f"[REGISTER] User object created: {user}")
         user.save()
@@ -282,19 +283,29 @@ def login(request: HttpRequest) -> JsonResponse:
     print(f"[LOGIN] Processing login for: {data.get('username', 'N/A')}")
 
     try:
-        print(f"[LOGIN] Attempting login for username: {data.get('username', 'N/A')}, role: {data.get('role', 'N/A')}")
+        username = data["username"]
+        password = data["password"]
+        provided_role = data.get("role")
         
-        user = User.objects.filter(
-            username=data["username"],
-            role=data["role"],
-        ).first()
+        print(f"[LOGIN] Attempting login for username: {username}, role: {provided_role or 'auto-detect'}")
+        
+        # If role is provided, try that specific role
+        if provided_role:
+            user = User.objects.filter(username=username, role=provided_role).first()
+        else:
+            # If no role provided, try all roles in order: student, employee, super_employee
+            user = User.objects.filter(username=username, role="student").first()
+            if not user:
+                user = User.objects.filter(username=username, role="employee").first()
+            if not user:
+                user = User.objects.filter(username=username, role="super_employee").first()
         
         if not user:
-            print(f"[LOGIN] User not found for username: {data['username']}, role: {data['role']}")
+            print(f"[LOGIN] User not found for username: {username}")
             return JsonResponse({"success": False, "message": "اسم المستخدم أو كلمة المرور غير صحيحة. يرجى التحقق من البيانات والمحاولة مرة أخرى."}, status=401)
             
-        if not check_password(data["password"], user.password_hash):
-            print(f"[LOGIN] Password mismatch for username: {data['username']}")
+        if not check_password(password, user.password_hash):
+            print(f"[LOGIN] Password mismatch for username: {username}")
             return JsonResponse({"success": False, "message": "اسم المستخدم أو كلمة المرور غير صحيحة. يرجى التحقق من البيانات والمحاولة مرة أخرى."}, status=401)
             
         print(f"[LOGIN] Successful login for user: {user.username} (ID: {user.id})")
