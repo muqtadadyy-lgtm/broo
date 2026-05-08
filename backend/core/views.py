@@ -254,7 +254,7 @@ def login(request: HttpRequest) -> JsonResponse:
     # Early validation to prevent unauthorized warnings
     try:
         data = _parse_json(request)
-        if not data or not all(field in data for field in ["username", "password", "role"]):
+        if not data or not all(field in data for field in ["username", "password"]):
             print(f"[LOGIN] Invalid request data received")
             return _error("جميع الحقول مطلوبة", status=400)
     except Exception as e:
@@ -285,20 +285,13 @@ def login(request: HttpRequest) -> JsonResponse:
     try:
         username = data["username"]
         password = data["password"]
-        provided_role = data.get("role")
         
-        print(f"[LOGIN] Attempting login for username: {username}, role: {provided_role or 'auto-detect'}")
+        print(f"[LOGIN] Attempting login for username: {username} (auto-detect role)")
         
-        # If role is provided, try that specific role
-        if provided_role:
-            user = User.objects.filter(username=username, role=provided_role).first()
-        else:
-            # If no role provided, try all roles in order: student, employee, super_employee
-            user = User.objects.filter(username=username, role="student").first()
-            if not user:
-                user = User.objects.filter(username=username, role="employee").first()
-            if not user:
-                user = User.objects.filter(username=username, role="super_employee").first()
+        # Auto-detect user role - try all roles in order: student, employee
+        user = User.objects.filter(username=username, role="student").first()
+        if not user:
+            user = User.objects.filter(username=username, role="employee").first()
         
         if not user:
             print(f"[LOGIN] User not found for username: {username}")
