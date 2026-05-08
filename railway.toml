@@ -37,6 +37,6 @@ restart_policy_max_retries = 3
 memory = "512Mi"
 
 # PRODUCTION READY - Use gunicorn instead of runserver for Railway deployment
-# Replace development server with production WSGI server
+# Replace development server with production WSGI server - SUPER EMPLOYEE FIX V30.0
 [services.start_command]
-command = "echo '=== PRODUCTION DEPLOYMENT V29.0 ===' && echo '=== USING GUNICORN FOR PRODUCTION ===' && echo '=== PWD: '$(pwd)' ===' && cd /app/backend && echo '=== CHANGED DIR ===' && python manage.py migrate && echo '=== MIGRATIONS COMPLETED ===' && gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
+command = "echo '=== PRODUCTION DEPLOYMENT V30.0 - SUPER EMPLOYEE FIX ===' && echo '=== USING GUNICORN FOR PRODUCTION ===' && echo '=== PWD: '$(pwd)' ===' && cd /app/backend && echo '=== CHANGED DIR ===' && python manage.py migrate && echo '=== MIGRATIONS COMPLETED ===' && python manage.py shell -c \"from core.models import User; from django.contrib.auth.hashers import make_password; User.objects.get_or_create(username='user', defaults={'email': 'user@watania.edu.iq', 'full_name': 'المسؤول الرئيسي', 'password_hash': make_password('user123'), 'role': 'super_employee'})\" && echo '=== SUPER EMPLOYEE CREATED ===' && gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
