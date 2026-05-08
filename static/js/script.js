@@ -212,9 +212,7 @@ window.addEventListener('DOMContentLoaded', () => {
             const user = JSON.parse(userStr);
             if (user && user.role === 'student') {
                 window.location.href = 'student-dashboard.html';
-            } else if (user && user.role === 'employee') {
-                window.location.href = 'employee-dashboard.html';
-            } else if (user && user.role === 'super_employee') {
+            } else if (user && (user.role === 'employee' || user.role === 'super_employee')) {
                 window.location.href = 'employee-dashboard.html';
             }
         } catch(e) {}
