@@ -323,6 +323,36 @@
         </div>
     </div>
 
+    <!-- Student Messaging Modal -->
+    <div class="modal" id="studentMessageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="header-info">
+                    <h2><i class="fas fa-envelope"></i> مراسلة الطالب</h2>
+                    <p class="other-user" id="messageStudentName"></p>
+                </div>
+                <button class="close-btn" onclick="closeMessageModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="message-form">
+                <div class="form-group">
+                    <label for="messageContent">الرسالة:</label>
+                    <textarea id="messageContent" rows="4" placeholder="اكتب رسالتك للطالب هنا..." required></textarea>
+                </div>
+                <input type="hidden" id="messageStudentId">
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeMessageModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="sendStudentMessage()">
+                        <i class="fas fa-paper-plane"></i> إرسال الرسالة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Employees Management Modal -->
     <div class="modal" id="employeesManagementModal">
         <div class="modal-content xl">

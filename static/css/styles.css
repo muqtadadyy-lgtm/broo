@@ -370,13 +370,31 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
 .filter-controls select:focus,.filter-controls input:focus {border-color:var(--accent-color);box-shadow:0 0 20px rgba(74,158,255,0.3)}
 
 .applications-table {display:flex;flex-direction:column;gap:15px}
-.application-row {background:var(--card-bg);border-radius:15px;padding:20px;box-shadow:var(--shadow);border:2px solid var(--border-color);transition:all 0.3s ease;cursor:pointer}
+.application-row {background:var(--card-bg);border-radius:15px;padding:20px;box-shadow:var(--shadow);border:2px solid var(--border-color);transition:all 0.3s ease}
 .application-row:hover {transform:translateY(-3px);box-shadow:var(--shadow-hover);border-color:var(--accent-color)}
 .app-row-header {display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px}
 .app-row-header h4 {font-size:20px;font-weight:700;color:var(--text-primary)}
 .app-row-content {display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px}
 .app-detail-item {font-size:14px;color:var(--text-secondary)}
 .app-detail-item strong {color:var(--text-primary);display:block;margin-bottom:5px}
+
+.app-row-actions {display:flex;gap:10px;margin-top:15px;flex-wrap:wrap}
+.action-btn {display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:none;border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.3s ease;text-decoration:none;min-width:100px;justify-content:center}
+.action-btn:hover {transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,0.2)}
+.action-btn i {font-size:16px}
+.action-btn span {font-size:14px}
+
+.action-btn.btn-info {background:linear-gradient(135deg,var(--accent-color),var(--primary-light));color:white}
+.action-btn.btn-info:hover {background:linear-gradient(135deg,var(--primary-light),var(--accent-color))}
+
+.action-btn.btn-message {background:linear-gradient(135deg,var(--warning-color),#f97316);color:white}
+.action-btn.btn-message:hover {background:linear-gradient(135deg,#f97316,var(--warning-color))}
+
+.action-btn.btn-success {background:linear-gradient(135deg,var(--success-color),#16a34a);color:white}
+.action-btn.btn-success:hover {background:linear-gradient(135deg,#16a34a,var(--success-color))}
+
+.action-btn.btn-danger {background:linear-gradient(135deg,var(--error-color),#dc2626);color:white}
+.action-btn.btn-danger:hover {background:linear-gradient(135deg,#dc2626,var(--error-color))}
 
 .details-content {background:var(--bg-color);border-radius:15px;padding:25px;margin-bottom:20px}
 .detail-row {display:grid;grid-template-columns:150px 1fr;gap:15px;padding:15px 0;border-bottom:1px solid var(--border-color)}

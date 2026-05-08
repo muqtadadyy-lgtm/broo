@@ -165,7 +165,7 @@ function displayApplications(applications) {
     }
     
     container.innerHTML = applications.map(app => `
-        <div class="application-row clickable-row" data-app-id="${app.id}" role="button" tabindex="0" style="cursor: pointer;">
+        <div class="application-row" data-app-id="${app.id}">
             <div class="app-row-header">
                 <h4><i class="fas fa-user"></i> ${app.studentName}</h4>
                 <span class="status-badge status-${app.status === 'قيد الانتظار' ? 'pending' : app.status === 'مقبول' ? 'approved' : 'rejected'}">
@@ -193,6 +193,26 @@ function displayApplications(applications) {
                     <strong><i class="fas fa-calendar"></i> تاريخ التقديم:</strong>
                     ${new Date(app.submittedAt).toLocaleDateString('ar-IQ')}
                 </div>
+            </div>
+            <div class="app-row-actions">
+                <button class="action-btn btn-info" onclick="viewApplicationDetails(${app.id})" title="عرض المعلومات">
+                    <i class="fas fa-eye"></i>
+                    <span>عرض</span>
+                </button>
+                <button class="action-btn btn-message" onclick="messageStudent(${app.id}, '${app.studentName}')" title="مراسلة الطالب">
+                    <i class="fas fa-envelope"></i>
+                    <span>مراسلة</span>
+                </button>
+                ${app.status === 'قيد الانتظار' ? `
+                    <button class="action-btn btn-success" onclick="acceptApplication(${app.id})" title="قبول الطلب">
+                        <i class="fas fa-check"></i>
+                        <span>قبول</span>
+                    </button>
+                    <button class="action-btn btn-danger" onclick="rejectApplication(${app.id})" title="رفض الطلب">
+                        <i class="fas fa-times"></i>
+                        <span>رفض</span>
+                    </button>
+                ` : ''}
             </div>
         </div>
     `).join('');
@@ -345,6 +365,114 @@ async function rejectApplication() {
     if (result.success) {
         showNotification(result.message, 'success');
         closeDetailsModal();
+        updateStatistics();
+        loadApplications();
+    } else {
+        showNotification(result.message || 'حدث خطأ في رفض الطلب', 'error');
+    }
+}
+
+// New functions for action buttons
+function viewApplicationDetails(applicationId) {
+    const app = getApplicationById(applicationId);
+    if (!app) return;
+    
+    currentApplicationId = applicationId;
+    
+    // Populate modal with application details
+    document.getElementById('modalStudentName').textContent = app.studentName;
+    document.getElementById('modalActivityType').textContent = app.activityType;
+    document.getElementById('modalActivityNumber').textContent = app.activityNumber;
+    document.getElementById('modalCollege').textContent = app.college;
+    document.getElementById('modalPhone').textContent = app.phone;
+    document.getElementById('modalEmail').textContent = app.email;
+    document.getElementById('modalSubmittedAt').textContent = new Date(app.submittedAt).toLocaleDateString('ar-IQ');
+    document.getElementById('modalStatus').textContent = app.status;
+    
+    // Show/hide action buttons based on status
+    const approveBtn = document.getElementById('approveBtn');
+    const rejectBtn = document.getElementById('rejectBtn');
+    
+    if (app.status === 'قيد الانتظار') {
+        approveBtn.style.display = 'inline-flex';
+        rejectBtn.style.display = 'inline-flex';
+    } else {
+        approveBtn.style.display = 'none';
+        rejectBtn.style.display = 'none';
+    }
+    
+    openDetailsModal();
+}
+
+function messageStudent(applicationId, studentName) {
+    const app = getApplicationById(applicationId);
+    if (!app) return;
+    
+    // Open messaging modal with student info
+    currentApplicationId = applicationId;
+    
+    // Set student info in messaging modal
+    document.getElementById('messageStudentName').textContent = studentName;
+    document.getElementById('messageStudentId').value = app.userId;
+    
+    // Clear previous message
+    document.getElementById('messageContent').value = '';
+    
+    // Open messaging modal
+    openMessageModal();
+}
+
+function openMessageModal() {
+    document.getElementById('studentMessageModal').style.display = 'flex';
+}
+
+function closeMessageModal() {
+    document.getElementById('studentMessageModal').style.display = 'none';
+}
+
+async function sendStudentMessage() {
+    const studentId = document.getElementById('messageStudentId').value;
+    const messageContent = document.getElementById('messageContent').value.trim();
+    
+    if (!messageContent) {
+        showNotification('الرجاء كتابة محتوى الرسالة', 'error');
+        return;
+    }
+    
+    try {
+        // Use currentApplicationId as applicationId, studentId as receiverId
+        const result = await apiSendMessage(currentApplicationId, studentId, messageContent);
+        
+        if (result.success) {
+            showNotification('تم إرسال الرسالة بنجاح', 'success');
+            closeMessageModal();
+            document.getElementById('messageContent').value = '';
+        } else {
+            showNotification(result.message || 'فشل إرسال الرسالة', 'error');
+        }
+    } catch (error) {
+        console.error('Error sending message:', error);
+        showNotification('حدث خطأ في إرسال الرسالة', 'error');
+    }
+}
+
+async function acceptApplication(applicationId) {
+    const result = await apiUpdateApplicationStatus(applicationId, 'مقبول');
+    
+    if (result.success) {
+        showNotification('تم قبول الطلب بنجاح', 'success');
+        updateStatistics();
+        loadApplications();
+    } else {
+        showNotification(result.message || 'حدث خطأ في قبول الطلب', 'error');
+    }
+}
+
+async function rejectApplication(applicationId) {
+    const result = await apiUpdateApplicationStatus(applicationId, 'مرفوض');
+    
+    if (result.success) {
+        showNotification('تم رفض الطلب بنجاح', 'success');
         updateStatistics();
         loadApplications();
     } else {
