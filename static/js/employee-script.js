@@ -13,7 +13,7 @@ window.addEventListener('DOMContentLoaded', () => {
     currentUser = user;
     currentUserRole = user?.role || null;
     
-    if (!user || (user.role !== 'employee' && user.role !== 'super_employee')) {
+    if (!user || user.role !== 'employee') {
         window.location.href = 'index.html';
         return;
     }
@@ -25,14 +25,14 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Display user name
     document.getElementById('employeeName').textContent = user.fullName;
-    // Show create employee button for super employee
+    // Show create employee button for all employees
     const createBtn = document.getElementById('createEmployeeBtn');
     if (createBtn) {
-        createBtn.style.display = (user.role === 'super_employee') ? 'inline-flex' : 'none';
+        createBtn.style.display = 'inline-flex';
     }
     const manageBtn = document.getElementById('manageEmployeesBtn');
     if (manageBtn) {
-        manageBtn.style.display = (user.role === 'super_employee') ? 'inline-flex' : 'none';
+        manageBtn.style.display = 'inline-flex';
     }
     const supervisorInboxBtn = document.getElementById('supervisorInboxBtn');
     if (supervisorInboxBtn) {
@@ -49,10 +49,7 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Load applications
     loadApplications();
-
-    if (user.role === 'super_employee') {
-        loadEmployees();
-    }
+    loadEmployees();
 });
 
 // Theme Management
@@ -298,7 +295,7 @@ function showApplicationDetails(applicationId) {
 
     const deleteBtn = document.getElementById('deleteApplicationBtn');
     if (deleteBtn) {
-        deleteBtn.style.display = (currentUserRole === 'super_employee') ? 'inline-flex' : 'none';
+        deleteBtn.style.display = 'inline-flex';
     }
 
     document.getElementById('detailsModal').classList.add('active');
@@ -576,9 +573,7 @@ async function handleCreateEmployee(event) {
     if (result.success) {
         showNotification('تم إنشاء حساب الموظف بنجاح', 'success');
         closeCreateEmployeeModal();
-        if (currentUserRole === 'super_employee') {
-            loadEmployees();
-        }
+        loadEmployees();
     } else {
         showNotification(result.message || 'فشل إنشاء حساب الموظف', 'error');
     }
@@ -672,7 +667,7 @@ function openSupervisorChat(employeeId = null, employeeName = '') {
     const title = document.getElementById('supervisorChatTitle');
     const subtitle = document.getElementById('supervisorChatSubtitle');
 
-    if (currentUserRole === 'super_employee') {
+    if (currentUserRole === 'employee') {
         title.textContent = employeeName ? `مراسلة: ${employeeName}` : 'مدير الموظفين';
         subtitle.textContent = employeeName ? 'تواصل مباشر مع الموظف' : 'اختر موظفاً من القائمة لمتابعة الحوار';
     } else {
@@ -692,15 +687,15 @@ function closeSupervisorChat() {
 async function loadSupervisorMessages() {
     const listEl = document.getElementById('supervisorMessagesList');
     if (!listEl) return;
-    const isSuper = currentUserRole === 'super_employee';
-    if (isSuper && !currentChatEmployeeId) {
+    const isEmployee = currentUserRole === 'employee';
+    if (isEmployee && !currentChatEmployeeId) {
         listEl.innerHTML = '<p class="no-messages">اختر موظفاً من القائمة لمتابعة الحوار.</p>';
         return;
     }
 
     listEl.innerHTML = '<p class="no-messages">جاري التحميل...</p>';
 
-    const targetId = isSuper ? currentChatEmployeeId : null;
+    const targetId = isEmployee ? currentChatEmployeeId : null;
     const res = await apiGetSupervisorMessages(targetId);
     if (!res.success) {
         listEl.innerHTML = `<p class="no-messages">${res.message || 'تعذر جلب الرسائل'}</p>`;
@@ -736,7 +731,7 @@ async function sendSupervisorMessage() {
     if (!text) return;
 
     let receiverId = null;
-    if (currentUserRole === 'super_employee') {
+    if (currentUserRole === 'employee') {
         if (!currentChatEmployeeId) {
             alert('يرجى اختيار موظف للمراسلة من قسم حسابات الموظفين.');
             return;

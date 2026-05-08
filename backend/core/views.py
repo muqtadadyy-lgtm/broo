@@ -573,7 +573,7 @@ def get_all_applications(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     applications = Application.objects.all().order_by("-submitted_at")
@@ -612,7 +612,7 @@ def update_application_status(request: HttpRequest, application_id: int) -> Json
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     data = _parse_json(request)
@@ -663,8 +663,8 @@ def delete_application(request: HttpRequest, application_id: int) -> JsonRespons
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role != "super_employee":
-        return _error("هذه الصلاحية للموظف الرئيسي فقط", status=403)
+    if user.role != "employee":
+        return _error("هذه الصلاحية للموظفين فقط", status=403)
 
     try:
         app = Application.objects.get(pk=application_id)
@@ -684,7 +684,7 @@ def get_statistics(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     total = Application.objects.count()
@@ -718,7 +718,7 @@ def send_employee_request(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     data = _parse_json(request)
@@ -790,7 +790,7 @@ def get_employee_sent_requests(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     requests_qs = EmployeeRequest.objects.filter(employee_id=user_id).select_related(
@@ -889,7 +889,7 @@ def get_employee_request_statistics(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     base_qs = EmployeeRequest.objects.filter(employee_id=user_id)
@@ -926,8 +926,8 @@ def list_employees(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role != "super_employee":
-        return _error("هذه العملية متاحة للموظف الرئيسي فقط", status=403)
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
 
     employees = (
         User.objects.filter(role="employee")
@@ -961,8 +961,8 @@ def delete_employee(request: HttpRequest, employee_id: int) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if caller.role != "super_employee":
-        return _error("هذه العملية متاحة للموظف الرئيسي فقط", status=403)
+    if caller.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
 
     if employee_id == caller.id:
         return _error("لا يمكن حذف حساب الموظف الرئيسي نفسه", status=400)
@@ -987,7 +987,7 @@ def get_employee_activities(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     regs = ActivityRegistration.objects.select_related("user")
@@ -1039,7 +1039,7 @@ def add_activity(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role not in ("employee", "super_employee"):
+    if user.role not in ("employee",):
         return _error("غير مصرح لك", status=403)
 
     data = _parse_json(request)
@@ -1141,25 +1141,23 @@ def send_supervisor_message(request: HttpRequest) -> JsonResponse:
     if not text:
         return _error("المستقبل والنص مطلوبان", status=400)
 
-    # إذا كان المرسل موظفًا عاديًا ولم يحدد المستقبل، نختار الموظف الرئيسي الوحيد
+    # إذا كان المرسل موظفًا ولم يحدد المستقبل، نختار أي موظف آخر
     if sender.role == "employee" and not receiver_id:
-        primary = User.objects.filter(role="super_employee").first()
-        if not primary:
-            return _error("لا يوجد موظف رئيسي لاستقبال الرسائل", status=400)
-        receiver_id = primary.id
+        # Find another employee to message
+        other_employee = User.objects.filter(role="employee").exclude(pk=sender.id).first()
+        if not other_employee:
+            return _error("لا يوجد موظفون آخرون لاستقبال الرسائل", status=400)
+        receiver_id = other_employee.id
 
     try:
         receiver = User.objects.get(pk=receiver_id)
     except User.DoesNotExist:
         return _error("المستخدم المستقبل غير موجود", status=404)
 
-    # قواعد الأدوار
-    if sender.role == "super_employee":
+    # قواعد الأدوار - الموظفون يمكنهم مراسلة بعضهم البعض
+    if sender.role == "employee":
         if receiver.role != "employee":
             return _error("يمكن مراسلة الموظفين فقط", status=400)
-    elif sender.role == "employee":
-        if receiver.role != "super_employee":
-            return _error("يمكن الرد على الموظف الرئيسي فقط", status=403)
     else:
         return _error("غير مصرح لك", status=403)
 
@@ -1188,7 +1186,7 @@ def get_supervisor_messages(request: HttpRequest) -> JsonResponse:
     employee_id = request.GET.get("employeeId")
     base_qs = EmployeeDirectMessage.objects.select_related("sender", "receiver")
 
-    if user.role == "super_employee":
+    if user.role == "employee":
         if employee_id:
             try:
                 target_id = int(employee_id)
@@ -1198,15 +1196,12 @@ def get_supervisor_messages(request: HttpRequest) -> JsonResponse:
                 (Q(sender_id=user_id, receiver_id=target_id))
                 | (Q(sender_id=target_id, receiver_id=user_id))
             )
-        # بدون employeeId نعيد جميع الرسائل مع أي موظف
+        # بدون employeeId نعيد جميع الرسائل مع أي موظف آخر
         else:
-            base_qs = base_qs.filter(Q(sender_id=user_id) | Q(receiver_id=user_id))
-    elif user.role == "employee":
-        # الموظف يرى محادثته مع الموظف الرئيسي فقط
-        base_qs = base_qs.filter(
-            (Q(sender_id=user_id, receiver__role="super_employee"))
-            | (Q(sender__role="super_employee", receiver_id=user_id))
-        )
+            base_qs = base_qs.filter(
+                (Q(sender_id=user_id, receiver__role="employee"))
+                | (Q(sender__role="employee", receiver_id=user_id))
+            )
     else:
         return _error("غير مصرح لك", status=403)
 
@@ -1492,8 +1487,8 @@ def create_employee(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if caller.role != "super_employee":
-        return _error("هذه العملية متاحة للموظف الرئيسي فقط", status=403)
+    if caller.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
 
     data = _parse_json(request)
     required = ["fullName", "username", "email", "password"]
@@ -1560,8 +1555,8 @@ def create_announcement(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role != "super_employee":
-        return _error("هذه العملية متاحة للموظف الرئيسي فقط", status=403)
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
 
     data = _parse_json(request)
     if not all(field in data for field in ["title", "content"]):
@@ -1602,8 +1597,8 @@ def update_announcement(request: HttpRequest, announcement_id: int) -> JsonRespo
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role != "super_employee":
-        return _error("هذه العملية متاحة للموظف الرئيسي فقط", status=403)
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
 
     try:
         announcement = Announcement.objects.get(pk=announcement_id)
@@ -1647,8 +1642,8 @@ def toggle_announcement(request: HttpRequest, announcement_id: int) -> JsonRespo
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role != "super_employee":
-        return _error("هذه العملية متاحة للموظف الرئيسي فقط", status=403)
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
 
     try:
         announcement = Announcement.objects.get(pk=announcement_id)

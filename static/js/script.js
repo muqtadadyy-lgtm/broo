@@ -212,7 +212,7 @@ window.addEventListener('DOMContentLoaded', () => {
             const user = JSON.parse(userStr);
             if (user && user.role === 'student') {
                 window.location.href = 'student-dashboard.html';
-            } else if (user && (user.role === 'employee' || user.role === 'super_employee')) {
+            } else if (user && user.role === 'employee') {
                 window.location.href = 'employee-dashboard.html';
             }
         } catch(e) {}
@@ -310,9 +310,6 @@ async function handleLogin(event) {
                 window.location.href = 'student-dashboard.html';
             } else if (role === 'employee') {
                 window.location.href = 'employee-dashboard.html';
-            } else if (role === 'super_employee') {
-                // للموظف الرئيسي، نضيف معلمة للمميزة في الـ URL
-                window.location.href = 'employee-dashboard.html?role=super_employee';
             }
         }, 1000);
     } else {
