@@ -40,7 +40,8 @@ CORS_ALLOW_CREDENTIALS = True
 INSTALLED_APPS = [
     # DISABLED: django.contrib.admin - causes Super User creation in post-migrate
     # DISABLED: django.contrib.auth - causes Super User creation in post-migrate
-    # DISABLED: django.contrib.contenttypes - causes post-migrate handlers
+    # ENABLED: django.contrib.contenttypes - required for AbstractBaseUser import
+    "django.contrib.contenttypes",
     # DISABLED: django.contrib.sessions - causes post-migrate handlers
     "django.contrib.messages",
     "django.contrib.staticfiles",
