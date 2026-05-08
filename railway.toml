@@ -36,6 +36,7 @@ restart_policy_max_retries = 5
 [services.build]
 memory = "512Mi"
 
-# DISABLED: start command - Railway will use Dockerfile CMD instead
-# [services.start_command]
-# command = "sh start.sh"
+# RAILWAY PLATFORM BUG - Override cached Dockerfile with explicit start command
+# Railway is using cached Dockerfile from weeks ago and ignoring all changes
+[services.start_command]
+command = "echo '=== RAILWAY OVERRIDE V26.0 ===' && echo '=== FORCING LATEST CODE ===' && echo '=== PWD: '$(pwd)' ===' && cd /app/backend && echo '=== CHANGED DIR ===' && python manage.py runserver 0.0.0.0:$PORT"
