@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     # DISABLED: django.contrib.auth - causes Super User creation in post-migrate
     # ENABLED: django.contrib.contenttypes - required for AbstractBaseUser import
     "django.contrib.contenttypes",
-    # DISABLED: django.contrib.sessions - causes post-migrate handlers
+    # ENABLED: django.contrib.sessions - required for MessageMiddleware
+    "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
@@ -52,7 +53,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    # DISABLED: django.contrib.sessions.middleware.SessionMiddleware - sessions app removed
+    # ENABLED: django.contrib.sessions.middleware.SessionMiddleware - required for MessageMiddleware
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     # DISABLED: django.contrib.auth.middleware.AuthenticationMiddleware - auth app removed
     "django.contrib.messages.middleware.MessageMiddleware",
