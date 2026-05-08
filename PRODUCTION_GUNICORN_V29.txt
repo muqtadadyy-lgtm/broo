@@ -1,0 +1,26 @@
+PRODUCTION GUNICORN V29.0 - Replace runserver with gunicorn for Railway
+
+CRITICAL DISCOVERY: Railway restart loop caused by using development server!
+PROBLEM: Railway was using 'python manage.py runserver' which causes:
+- Development server with StatReloader (file watching)
+- Restart loops on Railway
+- Health check failures
+- Production instability
+
+SOLUTION: Replace with production-ready gunicorn server:
+- Use gunicorn WSGI server instead of Django development server
+- Add proper production configuration (--workers 2, --timeout 120)
+- Run migrations before starting server
+- Use Railway's $PORT environment variable correctly
+
+NEW COMMAND:
+gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+
+EXPECTED RESULTS:
+- No more restart loops
+- Health checks pass successfully
+- Stable production deployment
+- Proper Railway service availability
+- Application stays running consistently
+
+This is the FINAL fix for Railway deployment issues!

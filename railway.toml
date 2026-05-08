@@ -36,7 +36,7 @@ restart_policy_max_retries = 5
 [services.build]
 memory = "512Mi"
 
-# RAILWAY PLATFORM BUG - Override cached Dockerfile with explicit start command
-# Railway is using cached Dockerfile from weeks ago and ignoring all changes
+# PRODUCTION READY - Use gunicorn instead of runserver for Railway deployment
+# Replace development server with production WSGI server
 [services.start_command]
-command = "echo '=== RAILWAY OVERRIDE V26.0 ===' && echo '=== FORCING LATEST CODE ===' && echo '=== PWD: '$(pwd)' ===' && cd /app/backend && echo '=== CHANGED DIR ===' && python manage.py runserver 0.0.0.0:$PORT"
+command = "echo '=== PRODUCTION DEPLOYMENT V29.0 ===' && echo '=== USING GUNICORN FOR PRODUCTION ===' && echo '=== PWD: '$(pwd)' ===' && cd /app/backend && echo '=== CHANGED DIR ===' && python manage.py migrate && echo '=== MIGRATIONS COMPLETED ===' && gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
