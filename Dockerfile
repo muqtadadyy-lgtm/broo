@@ -32,5 +32,5 @@ EXPOSE 8080
 
 # Railway will provide PORT environment variable dynamically
 
-# Railway will use this CMD if Start Command is not set - v12.0 FINAL
-CMD ["sh", "-c", "echo '=== RAILWAY PORT: '$PORT' ===' && python manage.py migrate --noinput && gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT"]
+# Railway will use this CMD if Start Command is not set - v23.0 DEBUG STARTUP
+CMD ["sh", "-c", "echo '=== DEBUG STARTUP V23.0 ===' && echo '=== RAILWAY PORT: '$PORT' ===' && echo '=== WORKING DIR: '$(pwd)' ===' && echo '=== DATABASE PATH CHECK ===' && ls -la /app/backend/db.sqlite3 2>/dev/null || echo 'DATABASE FILE NOT FOUND' && echo '=== DJANGO SETUP START ===' && python manage.py check --deploy && echo '=== DJANGO MIGRATIONS START ===' && python manage.py migrate --noinput && echo '=== GUNICORN START ===' && gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT --log-level debug"]

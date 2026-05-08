@@ -1,0 +1,14 @@
+DEBUG STARTUP V23.0 - Add comprehensive startup logging
+This file forces Railway to rebuild with detailed startup logging
+
+ISSUE: Service unavailable after successful build
+SOLUTION: Add comprehensive logging to identify startup failure
+
+Railway should now log:
+- PORT environment variable value
+- Database connection status
+- Django setup completion
+- Gunicorn startup status
+- Any errors during application startup
+
+This will help identify why the service is unavailable despite successful build.
