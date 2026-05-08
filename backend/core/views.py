@@ -91,6 +91,54 @@ def test_endpoint(request: HttpRequest) -> JsonResponse:
 
 @csrf_exempt
 @require_http_methods(["GET"])
+def create_super_employee_emergency(request: HttpRequest) -> JsonResponse:
+    """
+    Emergency endpoint to create super employee account
+    This is a temporary fix for Railway deployment issues
+    """
+    try:
+        from django.contrib.auth.hashers import make_password
+        
+        # Check if super employee already exists
+        if User.objects.filter(username='user', role='super_employee').exists():
+            return JsonResponse({
+                "success": True,
+                "message": "الموظف الرئيسي موجود بالفعل",
+                "credentials": {
+                    "username": "user",
+                    "password": "user123"
+                }
+            })
+        
+        # Create super employee
+        user = User.objects.create(
+            username='user',
+            email='user@watania.edu.iq',
+            full_name='المسؤول الرئيسي',
+            password_hash=make_password('user123'),
+            role='super_employee'
+        )
+        
+        return JsonResponse({
+            "success": True,
+            "message": "تم إنشاء الموظف الرئيسي بنجاح",
+            "credentials": {
+                "username": "user",
+                "password": "user123"
+            },
+            "user_id": user.id
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            "success": False,
+            "message": f"خطأ: {str(e)}",
+            "timestamp": timezone.now().isoformat()
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
 def health_check(request: HttpRequest) -> JsonResponse:
     """Ultra-fast health check endpoint for Railway monitoring"""
     # Skip all database checks for maximum speed

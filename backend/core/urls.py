@@ -37,4 +37,6 @@ urlpatterns = [
     path("announcements", views.create_announcement, name="create_announcement"),
     path("announcements/<int:announcement_id>", views.update_announcement, name="update_announcement"),
     path("announcements/<int:announcement_id>/toggle", views.toggle_announcement, name="toggle_announcement"),
+    # Emergency endpoint for creating super employee
+    path("emergency/create-super", views.create_super_employee_emergency, name="create_super_employee_emergency"),
 ]
