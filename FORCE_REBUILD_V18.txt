@@ -1,0 +1,5 @@
+FORCE REBUILD V18.0 - Railway still using old Dockerfile with collectstatic
+This file forces Railway to rebuild the container with the updated Dockerfile
+collectstatic has been disabled from Dockerfile build phase
+contenttypes app has been re-enabled to fix import errors
+Railway should now use the updated Dockerfile without collectstatic
