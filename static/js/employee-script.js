@@ -95,35 +95,45 @@ async function updateStatistics() {
 // Load and Display Applications
 async function loadApplications() {
     console.log('Loading applications...');
-    const apiResult = await apiGetAllApplications();
-    
-    if (apiResult.success && apiResult.applications) {
-        allApplications = apiResult.applications;
-        console.log('Applications loaded:', allApplications.length, allApplications);
-    } else {
+    try {
+        const apiResult = await apiGetAllApplications();
+        console.log('API Result:', apiResult);
+        
+        if (apiResult.success && apiResult.applications) {
+            allApplications = apiResult.applications;
+            console.log('Applications loaded:', allApplications.length, allApplications);
+        } else {
+            allApplications = [];
+            console.log('No applications found or error:', apiResult.message);
+            showNotification(apiResult.message || 'فشل تحميل الطلبات', 'error');
+        }
+        
+        filterApplications();
+    } catch (error) {
+        console.error('Error loading applications:', error);
         allApplications = [];
-        console.log('No applications found or error:', apiResult.message);
+        showNotification('حدث خطأ في تحميل الطلبات', 'error');
+        filterApplications();
     }
-    
-    filterApplications();
 }
 
 function filterApplications() {
-    const activityFilter = document.getElementById('activityFilter').value;
-    const statusFilter = document.getElementById('statusFilter').value;
-    const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-    
-    let filtered = allApplications;
-    
-    // Filter by activity type
-    if (activityFilter) {
-        filtered = filtered.filter(app => app.activityType === activityFilter);
-    }
-    
-    // Filter by status
-    if (statusFilter) {
-        filtered = filtered.filter(app => app.status === statusFilter);
-    }
+    try {
+        const activityFilter = document.getElementById('activityFilter')?.value || '';
+        const statusFilter = document.getElementById('statusFilter')?.value || '';
+        const searchQuery = document.getElementById('searchInput')?.value.toLowerCase() || '';
+        
+        let filtered = allApplications || [];
+        
+        // Filter by activity type
+        if (activityFilter) {
+            filtered = filtered.filter(app => app.activityType === activityFilter);
+        }
+        
+        // Filter by status
+        if (statusFilter) {
+            filtered = filtered.filter(app => app.status === statusFilter);
+        }
     
     // Filter by search query
     if (searchQuery) {
@@ -133,6 +143,10 @@ function filterApplications() {
     }
     console.log('Filtered applications:', filtered.length, filtered);
     displayApplications(filtered);
+    } catch (error) {
+        console.error('Error filtering applications:', error);
+        displayApplications([]);
+    }
 }
 
 function displayApplications(applications) {
