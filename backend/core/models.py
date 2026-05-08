@@ -1,7 +1,8 @@
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
-from django.contrib.auth.models import AbstractBaseUser
+# DISABLED: AbstractBaseUser import - requires django.contrib.auth app
+# from django.contrib.auth.models import AbstractBaseUser
 
 
 class User(models.Model):
