@@ -27,7 +27,13 @@ class User(models.Model):
             models.Index(fields=["role"]),  # Optimize role-based queries
             models.Index(fields=["created_at"]),  # Optimize date-based queries
         ]
-        constraints = []
+        constraints = [
+            models.UniqueConstraint(
+                fields=["role"],
+                condition=Q(role="super_employee"),
+                name="unique_super_employee",
+            )
+        ]
 
     def save(self, *args, **kwargs):
         self.updated_at = timezone.now()
