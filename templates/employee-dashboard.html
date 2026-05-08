@@ -378,6 +378,34 @@
     <!-- Notification -->
     <div class="notification" id="notification"></div>
 
+    <!-- Floating Action Button for Admin/Staff -->
+    <div class="fab-container" id="fabContainer">
+        <button class="fab-main" onclick="toggleFabMenu()" title="القائمة الرئيسية">
+            <i class="fas fa-plus"></i>
+        </button>
+        <div class="fab-menu" id="fabMenu">
+            <button class="fab-item" onclick="openVideoReelModal()" title="نشر مقطع قصير">
+                <i class="fas fa-video"></i>
+                <span>نشر مقطع قصير</span>
+            </button>
+            <button class="fab-item" onclick="openImageAnnouncementModal()" title="نشر صورة أو إعلان">
+                <i class="fas fa-image"></i>
+                <span>نشر صورة أو إعلان</span>
+            </button>
+            <button class="fab-item" onclick="openContestModal()" title="إنشاء مسابقة">
+                <i class="fas fa-trophy"></i>
+                <span>إنشاء مسابقة</span>
+            </button>
+            <button class="fab-item" onclick="openChatRoomModal()" title="فتح كروب دردشة">
+                <i class="fas fa-comments"></i>
+                <span>فتح كروب دردشة</span>
+            </button>
+            <button class="fab-item" onclick="openNotificationModal()" title="إرسال تنبيه">
+                <i class="fas fa-bell"></i>
+                <span>إرسال تنبيه</span>
+            </button>
+        </div>
+    </div>
 
     <script src="translations.js"></script>
     <script src="messaging-system.js"></script>

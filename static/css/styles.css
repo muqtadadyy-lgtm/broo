@@ -556,6 +556,46 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
     .dashboard-header, .dashboard-content {width: 100%; box-sizing: border-box;}
 }
 
+/* Floating Action Button (FAB) Styles */
+.fab-container {position: fixed; bottom: 30px; left: 30px; z-index: 1000; direction: ltr;}
+.fab-main {width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-color), var(--primary-color)); border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(74, 158, 255, 0.4); transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;}
+.fab-main:hover {transform: scale(1.1); box-shadow: 0 6px 30px rgba(74, 158, 255, 0.6);}
+.fab-main.active {transform: rotate(45deg); background: linear-gradient(135deg, var(--error-color), #dc2626);}
+
+.fab-menu {position: absolute; bottom: 80px; left: 0; display: flex; flex-direction: column; gap: 15px; opacity: 0; visibility: hidden; transform: translateY(20px); transition: all 0.3s ease;}
+.fab-menu.active {opacity: 1; visibility: visible; transform: translateY(0);}
+
+.fab-item {display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: var(--card-bg); border: 2px solid var(--border-color); border-radius: 25px; color: var(--text-primary); font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; white-space: nowrap; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); min-width: 200px;}
+.fab-item:hover {transform: translateX(-5px); border-color: var(--accent-color); background: var(--primary-light); box-shadow: 0 4px 20px rgba(74, 158, 255, 0.3);}
+.fab-item i {font-size: 16px; color: var(--accent-color); width: 20px; text-align: center;}
+.fab-item span {flex: 1; text-align: right;}
+
+/* FAB Animation */
+@keyframes fabIn {from {opacity: 0; transform: translateY(20px) scale(0.8);} to {opacity: 1; transform: translateY(0) scale(1);}}
+.fab-menu.active .fab-item {animation: fabIn 0.3s ease backwards;}
+.fab-menu.active .fab-item:nth-child(1) {animation-delay: 0.1s;}
+.fab-menu.active .fab-item:nth-child(2) {animation-delay: 0.2s;}
+.fab-menu.active .fab-item:nth-child(3) {animation-delay: 0.3s;}
+.fab-menu.active .fab-item:nth-child(4) {animation-delay: 0.4s;}
+.fab-menu.active .fab-item:nth-child(5) {animation-delay: 0.5s;}
+
+/* Mobile FAB Styles */
+@media (max-width: 768px) {
+    .fab-container {bottom: 20px; left: 20px;}
+    .fab-main {width: 50px; height: 50px; font-size: 20px;}
+    .fab-menu {bottom: 70px; gap: 10px;}
+    .fab-item {padding: 10px 15px; font-size: 13px; min-width: 180px;}
+    .fab-item i {font-size: 14px; width: 18px;}
+}
+
+@media (max-width: 480px) {
+    .fab-container {bottom: 15px; left: 15px;}
+    .fab-main {width: 45px; height: 45px; font-size: 18px;}
+    .fab-menu {bottom: 65px; gap: 8px; left: -10px;}
+    .fab-item {padding: 8px 12px; font-size: 12px; min-width: 160px; flex-direction: column; align-items: center; text-align: center; gap: 5px;}
+    .fab-item span {text-align: center;}
+}
+
 
 @media (min-width:1024px) {
     .auth-card {max-width:600px}

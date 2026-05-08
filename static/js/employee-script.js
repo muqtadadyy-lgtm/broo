@@ -893,3 +893,54 @@ async function sendSupervisorMessage() {
         showNotification(res.message || 'تعذر إرسال الرسالة', 'error');
     }
 }
+
+// FAB Menu Functions
+function toggleFabMenu() {
+    const fabMenu = document.getElementById('fabMenu');
+    const fabMain = document.querySelector('.fab-main');
+    
+    if (fabMenu.classList.contains('active')) {
+        fabMenu.classList.remove('active');
+        fabMain.classList.remove('active');
+    } else {
+        fabMenu.classList.add('active');
+        fabMain.classList.add('active');
+    }
+}
+
+// Close FAB menu when clicking outside
+document.addEventListener('click', function(event) {
+    const fabContainer = document.getElementById('fabContainer');
+    if (!fabContainer.contains(event.target)) {
+        const fabMenu = document.getElementById('fabMenu');
+        const fabMain = document.querySelector('.fab-main');
+        fabMenu.classList.remove('active');
+        fabMain.classList.remove('active');
+    }
+});
+
+// FAB Modal Functions
+function openVideoReelModal() {
+    showNotification('نشر الفيديوهات القصيرة قيد التطوير', 'info');
+    toggleFabMenu();
+}
+
+function openImageAnnouncementModal() {
+    showNotification('نشر الصور والإعلانات قيد التطوير', 'info');
+    toggleFabMenu();
+}
+
+function openContestModal() {
+    showNotification('إنشاء المسابقات قيد التطوير', 'info');
+    toggleFabMenu();
+}
+
+function openChatRoomModal() {
+    showNotification('غرف الدردشة قيد التطوير', 'info');
+    toggleFabMenu();
+}
+
+function openNotificationModal() {
+    showNotification('إرسال الإشعارات قيد التطوير', 'info');
+    toggleFabMenu();
+}
