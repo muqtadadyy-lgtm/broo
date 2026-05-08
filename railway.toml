@@ -36,5 +36,6 @@ restart_policy_max_retries = 5
 [services.build]
 memory = "512Mi"
 
-[services.start_command]
-command = "sh start.sh"
+# DISABLED: start command - Railway will use Dockerfile CMD instead
+# [services.start_command]
+# command = "sh start.sh"
