@@ -1,0 +1,15 @@
+FINAL FORCE REBUILD V21.0 - Railway using extremely old code
+This file forces Railway to rebuild with the LATEST code
+Railway is still running:
+- collectstatic (should be disabled)
+- emergency database initialization (should be disabled)
+- missing contenttypes app (should be enabled)
+
+Latest code should have:
+- collectstatic DISABLED
+- emergency initialization DISABLED  
+- contenttypes app ENABLED
+- AbstractBaseUser import DISABLED
+- All Super User creation DISABLED
+
+This is the FINAL force rebuild marker - Railway must use latest code!
