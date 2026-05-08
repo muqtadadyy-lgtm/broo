@@ -311,7 +311,8 @@ async function handleLogin(event) {
             } else if (role === 'employee') {
                 window.location.href = 'employee-dashboard.html';
             } else if (role === 'super_employee') {
-                window.location.href = 'employee-dashboard.html';
+                // للموظف الرئيسي، نضيف معلمة للمميزة في الـ URL
+                window.location.href = 'employee-dashboard.html?role=super_employee';
             }
         }, 1000);
     } else {
