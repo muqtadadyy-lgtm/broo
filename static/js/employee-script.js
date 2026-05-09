@@ -1641,6 +1641,91 @@ function assignRole(memberId) {
     }
 }
 
+function checkUsernameAvailability(event) {
+    const username = document.getElementById('usernameInput').value.trim();
+    const statusDiv = document.getElementById('usernameStatus');
+    
+    if (username.length < 3) {
+        statusDiv.innerHTML = '<span class="status-error">اسم المستخدم يجب أن يكون 3 أحرف على الأقل</span>';
+        return;
+    }
+    
+    if (username.length > 20) {
+        statusDiv.innerHTML = '<span class="status-error">اسم المستخدم يجب أن يكون 20 حرف كحد أقصى</span>';
+        return;
+    }
+    
+    // Check if username is already added to the room
+    if (chatRoomMembers.some(member => member.username === username)) {
+        statusDiv.innerHTML = '<span class="status-error">هذا المستخدم موجود بالفعل في الكروب</span>';
+        return;
+    }
+    
+    // Check if username exists in available users
+    const userExists = allAvailableMembers.some(member => 
+        member.username === username || member.name.toLowerCase().includes(username.toLowerCase())
+    );
+    
+    if (userExists) {
+        statusDiv.innerHTML = '<span class="status-success">المستخدم متاح للإضافة</span>';
+    } else {
+        statusDiv.innerHTML = '<span class="status-warning">المستخدم غير موجود في النظام</span>';
+    }
+    
+    // Allow adding with Enter key
+    if (event.key === 'Enter') {
+        addMemberByUsername();
+    }
+}
+
+function addMemberByUsername() {
+    const username = document.getElementById('usernameInput').value.trim();
+    const statusDiv = document.getElementById('usernameStatus');
+    
+    if (!username) {
+        statusDiv.innerHTML = '<span class="status-error">الرجاء إدخال اسم المستخدم</span>';
+        return;
+    }
+    
+    if (username.length < 3) {
+        statusDiv.innerHTML = '<span class="status-error">اسم المستخدم يجب أن يكون 3 أحرف على الأقل</span>';
+        return;
+    }
+    
+    // Check if already added
+    if (chatRoomMembers.some(member => member.username === username)) {
+        showNotification('هذا المستخدم موجود بالفعل في الكروب', 'error');
+        return;
+    }
+    
+    // Find user in available members
+    let userToAdd = allAvailableMembers.find(member => 
+        member.username === username || member.name.toLowerCase().includes(username.toLowerCase())
+    );
+    
+    // If not found, create a new user entry
+    if (!userToAdd) {
+        userToAdd = {
+            id: Date.now(), // Temporary ID
+            username: username,
+            name: username, // Use username as name if not found
+            email: `${username}@university.edu`, // Generate email
+            role: 'student', // Default role
+            status: 'active'
+        };
+    }
+    
+    // Add to chat room members
+    chatRoomMembers.push(userToAdd);
+    updateMemberList();
+    
+    // Clear input and status
+    document.getElementById('usernameInput').value = '';
+    statusDiv.innerHTML = '';
+    
+    showNotification(`تم إضافة ${userToAdd.name} إلى الكروب بنجاح`, 'success');
+}
+
 // Video Reels Modal Functions
 function openVideoReelModal() {
     document.getElementById('videoReelModal').style.display = 'flex';
