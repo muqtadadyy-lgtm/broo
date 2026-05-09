@@ -1805,6 +1805,252 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Real-time Chat Interface Functions
+let chatMessages = [];
+let onlineMembers = [];
+let typingMembers = [];
+let currentChatRoom = null;
+
+function openChatInterfaceModal() {
+    document.getElementById('chatInterfaceModal').style.display = 'flex';
+    initializeChatRoom();
+    toggleFabMenu();
+}
+
+function closeChatInterfaceModal() {
+    document.getElementById('chatInterfaceModal').style.display = 'none';
+}
+
+function initializeChatRoom() {
+    // Simulate chat room initialization
+    currentChatRoom = {
+        id: 1,
+        name: 'كروب العام',
+        members: chatRoomMembers,
+        createdAt: new Date().toISOString()
+    };
+    
+    // Initialize member status
+    onlineMembers = chatRoomMembers.map(member => ({
+        ...member,
+        status: 'online',
+        lastSeen: new Date().toISOString(),
+        isTyping: false
+    }));
+    
+    updateMemberStatusList();
+    updateRoomInfo();
+    
+    // Add welcome message
+    addSystemMessage('مرحباً بك في كروب الدردشة! يمكنك البدء في المحادثة.');
+}
+
+function updateMemberStatusList() {
+    const memberStatusList = document.getElementById('memberStatusList');
+    
+    if (onlineMembers.length === 0) {
+        memberStatusList.innerHTML = '<p class="no-members">لا يوجد أعضاء حالياً</p>';
+        return;
+    }
+    
+    memberStatusList.innerHTML = onlineMembers.map(member => `
+        <div class="member-status-item">
+            <div class="member-avatar">
+                <i class="fas fa-user-circle"></i>
+                <span class="status-indicator ${member.status}"></span>
+            </div>
+            <div class="member-info">
+                <div class="member-name">${member.name}</div>
+                <div class="member-role">${member.role === 'admin' ? 'مدير' : member.role === 'moderator' ? 'مشرف' : 'عضو'}</div>
+                <div class="member-status-text">${member.status === 'online' ? 'متصل' : 'غير متصل'}</div>
+            </div>
+            <div class="member-actions">
+                ${member.isTyping ? '<i class="fas fa-keyboard typing-indicator"></i>' : ''}
+                <button class="member-action-btn" onclick="sendPrivateMessage(${member.id})" title="رسالة خاصة">
+                    <i class="fas fa-envelope"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateRoomInfo() {
+    document.getElementById('currentRoomName').textContent = currentChatRoom?.name || 'كروب العام';
+    document.getElementById('currentRoomMembersCount').textContent = chatRoomMembers.length;
+    document.getElementById('onlineMembersCount').textContent = onlineMembers.filter(m => m.status === 'online').length;
+}
+
+function sendMessage() {
+    const messageInput = document.getElementById('messageInput');
+    const message = messageInput.value.trim();
+    
+    if (!message) return;
+    
+    // Add message to chat
+    const newMessage = {
+        id: Date.now(),
+        sender: currentUser,
+        content: message,
+        timestamp: new Date().toISOString(),
+        type: 'user'
+    };
+    
+    chatMessages.push(newMessage);
+    displayMessage(newMessage);
+    
+    // Clear input
+    messageInput.value = '';
+    
+    // Simulate sending to other members
+    simulateMessageDelivery(newMessage);
+    
+    // Update typing status
+    stopTyping();
+}
+
+function displayMessage(message) {
+    const chatMessagesDiv = document.getElementById('chatMessages');
+    
+    const messageElement = document.createElement('div');
+    messageElement.className = `message ${message.type}`;
+    
+    if (message.type === 'system') {
+        messageElement.innerHTML = `
+            <div class="system-message">
+                <i class="fas fa-info-circle"></i>
+                <span>${message.content}</span>
+                <div class="message-time">${new Date(message.timestamp).toLocaleTimeString('ar-SA')}</div>
+            </div>
+        `;
+    } else {
+        messageElement.innerHTML = `
+            <div class="user-message">
+                <div class="message-header">
+                    <div class="sender-info">
+                        <img src="${message.sender.avatar || '/static/images/default-avatar.png'}" alt="${message.sender.name}" class="sender-avatar">
+                        <span class="sender-name">${message.sender.name}</span>
+                        <span class="sender-role">${message.sender.role === 'admin' ? 'مدير' : 'عضو'}</span>
+                    </div>
+                    <div class="message-time">${new Date(message.timestamp).toLocaleTimeString('ar-SA')}</div>
+                </div>
+                <div class="message-content">${message.content}</div>
+            </div>
+        `;
+    }
+    
+    chatMessagesDiv.appendChild(messageElement);
+    chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+}
+
+function addSystemMessage(content) {
+    const systemMessage = {
+        id: Date.now(),
+        content: content,
+        timestamp: new Date().toISOString(),
+        type: 'system'
+    };
+    
+    chatMessages.push(systemMessage);
+    displayMessage(systemMessage);
+}
+
+function simulateMessageDelivery(message) {
+    // Simulate other members receiving the message
+    onlineMembers.forEach(member => {
+        if (member.id !== message.sender.id) {
+            // In real app, this would send via WebSocket
+            console.log(`Message delivered to ${member.name}:`, message);
+        }
+    });
+}
+
+function handleMessageKeyPress(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+    }
+}
+
+function handleMessageInput() {
+    const messageInput = document.getElementById('messageInput');
+    
+    if (messageInput.value.trim()) {
+        startTyping();
+    } else {
+        stopTyping();
+    }
+}
+
+function startTyping() {
+    if (!currentUser.isTyping) {
+        currentUser.isTyping = true;
+        // In real app, send typing indicator via WebSocket
+        broadcastTypingStatus(true);
+    }
+}
+
+function stopTyping() {
+    if (currentUser.isTyping) {
+        currentUser.isTyping = false;
+        // In real app, send stop typing via WebSocket
+        broadcastTypingStatus(false);
+    }
+}
+
+function broadcastTypingStatus(isTyping) {
+    // Simulate broadcasting typing status
+    const typingIndicator = document.getElementById('typingIndicator');
+    
+    if (isTyping) {
+        // Show typing indicator to others
+        console.log(`${currentUser.name} is typing...`);
+    } else {
+        // Hide typing indicator
+        console.log(`${currentUser.name} stopped typing`);
+    }
+}
+
+function sendPrivateMessage(memberId) {
+    const member = onlineMembers.find(m => m.id === memberId);
+    if (member) {
+        showNotification(`فتح نافذة الرسالة الخاصة لـ ${member.name}`, 'info');
+        // In real app, open private message modal
+    }
+}
+
+function addEmoji() {
+    const messageInput = document.getElementById('messageInput');
+    const emojis = ['😀', '😂', '❤️', '👍', '🎉', '🤔', '😎', '🔥', '💯'];
+    const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+    messageInput.value += randomEmoji;
+    messageInput.focus();
+}
+
+function attachFile() {
+    showNotification('فتح نافذة اختيار الملف', 'info');
+    // In real app, open file picker
+}
+
+function formatText() {
+    showNotification('فتح خيارات التنسيق', 'info');
+    // In real app, show formatting options
+}
+
+function simulateMemberActivity() {
+    // Simulate random member activities
+    if (Math.random() > 0.7 && onlineMembers.length > 0) {
+        const randomMember = onlineMembers[Math.floor(Math.random() * onlineMembers.length)];
+        const activities = [
+            'دخل الكروب',
+            'غادر الكروب',
+            'غير حالته إلى متصل',
+            'غير حالته إلى غير متصل'
+        ];
+        const activity = activities[Math.floor(Math.random() * activities.length)];
+        addSystemMessage(`${randomMember.name} ${activity}`);
+    }
+}
+
 function closeNotificationModal() {
     document.getElementById('notificationModal').style.display = 'none';
 }
