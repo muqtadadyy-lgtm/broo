@@ -2068,7 +2068,7 @@ function closeUserManagementModal() {
 }
 
 function loadAllUsers() {
-    // Simulate loading all users from database
+    // Start with base users
     allUsers = [
         {
             id: 1,
@@ -2156,6 +2156,11 @@ function loadAllUsers() {
             });
         }
     });
+    
+    // Also sync with any users created through the create new user function
+    // This ensures all created accounts are visible
+    console.log('Loading all users. Total count:', allUsers.length);
+    console.log('All users:', allUsers);
     
     filteredUsers = [...allUsers];
     currentPage = 1;
@@ -3034,8 +3039,9 @@ function checkUsernameAvailability(event) {
 }
 
 function checkUserExistsInSystem(username) {
-    // Simulate database check for user existence
-    const mockUsers = [
+    // Combine all available users from different sources
+    const allSystemUsers = [
+        // Mock users from initial setup
         {
             id: 1,
             username: 'ahmed_student',
@@ -3074,11 +3080,58 @@ function checkUserExistsInSystem(username) {
         }
     ];
     
-    const user = mockUsers.find(u => 
-        u.username === username || 
-        u.name.toLowerCase().includes(username.toLowerCase()) ||
-        username.toLowerCase().includes(u.username.toLowerCase())
-    );
+    // Add users from allAvailableMembers (created during chat room management)
+    allAvailableMembers.forEach(member => {
+        if (!allSystemUsers.find(u => u.id === member.id)) {
+            allSystemUsers.push({
+                ...member,
+                status: member.status || 'active'
+            });
+        }
+    });
+    
+    // Add users from allUsers (created through user management)
+    allUsers.forEach(user => {
+        if (!allSystemUsers.find(u => u.id === user.id)) {
+            allSystemUsers.push({
+                ...user,
+                status: user.status || 'active'
+            });
+        }
+    });
+    
+    // Enhanced search with multiple matching strategies
+    const user = allSystemUsers.find(u => {
+        const usernameLower = username.toLowerCase();
+        const storedUsernameLower = u.username.toLowerCase();
+        const storedNameLower = u.name.toLowerCase();
+        
+        // Exact username match
+        if (storedUsernameLower === usernameLower) {
+            return true;
+        }
+        
+        // Partial username match
+        if (storedUsernameLower.includes(usernameLower) || usernameLower.includes(storedUsernameLower)) {
+            return true;
+        }
+        
+        // Name match
+        if (storedNameLower.includes(usernameLower) || usernameLower.includes(storedNameLower)) {
+            return true;
+        }
+        
+        // Email match
+        if (u.email && u.email.toLowerCase().includes(usernameLower)) {
+            return true;
+        }
+        
+        return false;
+    });
+    
+    console.log('Searching for user:', username);
+    console.log('Available users:', allSystemUsers);
+    console.log('Found user:', user);
     
     return {
         exists: !!user,
