@@ -597,6 +597,37 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
 }
 
 
+/* Video Reels Modal Styles */
+.video-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.video-preview {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.video-preview h3 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 14px;
+}
+
+.file-info {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 5px;
+    background: #f8f9fa;
+    padding: 5px 8px;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
 @media (min-width:1024px) {
     .auth-card {max-width:600px}
     .language-menu {width:320px}

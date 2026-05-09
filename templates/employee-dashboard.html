@@ -411,6 +411,65 @@
         </div>
     </div>
 
+    <!-- Video Reels Modal -->
+    <div class="modal" id="videoReelModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-video"></i> نشر فيديو قصير</h2>
+                <button class="close-btn" onclick="closeVideoReelModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="video-form">
+                <div class="form-group">
+                    <label for="videoTitle">عنوان الفيديو:</label>
+                    <input type="text" id="videoTitle" placeholder="أدخل عنوان الفيديو..." required>
+                </div>
+                <div class="form-group">
+                    <label for="videoDescription">وصف الفيديو:</label>
+                    <textarea id="videoDescription" rows="4" placeholder="أدخل وصف الفيديو..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="videoFile">اختر الفيديو:</label>
+                    <input type="file" id="videoFile" accept="video/*" required onchange="handleVideoFileSelect(event)">
+                    <div class="file-info" id="videoFileInfo">لم يتم اختيار ملف بعد</div>
+                </div>
+                <div class="form-group">
+                    <label for="videoThumbnail">صورة مصغرة (اختياري):</label>
+                    <input type="file" id="videoThumbnail" accept="image/*" onchange="handleThumbnailSelect(event)">
+                    <div class="file-info" id="thumbnailFileInfo">لم يتم اختيار صورة بعد</div>
+                </div>
+                <div class="form-group">
+                    <label for="videoCategory">الفئة:</label>
+                    <select id="videoCategory">
+                        <option value="general">عام</option>
+                        <option value="educational">تعليمي</option>
+                        <option value="entertainment">ترفيهي</option>
+                        <option value="sports">رياضي</option>
+                        <option value="news">أخبار</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="videoTags">الوسوم (فصل بينها بفاصلة):</label>
+                    <input type="text" id="videoTags" placeholder="مثال: تعليمي, جامعة, طلاب">
+                </div>
+                <div class="video-preview" id="videoPreview" style="display: none;">
+                    <h3>معاينة الفيديو:</h3>
+                    <video id="previewVideo" controls style="width: 100%; max-height: 300px;"></video>
+                    <img id="previewThumbnail" style="width: 100px; height: 100px; object-fit: cover; margin-top: 10px;">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeVideoReelModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="submitVideoReel()">
+                        <i class="fas fa-upload"></i> نشر الفيديو
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Announcement Modal -->
     <div class="modal" id="announcementModal">
         <div class="modal-content">

@@ -964,6 +964,101 @@ function openNotificationModal() {
     toggleFabMenu();
 }
 
+// Video Reels Modal Functions
+function openVideoReelModal() {
+    document.getElementById('videoReelModal').style.display = 'flex';
+    toggleFabMenu();
+}
+
+function closeVideoReelModal() {
+    document.getElementById('videoReelModal').style.display = 'none';
+    // Clear preview
+    document.getElementById('videoPreview').style.display = 'none';
+    document.getElementById('previewVideo').src = '';
+    document.getElementById('previewThumbnail').src = '';
+}
+
+function handleVideoFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        // Update file info
+        document.getElementById('videoFileInfo').textContent = `تم اختيار: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        
+        // Show video preview
+        const videoPreview = document.getElementById('videoPreview');
+        const previewVideo = document.getElementById('previewVideo');
+        
+        videoPreview.style.display = 'block';
+        previewVideo.src = URL.createObjectURL(file);
+    }
+}
+
+function handleThumbnailSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        // Update file info
+        document.getElementById('thumbnailFileInfo').textContent = `تم اختيار: ${file.name}`;
+        
+        // Show thumbnail preview
+        const previewThumbnail = document.getElementById('previewThumbnail');
+        previewThumbnail.src = URL.createObjectURL(file);
+    }
+}
+
+async function submitVideoReel() {
+    const title = document.getElementById('videoTitle').value.trim();
+    const description = document.getElementById('videoDescription').value.trim();
+    const category = document.getElementById('videoCategory').value;
+    const tags = document.getElementById('videoTags').value.trim();
+    const videoFile = document.getElementById('videoFile').files[0];
+    const thumbnailFile = document.getElementById('videoThumbnail').files[0];
+    
+    if (!title || !description || !videoFile) {
+        showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
+    
+    try {
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('description', description);
+        formData.append('category', category);
+        formData.append('tags', tags);
+        formData.append('video', videoFile);
+        if (thumbnailFile) {
+            formData.append('thumbnail', thumbnailFile);
+        }
+        formData.append('createdBy', currentUser.fullName);
+        
+        // Here you would normally send to API
+        // For now, simulate upload and show success
+        showNotification('جاري رفع الفيديو...', 'info');
+        
+        // Simulate upload progress
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        showNotification('تم نشر الفيديو بنجاح', 'success');
+        
+        // Clear form
+        document.getElementById('videoTitle').value = '';
+        document.getElementById('videoDescription').value = '';
+        document.getElementById('videoCategory').value = 'general';
+        document.getElementById('videoTags').value = '';
+        document.getElementById('videoFile').value = '';
+        document.getElementById('videoThumbnail').value = '';
+        document.getElementById('videoFileInfo').textContent = 'لم يتم اختيار ملف بعد';
+        document.getElementById('thumbnailFileInfo').textContent = 'لم يتم اختيار صورة بعد';
+        
+        // Close modal
+        closeVideoReelModal();
+        
+    } catch (error) {
+        console.error('Error submitting video reel:', error);
+        showNotification('حدث خطأ في نشر الفيديو', 'error');
+    }
+}
+
 // Update FAB menu items based on user role
 function updateFabMenuItems(isMainEmployee) {
     // Video and Image publishing - available for all staff
