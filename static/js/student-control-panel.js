@@ -33,35 +33,23 @@ function closeStudentAnnouncements() {
 }
 
 function loadStudentAnnouncements() {
-    // Mock data for announcements
-    studentAnnouncements = [
-        {
-            id: 1,
-            title: 'إعلان هام: بدء التسجيل للمسابقات',
-            content: 'تم فتح باب التسجيل للمسابقات الجديدة. التسجيل متاح حتى نهاية الشهر.',
-            type: 'urgent',
-            date: new Date().toISOString(),
-            author: 'إدارة النشاط الطلابي'
-        },
-        {
-            id: 2,
-            title: 'فعالية ثقافية يوم الخميس',
-            content: 'تنظم الجامعة فعالية ثقافية يوم الخميس القادم في الساعة 7 مساء.',
-            type: 'events',
-            date: new Date().toISOString(),
-            author: 'قسم الأنشطة الثقافية'
-        },
-        {
-            id: 3,
-            title: 'نتائج امتحانات منتصف الفصل',
-            content: 'تم الإعلان عن نتائج امتحانات منتصف الفصل الدراسي.',
-            type: 'academic',
-            date: new Date().toISOString(),
-            author: 'عمادة شؤون الطلاب'
-        }
-    ];
+    // Get only admin-created announcements from the main system
+    studentAnnouncements = [];
     
-    displayStudentAnnouncements();
+    // Check if there are any admin announcements in the main system
+    if (typeof adminAnnouncements !== 'undefined' && adminAnnouncements.length > 0) {
+        studentAnnouncements = adminAnnouncements.filter(announcement => 
+            announcement.createdBy === 'admin' || 
+            announcement.official === true
+        );
+    }
+    
+    // If no admin announcements exist, show empty state
+    if (studentAnnouncements.length === 0) {
+        showEmptyAnnouncementsState();
+    } else {
+        displayStudentAnnouncements();
+    }
 }
 
 function displayStudentAnnouncements() {
@@ -98,6 +86,22 @@ function getTypeText(type) {
         'general': 'عام'
     };
     return types[type] || type;
+}
+
+function showEmptyAnnouncementsState() {
+    const container = document.getElementById('studentAnnouncementsList');
+    container.innerHTML = `
+        <div class="empty-announcements">
+            <div class="empty-icon">
+                <i class="fas fa-bullhorn"></i>
+            </div>
+            <h3>لا توجد إعلانات رسمية</h3>
+            <p>لم يقم المدير بنشر أي إعلانات بعد. سيتم عرض الإعلانات الرسمية هنا عند نشرها.</p>
+            <div class="empty-info">
+                <p><i class="fas fa-info-circle"></i> سيتم عرض الإعلانات التي ينشرها المدير فقط</p>
+            </div>
+        </div>
+    `;
 }
 
 // Users Functions
@@ -464,35 +468,23 @@ function closeStudentNotifications() {
 }
 
 function loadStudentNotifications() {
-    // Mock data for notifications
-    studentNotifications = [
-        {
-            id: 1,
-            title: 'رسالة جديدة من الأستاذ خالد',
-            content: 'يرجى مراجعة الواجب المطلوب',
-            type: 'message',
-            read: false,
-            timestamp: new Date().toISOString()
-        },
-        {
-            id: 2,
-            title: 'تذكير: فعالية غداً',
-            content: 'لا تنسى الفعالية الثقافية غداً الساعة 7 مساء',
-            type: 'reminder',
-            read: false,
-            timestamp: new Date().toISOString()
-        },
-        {
-            id: 3,
-            title: 'تم قبول طلبك',
-            content: 'تم قبول طلبك للمشاركة في مسابقة البرمجة',
-            type: 'success',
-            read: true,
-            timestamp: new Date().toISOString()
-        }
-    ];
+    // Get only real notifications from the main system
+    studentNotifications = [];
     
-    displayStudentNotifications();
+    // Check if there are any real notifications in the main system
+    if (typeof userNotifications !== 'undefined' && userNotifications.length > 0) {
+        studentNotifications = userNotifications.filter(notification => 
+            notification.targetUser === 'student' || 
+            notification.targetUser === 'all'
+        );
+    }
+    
+    // If no real notifications exist, show empty state
+    if (studentNotifications.length === 0) {
+        showEmptyNotificationsState();
+    } else {
+        displayStudentNotifications();
+    }
     updateControlPanelCounts();
 }
 
@@ -553,6 +545,22 @@ function markAllNotificationsAsRead() {
     showNotification('تم تعيين جميع الإشعارات كمقروءة', 'success');
 }
 
+function showEmptyNotificationsState() {
+    const container = document.getElementById('studentNotificationsList');
+    container.innerHTML = `
+        <div class="empty-notifications">
+            <div class="empty-icon">
+                <i class="fas fa-bell"></i>
+            </div>
+            <h3>لا توجد إشعارات</h3>
+            <p>ليس لديك أي إشعارات حالياً. ستظهر الإشعارات الجديدة هنا عند استلامها.</p>
+            <div class="empty-info">
+                <p><i class="fas fa-info-circle"></i> ستتلقى إشعارات عند وجود تحديثات مهمة</p>
+            </div>
+        </div>
+    `;
+}
+
 // Images Functions
 function openStudentImages() {
     document.getElementById('studentImagesModal').style.display = 'flex';
@@ -564,32 +572,23 @@ function closeStudentImages() {
 }
 
 function loadStudentImages() {
-    // Mock data for images
-    studentImages = [
-        {
-            id: 1,
-            title: 'فعالية اليوم العالمي للطالب',
-            url: '/static/images/event1.jpg',
-            type: 'events',
-            date: new Date().toISOString()
-        },
-        {
-            id: 2,
-            title: 'مسابقة البرمجة',
-            url: '/static/images/contest1.jpg',
-            type: 'activities',
-            date: new Date().toISOString()
-        },
-        {
-            id: 3,
-            title: 'حفل تخرج الدفعة الجديدة',
-            url: '/static/images/graduation1.jpg',
-            type: 'achievements',
-            date: new Date().toISOString()
-        }
-    ];
+    // Get only real images from the main system
+    studentImages = [];
     
-    displayStudentImages();
+    // Check if there are any real images in the main system
+    if (typeof adminImages !== 'undefined' && adminImages.length > 0) {
+        studentImages = adminImages.filter(image => 
+            image.createdBy === 'admin' || 
+            image.official === true
+        );
+    }
+    
+    // If no real images exist, show empty state
+    if (studentImages.length === 0) {
+        showEmptyImagesState();
+    } else {
+        displayStudentImages();
+    }
 }
 
 function displayStudentImages() {
@@ -622,6 +621,22 @@ function viewImage(imageId) {
     }
 }
 
+function showEmptyImagesState() {
+    const container = document.getElementById('studentImagesGallery');
+    container.innerHTML = `
+        <div class="empty-images">
+            <div class="empty-icon">
+                <i class="fas fa-images"></i>
+            </div>
+            <h3>لا توجد صور</h3>
+            <p>لم يقم المدير برفع أي صور بعد. سيتم عرض الصور الرسمية هنا عند رفعها.</p>
+            <div class="empty-info">
+                <p><i class="fas fa-info-circle"></i> سيتم عرض الصور التي يرفعها المدير فقط</p>
+            </div>
+        </div>
+    `;
+}
+
 // Videos Functions
 function openStudentVideos() {
     document.getElementById('studentVideosModal').style.display = 'flex';
@@ -633,38 +648,23 @@ function closeStudentVideos() {
 }
 
 function loadStudentVideos() {
-    // Mock data for videos
-    studentVideos = [
-        {
-            id: 1,
-            title: 'محاضرة عن الذكاء الاصطناعي',
-            url: '/static/videos/ai-lecture.mp4',
-            thumbnail: '/static/images/ai-thumb.jpg',
-            type: 'lectures',
-            duration: '45:30',
-            date: new Date().toISOString()
-        },
-        {
-            id: 2,
-            title: 'فعالية الرياضة الجامعية',
-            url: '/static/videos/sports-event.mp4',
-            thumbnail: '/static/images/sports-thumb.jpg',
-            type: 'events',
-            duration: '12:15',
-            date: new Date().toISOString()
-        },
-        {
-            id: 3,
-            title: 'دورة البرمجة للمبتدئين',
-            url: '/static/videos/programming-tutorial.mp4',
-            thumbnail: '/static/images/programming-thumb.jpg',
-            type: 'tutorials',
-            duration: '30:00',
-            date: new Date().toISOString()
-        }
-    ];
+    // Get only real videos from the main system
+    studentVideos = [];
     
-    displayStudentVideos();
+    // Check if there are any real videos in the main system
+    if (typeof adminVideos !== 'undefined' && adminVideos.length > 0) {
+        studentVideos = adminVideos.filter(video => 
+            video.createdBy === 'admin' || 
+            video.official === true
+        );
+    }
+    
+    // If no real videos exist, show empty state
+    if (studentVideos.length === 0) {
+        showEmptyVideosState();
+    } else {
+        displayStudentVideos();
+    }
 }
 
 function displayStudentVideos() {
@@ -700,6 +700,22 @@ function playVideo(videoId) {
     }
 }
 
+function showEmptyVideosState() {
+    const container = document.getElementById('studentVideosGallery');
+    container.innerHTML = `
+        <div class="empty-videos">
+            <div class="empty-icon">
+                <i class="fas fa-video"></i>
+            </div>
+            <h3>لا توجد فيديوهات</h3>
+            <p>لم يقم المدير برفع أي فيديوهات بعد. سيتم عرض الفيديوهات الرسمية هنا عند رفعها.</p>
+            <div class="empty-info">
+                <p><i class="fas fa-info-circle"></i> سيتم عرض الفيديوهات التي يرفعها المدير فقط</p>
+            </div>
+        </div>
+    `;
+}
+
 // Contests Functions
 function openStudentContests() {
     document.getElementById('studentContestsModal').style.display = 'flex';
@@ -711,38 +727,23 @@ function closeStudentContests() {
 }
 
 function loadStudentContests() {
-    // Mock data for contests
-    studentContests = [
-        {
-            id: 1,
-            title: 'مسابقة البرمجة السنوية',
-            description: 'مسابقة في البرمجة للطلاب',
-            type: 'active',
-            deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            prize: 'جائزة مالية 5000 ريال',
-            participants: 25
-        },
-        {
-            id: 2,
-            title: 'مسابقة الخط العربي',
-            description: 'مسابقة في فن الخط العربي',
-            type: 'upcoming',
-            deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-            prize: 'جائزة مالية 3000 ريال',
-            participants: 0
-        },
-        {
-            id: 3,
-            title: 'مسابقة الإبداع العلمي',
-            description: 'مسابقة للمشاريع العلمية المبتكرة',
-            type: 'completed',
-            deadline: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            prize: 'جائزة مالية 10000 ريال',
-            participants: 40
-        }
-    ];
+    // Get only real contests from the main system
+    studentContests = [];
     
-    displayStudentContests();
+    // Check if there are any real contests in the main system
+    if (typeof adminContests !== 'undefined' && adminContests.length > 0) {
+        studentContests = adminContests.filter(contest => 
+            contest.createdBy === 'admin' || 
+            contest.official === true
+        );
+    }
+    
+    // If no real contests exist, show empty state
+    if (studentContests.length === 0) {
+        showEmptyContestsState();
+    } else {
+        displayStudentContests();
+    }
 }
 
 function displayStudentContests() {
@@ -807,6 +808,22 @@ function notifyMeForContest(contestId) {
     if (contest) {
         showNotification(`سيتم إعلامك عند بدء مسابقة: ${contest.title}`, 'success');
     }
+}
+
+function showEmptyContestsState() {
+    const container = document.getElementById('studentContestsList');
+    container.innerHTML = `
+        <div class="empty-contests">
+            <div class="empty-icon">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <h3>لا توجد مسابقات</h3>
+            <p>لم يقم المدير بإنشاء أي مسابقات بعد. سيتم عرض المسابقات الرسمية هنا عند إنشائها.</p>
+            <div class="empty-info">
+                <p><i class="fas fa-info-circle"></i> سيتم عرض المسابقات التي ينشئها المدير فقط</p>
+            </div>
+        </div>
+    `;
 }
 
 // Utility Functions
