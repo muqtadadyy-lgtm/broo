@@ -37,4 +37,5 @@ urlpatterns = [
     path("announcements", views.create_announcement, name="create_announcement"),
     path("announcements/<int:announcement_id>", views.update_announcement, name="update_announcement"),
     path("announcements/<int:announcement_id>/toggle", views.toggle_announcement, name="toggle_announcement"),
+    path("announcements/list", views.get_announcements, name="get_announcements"),
 ]

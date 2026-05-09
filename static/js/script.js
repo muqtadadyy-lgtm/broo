@@ -456,6 +456,10 @@ function openAnnouncementModal() {
     }
 }
 
+function goToAnnouncements() {
+    window.location.href = 'announcements.html';
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
     const onIndex = !!document.getElementById('loginForm');
     if (!onIndex) return;

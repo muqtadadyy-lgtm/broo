@@ -964,14 +964,29 @@ function openNotificationModal() {
     toggleFabMenu();
 }
 
+// Activity Media Publishing Functions
+function openActivityVideoModal() {
+    showNotification('نشر فيديوهات النشاطات قيد التطوير', 'info');
+    toggleFabMenu();
+}
+
+function openActivityImageModal() {
+    showNotification('نشر صور النشاطات قيد التطوير', 'info');
+    toggleFabMenu();
+}
+
 // Update FAB menu items based on user role
 function updateFabMenuItems(isMainEmployee) {
     // Video and Image publishing - available for all staff
     const videoBtn = document.querySelector('[onclick="openVideoReelModal()"]');
     const imageBtn = document.querySelector('[onclick="openImageAnnouncementModal()"]');
+    const activityVideoBtn = document.querySelector('[onclick="openActivityVideoModal()"]');
+    const activityImageBtn = document.querySelector('[onclick="openActivityImageModal()"]');
     
     if (videoBtn) videoBtn.style.display = 'flex';
     if (imageBtn) imageBtn.style.display = 'flex';
+    if (activityVideoBtn) activityVideoBtn.style.display = isMainEmployee ? 'flex' : 'none';
+    if (activityImageBtn) activityImageBtn.style.display = isMainEmployee ? 'flex' : 'none';
     
     // Advanced features - only for main employee
     const contestBtn = document.querySelector('[onclick="openContestModal()"]');
