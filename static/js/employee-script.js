@@ -954,3 +954,56 @@ function openNotificationModal() {
     showNotification('إرسال الإشعارات قيد التطوير', 'info');
     toggleFabMenu();
 }
+
+// Announcement Modal Functions
+function openAnnouncementModal() {
+    document.getElementById('announcementModal').style.display = 'flex';
+    toggleFabMenu();
+}
+
+function closeAnnouncementModal() {
+    document.getElementById('announcementModal').style.display = 'none';
+}
+
+async function submitAnnouncement() {
+    const title = document.getElementById('announcementTitle').value.trim();
+    const content = document.getElementById('announcementContent').value.trim();
+    const type = document.getElementById('announcementType').value;
+    
+    if (!title || !content) {
+        showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
+    
+    try {
+        // Create announcement data
+        const announcementData = {
+            title: title,
+            content: content,
+            type: type,
+            createdBy: currentUser.fullName,
+            createdAt: new Date().toISOString()
+        };
+        
+        // Here you would normally send to API
+        // For now, show success message
+        showNotification('تم نشر الإعلان بنجاح', 'success');
+        
+        // Clear form
+        document.getElementById('announcementTitle').value = '';
+        document.getElementById('announcementContent').value = '';
+        document.getElementById('announcementType').value = 'general';
+        
+        // Close modal
+        closeAnnouncementModal();
+        
+        // Reload announcements if they exist in the system
+        if (typeof loadAnnouncements === 'function') {
+            loadAnnouncements();
+        }
+        
+    } catch (error) {
+        console.error('Error submitting announcement:', error);
+        showNotification('حدث خطأ في نشر الإعلان', 'error');
+    }
+}

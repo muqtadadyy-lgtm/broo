@@ -404,6 +404,49 @@
                 <i class="fas fa-bell"></i>
                 <span>إرسال تنبيه</span>
             </button>
+            <button class="fab-item" onclick="openAnnouncementModal()" title="إعلانات">
+                <i class="fas fa-bullhorn"></i>
+                <span>إعلانات</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Announcement Modal -->
+    <div class="modal" id="announcementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-bullhorn"></i> إعلانات</h2>
+                <button class="close-btn" onclick="closeAnnouncementModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="announcement-form">
+                <div class="form-group">
+                    <label for="announcementTitle">عنوان الإعلان:</label>
+                    <input type="text" id="announcementTitle" placeholder="أدخل عنوان الإعلان..." required>
+                </div>
+                <div class="form-group">
+                    <label for="announcementContent">محتوى الإعلان:</label>
+                    <textarea id="announcementContent" rows="6" placeholder="أدخل محتوى الإعلان..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="announcementType">نوع الإعلان:</label>
+                    <select id="announcementType">
+                        <option value="general">عام</option>
+                        <option value="urgent">عاجل</option>
+                        <option value="contest">مسابقة</option>
+                        <option value="event">فعالية</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeAnnouncementModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="submitAnnouncement()">
+                        <i class="fas fa-paper-plane"></i> نشر الإعلان
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
