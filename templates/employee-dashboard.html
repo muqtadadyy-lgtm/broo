@@ -360,6 +360,105 @@
             <div class="links-grid" id="linksGrid"></div>
         </div>
 
+        <!-- Activities Section -->
+        <div class="activities-section" id="activitiesSection" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-calendar-alt"></i>
+                <span>🎯 الأنشطة الطلابية</span>
+            </h2>
+            
+            <!-- Activities Statistics -->
+            <div class="activities-stats">
+                <div class="stat-card">
+                    <div class="stat-icon pending">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="activitiesPendingCount">0</h3>
+                        <p>طلبات قيد الانتظار</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon approved">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="activitiesApprovedCount">0</h3>
+                        <p>طلبات مقبولة</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon rejected">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="activitiesRejectedCount">0</h3>
+                        <p>طلبات مرفوضة</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon total">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="activitiesTotalCount">0</h3>
+                        <p>إجمالي الطلبات</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activities Filter Section -->
+            <div class="activities-filter-section">
+                <h3 class="subsection-title">
+                    <i class="fas fa-filter"></i>
+                    <span>تصفية الأنشطة</span>
+                </h3>
+                <div class="filter-controls">
+                    <select id="activitiesActivityFilter" onchange="filterActivities()">
+                        <option value="">جميع الأنشطة</option>
+                        <option value="الأنشطة الطلابية">الأنشطة الطلابية</option>
+                        <option value="القسم الرياضي">القسم الرياضي</option>
+                        <option value="قسم المشاريع الهندسية">قسم المشاريع الهندسية</option>
+                        <option value="المشاريع والابتكارات الطبية">المشاريع والابتكارات الطبية</option>
+                        <option value="الأنشطة الثقافية الطبية">الأنشطة الثقافية الطبية</option>
+                        <option value="الأنشطة الفنية">الأنشطة الفنية</option>
+                        <option value="الأنشطة الثقافية">الأنشطة الثقافية</option>
+                        <option value="الأنشطة التطوعية">الأنشطة التطوعية</option>
+                    </select>
+
+                    <select id="activitiesStatusFilter" onchange="filterActivities()">
+                        <option value="">جميع الحالات</option>
+                        <option value="قيد الانتظار">قيد الانتظار</option>
+                        <option value="مقبول">مقبول</option>
+                        <option value="مرفوض">مرفوض</option>
+                    </select>
+
+                    <input type="text" id="activitiesSearchInput" placeholder="البحث باسم الطالب..." onkeyup="searchActivities()">
+                </div>
+            </div>
+
+            <!-- Activities Management -->
+            <div class="activities-management">
+                <h3 class="subsection-title">
+                    <i class="fas fa-tasks"></i>
+                    <span>إدارة الأنشطة</span>
+                </h3>
+                <div class="management-controls">
+                    <button class="submit-btn" onclick="openActivityModal()">
+                        <i class="fas fa-plus"></i> إنشاء نشاط جديد
+                    </button>
+                    <button class="secondary-btn" onclick="exportActivities()">
+                        <i class="fas fa-download"></i> تصدير البيانات
+                    </button>
+                </div>
+            </div>
+
+            <!-- Activities List -->
+            <div class="activities-list" id="activitiesList">
+                <!-- Activities will be loaded here -->
+            </div>
+        </div>
+
     </main>
 
     <!-- Application Details Modal -->
@@ -562,6 +661,10 @@
             <button class="fab-item" onclick="openContestModal()" title="إنشاء مسابقة">
                 <i class="fas fa-trophy"></i>
                 <span>إنشاء مسابقة</span>
+            </button>
+            <button class="fab-item" onclick="showActivitiesSection()" title="الأنشطة">
+                <i class="fas fa-calendar-alt"></i>
+                <span>الأنشطة</span>
             </button>
             <button class="fab-item library-fab" onclick="toggleLibraryFAB()" title="المكتبة الإلكترونية">
                 <i class="fas fa-book"></i>

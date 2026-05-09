@@ -3714,10 +3714,188 @@ let libraryVideos = [];
 let libraryFiles = [];
 let libraryLinks = [];
 
+// Activities Section Functions
+function showActivitiesSection() {
+    // Hide all sections
+    document.querySelectorAll('.applications-management-section, .library-section, .library-books-section, .library-videos-section, .library-files-section, .library-links-section, .activities-section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Show activities section
+    document.getElementById('activitiesSection').style.display = 'block';
+    
+    // Load activities data
+    loadActivitiesData();
+    
+    // Close FAB menu if open
+    closeFabMenu();
+}
+
+function loadActivitiesData() {
+    updateActivitiesStats();
+    loadActivitiesList();
+}
+
+function updateActivitiesStats() {
+    // Update activities statistics
+    const pendingCount = document.getElementById('activitiesPendingCount');
+    const approvedCount = document.getElementById('activitiesApprovedCount');
+    const rejectedCount = document.getElementById('activitiesRejectedCount');
+    const totalCount = document.getElementById('activitiesTotalCount');
+    
+    // These would normally come from the backend
+    pendingCount.textContent = '0';
+    approvedCount.textContent = '0';
+    rejectedCount.textContent = '0';
+    totalCount.textContent = '0';
+}
+
+function loadActivitiesList() {
+    const activitiesList = document.getElementById('activitiesList');
+    
+    // Load activities from the existing applications data
+    const applications = getApplicationsData();
+    
+    if (applications.length === 0) {
+        activitiesList.innerHTML = `
+            <div class="empty-activities">
+                <div class="empty-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <h3>لا توجد أنشطة</h3>
+                <p>لم يتم إنشاء أي أنشطة بعد. ابدأ بإنشاء نشاط جديد.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    activitiesList.innerHTML = applications.map(app => `
+        <div class="activity-card">
+            <div class="activity-header">
+                <h4>${app.activityType}</h4>
+                <span class="activity-status ${app.status}">${app.status}</span>
+            </div>
+            <div class="activity-content">
+                <p><strong>الطالب:</strong> ${app.studentName}</p>
+                <p><strong>القسم:</strong> ${app.department}</p>
+                <p><strong>التاريخ:</strong> ${app.date}</p>
+                <p><strong>الوصف:</strong> ${app.description}</p>
+            </div>
+            <div class="activity-actions">
+                <button class="primary-btn" onclick="viewActivityDetails('${app.id}')">
+                    <i class="fas fa-eye"></i> عرض
+                </button>
+                <button class="secondary-btn" onclick="editActivity('${app.id}')">
+                    <i class="fas fa-edit"></i> تعديل
+                </button>
+                <button class="danger-btn" onclick="deleteActivity('${app.id}')">
+                    <i class="fas fa-trash"></i> حذف
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterActivities() {
+    const activityFilter = document.getElementById('activitiesActivityFilter').value;
+    const statusFilter = document.getElementById('activitiesStatusFilter').value;
+    const searchInput = document.getElementById('activitiesSearchInput').value.toLowerCase();
+    
+    const applications = getApplicationsData();
+    
+    const filteredActivities = applications.filter(app => {
+        const matchesActivity = !activityFilter || app.activityType === activityFilter;
+        const matchesStatus = !statusFilter || app.status === statusFilter;
+        const matchesSearch = !searchInput || app.studentName.toLowerCase().includes(searchInput);
+        
+        return matchesActivity && matchesStatus && matchesSearch;
+    });
+    
+    // Update the activities list with filtered results
+    const activitiesList = document.getElementById('activitiesList');
+    if (filteredActivities.length === 0) {
+        activitiesList.innerHTML = `
+            <div class="empty-activities">
+                <div class="empty-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3>لا توجد نتائج</h3>
+                <p>لم يتم العثور على أنشطة تطابق معايير البحث.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    activitiesList.innerHTML = filteredActivities.map(app => `
+        <div class="activity-card">
+            <div class="activity-header">
+                <h4>${app.activityType}</h4>
+                <span class="activity-status ${app.status}">${app.status}</span>
+            </div>
+            <div class="activity-content">
+                <p><strong>الطالب:</strong> ${app.studentName}</p>
+                <p><strong>القسم:</strong> ${app.department}</p>
+                <p><strong>التاريخ:</strong> ${app.date}</p>
+                <p><strong>الوصف:</strong> ${app.description}</p>
+            </div>
+            <div class="activity-actions">
+                <button class="primary-btn" onclick="viewActivityDetails('${app.id}')">
+                    <i class="fas fa-eye"></i> عرض
+                </button>
+                <button class="secondary-btn" onclick="editActivity('${app.id}')">
+                    <i class="fas fa-edit"></i> تعديل
+                </button>
+                <button class="danger-btn" onclick="deleteActivity('${app.id}')">
+                    <i class="fas fa-trash"></i> حذف
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function searchActivities() {
+    filterActivities();
+}
+
+function openActivityModal() {
+    // This would open a modal for creating new activities
+    showNotification('إنشاء نشاط جديد - قيد التطوير', 'info');
+}
+
+function exportActivities() {
+    // This would export activities data
+    showNotification('تصدير البيانات - قيد التطوير', 'info');
+}
+
+function viewActivityDetails(activityId) {
+    // This would show activity details
+    showNotification('عرض تفاصيل النشاط - قيد التطوير', 'info');
+}
+
+function editActivity(activityId) {
+    // This would open edit modal for the activity
+    showNotification('تعديل النشاط - قيد التطوير', 'info');
+}
+
+function deleteActivity(activityId) {
+    if (confirm('هل أنت متأكد من حذف هذا النشاط؟')) {
+        // This would delete the activity
+        showNotification('تم حذف النشاط', 'success');
+        loadActivitiesData();
+    }
+}
+
+// Helper function to get applications data
+function getApplicationsData() {
+    // This would normally fetch from the backend
+    // For now, return empty array or mock data
+    return [];
+}
+
 // Library Navigation
 function showSection(sectionName) {
     // Hide all sections
-    document.querySelectorAll('.applications-management-section, .library-section, .library-books-section, .library-videos-section, .library-files-section, .library-links-section').forEach(section => {
+    document.querySelectorAll('.applications-management-section, .library-section, .library-books-section, .library-videos-section, .library-files-section, .library-links-section, .activities-section').forEach(section => {
         section.style.display = 'none';
     });
     
@@ -3748,12 +3926,18 @@ function showSection(sectionName) {
             document.getElementById('libraryLinksSection').style.display = 'block';
             loadLibraryLinks();
             break;
+        case 'activities':
+            document.getElementById('activitiesSection').style.display = 'block';
+            loadActivitiesData();
+            break;
         default:
             document.querySelector('.applications-management-section').style.display = 'block';
     }
     
     // Add active class to clicked nav link
-    event.currentTarget.classList.add('active');
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+    }
 }
 
 // FAB Library Functions
