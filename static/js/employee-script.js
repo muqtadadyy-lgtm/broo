@@ -2563,20 +2563,175 @@ function checkUsernameAvailability(event) {
         return;
     }
     
-    // Check if username exists in available users
-    const userExists = allAvailableMembers.some(member => 
-        member.username === username || member.name.toLowerCase().includes(username.toLowerCase())
-    );
+    // Simulate real-time user existence check
+    statusDiv.innerHTML = '<span class="status-info">جاري التحقق من وجود المستخدم...</span>';
     
-    if (userExists) {
-        statusDiv.innerHTML = '<span class="status-success">المستخدم متاح للإضافة</span>';
-    } else {
-        statusDiv.innerHTML = '<span class="status-warning">المستخدم غير موجود في النظام</span>';
-    }
+    // Simulate API call to check user existence
+    setTimeout(() => {
+        const userExists = checkUserExistsInSystem(username);
+        
+        if (userExists.exists) {
+            statusDiv.innerHTML = `
+                <div class="user-found">
+                    <span class="status-success">المستخدم موجود في النظام</span>
+                    <div class="user-preview">
+                        <img src="${userExists.avatar || '/static/images/default-avatar.png'}" alt="${userExists.name}" class="preview-avatar">
+                        <div class="preview-info">
+                            <strong>${userExists.name}</strong>
+                            <small>${userExists.email}</small>
+                            <span class="user-status ${userExists.status}">${userExists.status === 'active' ? 'نشط' : 'غير نشط'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            statusDiv.innerHTML = `
+                <div class="user-not-found">
+                    <span class="status-warning">المستخدم غير موجود في النظام</span>
+                    <div class="create-user-option">
+                        <p>هل تريد إنشاء حساب جديد لهذا المستخدم؟</p>
+                        <button class="create-user-btn" onclick="createNewUser('${username}')">
+                            <i class="fas fa-user-plus"></i> إنشاء مستخدم جديد
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    }, 1000); // Simulate network delay
     
     // Allow adding with Enter key
     if (event.key === 'Enter') {
         addMemberByUsername();
+    }
+}
+
+function checkUserExistsInSystem(username) {
+    // Simulate database check for user existence
+    const mockUsers = [
+        {
+            id: 1,
+            username: 'ahmed_student',
+            name: 'أحمد محمد',
+            email: 'ahmed@university.edu',
+            avatar: '/static/images/user1.jpg',
+            status: 'active',
+            role: 'student'
+        },
+        {
+            id: 2,
+            username: 'fatima_student',
+            name: 'فاطمة علي',
+            email: 'fatima@university.edu',
+            avatar: '/static/images/user2.jpg',
+            status: 'active',
+            role: 'student'
+        },
+        {
+            id: 3,
+            username: 'mohammed_student',
+            name: 'محمد خالد',
+            email: 'mohammed@university.edu',
+            avatar: '/static/images/user3.jpg',
+            status: 'inactive',
+            role: 'student'
+        },
+        {
+            id: 4,
+            username: 'admin',
+            name: 'المدير العام',
+            email: 'admin@university.edu',
+            avatar: '/static/images/admin.jpg',
+            status: 'active',
+            role: 'admin'
+        }
+    ];
+    
+    const user = mockUsers.find(u => 
+        u.username === username || 
+        u.name.toLowerCase().includes(username.toLowerCase()) ||
+        username.toLowerCase().includes(u.username.toLowerCase())
+    );
+    
+    return {
+        exists: !!user,
+        ...user
+    };
+}
+
+function createNewUser(username) {
+    const statusDiv = document.getElementById('usernameStatus');
+    
+    // Show loading state
+    statusDiv.innerHTML = '<span class="status-info">جاري إنشاء مستخدم جديد...</span>';
+    
+    // Simulate user creation
+    setTimeout(() => {
+        const newUser = {
+            id: Date.now(),
+            username: username,
+            name: username,
+            email: `${username}@university.edu`,
+            avatar: '/static/images/default-avatar.png',
+            role: 'student',
+            status: 'active',
+            createdAt: new Date().toISOString()
+        };
+        
+        // Add to available users list
+        allAvailableMembers.push(newUser);
+        
+        // Show success message
+        statusDiv.innerHTML = `
+            <div class="user-created">
+                <span class="status-success">تم إنشاء المستخدم بنجاح</span>
+                <div class="user-preview">
+                    <img src="${newUser.avatar}" alt="${newUser.name}" class="preview-avatar">
+                    <div class="preview-info">
+                        <strong>${newUser.name}</strong>
+                        <small>${newUser.email}</small>
+                        <span class="user-status active">نشط</span>
+                    </div>
+                </div>
+                <button class="add-to-room-btn" onclick="addCreatedUserToRoom(${newUser.id})">
+                    <i class="fas fa-user-plus"></i> إضافة للكروب
+                </button>
+            </div>
+        `;
+        
+        showNotification(`تم إنشاء مستخدم جديد: ${username}`, 'success');
+    }, 1500);
+}
+
+function addCreatedUserToRoom(userId) {
+    const user = allAvailableMembers.find(u => u.id === userId);
+    if (user) {
+        // Check if already in room
+        if (chatRoomMembers.some(member => member.username === user.username)) {
+            showNotification('هذا المستخدم موجود بالفعل في الكروب', 'error');
+            return;
+        }
+        
+        // Add to chat room members
+        chatRoomMembers.push(user);
+        updateMemberList();
+        
+        // Clear input and status
+        document.getElementById('usernameInput').value = '';
+        document.getElementById('usernameStatus').innerHTML = '';
+        
+        showNotification(`تم إضافة ${user.name} إلى الكروب بنجاح`, 'success');
+        
+        // Update member status list if chat is open
+        if (document.getElementById('chatInterfaceModal').style.display === 'flex') {
+            onlineMembers.push({
+                ...user,
+                status: 'online',
+                lastSeen: new Date().toISOString(),
+                isTyping: false
+            });
+            updateMemberStatusList();
+            updateRoomInfo();
+        }
     }
 }
 
@@ -2600,32 +2755,45 @@ function addMemberByUsername() {
         return;
     }
     
-    // Find user in available members
-    let userToAdd = allAvailableMembers.find(member => 
-        member.username === username || member.name.toLowerCase().includes(username.toLowerCase())
-    );
+    // Check if user exists in system
+    const userCheck = checkUserExistsInSystem(username);
     
-    // If not found, create a new user entry
-    if (!userToAdd) {
-        userToAdd = {
-            id: Date.now(), // Temporary ID
-            username: username,
-            name: username, // Use username as name if not found
-            email: `${username}@university.edu`, // Generate email
-            role: 'student', // Default role
-            status: 'active'
-        };
+    if (userCheck.exists) {
+        // Add existing user to room
+        chatRoomMembers.push(userCheck);
+        updateMemberList();
+        
+        // Clear input and status
+        document.getElementById('usernameInput').value = '';
+        statusDiv.innerHTML = '';
+        
+        showNotification(`تم إضافة ${userCheck.name} إلى الكروب بنجاح`, 'success');
+        
+        // Update member status list if chat is open
+        if (document.getElementById('chatInterfaceModal').style.display === 'flex') {
+            onlineMembers.push({
+                ...userCheck,
+                status: 'online',
+                lastSeen: new Date().toISOString(),
+                isTyping: false
+            });
+            updateMemberStatusList();
+            updateRoomInfo();
+        }
+    } else {
+        // Show option to create new user
+        statusDiv.innerHTML = `
+            <div class="user-not-found">
+                <span class="status-warning">المستخدم غير موجود في النظام</span>
+                <div class="create-user-option">
+                    <p>هل تريد إنشاء حساب جديد لهذا المستخدم؟</p>
+                    <button class="create-user-btn" onclick="createNewUser('${username}')">
+                        <i class="fas fa-user-plus"></i> إنشاء مستخدم جديد
+                    </button>
+                </div>
+            </div>
+        `;
     }
-    
-    // Add to chat room members
-    chatRoomMembers.push(userToAdd);
-    updateMemberList();
-    
-    // Clear input and status
-    document.getElementById('usernameInput').value = '';
-    statusDiv.innerHTML = '';
-    
-    showNotification(`تم إضافة ${userToAdd.name} إلى الكروب بنجاح`, 'success');
 }
 
 // Video Reels Modal Functions

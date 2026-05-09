@@ -946,6 +946,130 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
     color: #ffc107;
 }
 
+/* Enhanced User Validation Styles */
+.user-found, .user-not-found, .user-created {
+    margin-top: 10px;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid;
+}
+
+.user-found {
+    background: var(--success-light);
+    border-color: var(--success-color);
+}
+
+.user-not-found {
+    background: var(--warning-light);
+    border-color: var(--warning-color);
+}
+
+.user-created {
+    background: var(--info-light);
+    border-color: var(--info-color);
+}
+
+.user-preview {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 10px;
+    padding: 10px;
+    background: var(--background-color);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.preview-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+}
+
+.preview-info {
+    flex: 1;
+}
+
+.preview-info strong {
+    display: block;
+    color: var(--text-color);
+    margin-bottom: 5px;
+}
+
+.preview-info small {
+    display: block;
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.user-status {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.user-status.active {
+    background: var(--success-color);
+    color: white;
+}
+
+.user-status.inactive {
+    background: var(--warning-color);
+    color: white;
+}
+
+.create-user-option {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.create-user-option p {
+    margin: 0 0 10px 0;
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+.create-user-btn, .add-to-room-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.create-user-btn {
+    background: var(--primary-color);
+    color: white;
+}
+
+.create-user-btn:hover {
+    background: var(--primary-color-dark);
+}
+
+.add-to-room-btn {
+    background: var(--success-color);
+    color: white;
+    margin-top: 10px;
+}
+
+.add-to-room-btn:hover {
+    background: var(--success-dark);
+}
+
+.status-info {
+    color: var(--info-color);
+    font-style: italic;
+}
+
 /* Student Requests Management Styles */
 .student-requests-form {
     display: flex;
