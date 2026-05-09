@@ -27,7 +27,13 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('employeeName').textContent = user.fullName;
     
     // Check if user is main employee (admin account)
-    const isMainEmployee = user.username === 'admin' || user.fullName.includes('الرئيسي');
+    const isMainEmployee = user.username === 'admin' || user.fullName.includes('الرئيسي') || user.fullName.includes('Main') || user.fullName.includes('Admin');
+    
+    // Debug logging
+    console.log('User info:', user);
+    console.log('Is main employee:', isMainEmployee);
+    console.log('Username:', user.username);
+    console.log('Full name:', user.fullName);
     
     // Show FAB for main employee, but enable video/image publishing for all staff
     const fabContainer = document.getElementById('fabContainer');
