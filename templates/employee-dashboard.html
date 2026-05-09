@@ -544,6 +544,100 @@
         </div>
     </div>
 
+    <!-- Notification System Modal -->
+    <div class="modal" id="notificationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-bell"></i> إرسال تنبيه</h2>
+                <button class="close-btn" onclick="closeNotificationModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="notification-form">
+                <div class="form-section">
+                    <h3>معلومات التنبيه</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="notificationTitle">عنوان التنبيه:</label>
+                            <input type="text" id="notificationTitle" placeholder="أدخل عنوان التنبيه..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="notificationType">نوع التنبيه:</label>
+                            <select id="notificationType">
+                                <option value="general">عام</option>
+                                <option value="urgent">عاجل</option>
+                                <option value="academic">أكاديمي</option>
+                                <option value="administrative">إداري</option>
+                                <option value="event">فعالية</option>
+                                <option value="deadline">موعد نهائي</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="notificationPriority">الأولوية:</label>
+                            <select id="notificationPriority">
+                                <option value="low">منخفضة</option>
+                                <option value="medium" selected>متوسطة</option>
+                                <option value="high">عالية</option>
+                                <option value="critical">حرجة</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="notificationTarget">الجهة المستهدفة:</label>
+                            <select id="notificationTarget" onchange="handleNotificationTargetChange()">
+                                <option value="all">جميع المستخدمين</option>
+                                <option value="students">الطلاب فقط</option>
+                                <option value="employees">الموظفين فقط</option>
+                                <option value="specific">مستخدمين محددين</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>نص الرسالة</h3>
+                    <div class="form-group">
+                        <label for="notificationMessage">محتوى التنبيه:</label>
+                        <textarea id="notificationMessage" rows="6" placeholder="أدخل نص التنبيه..." required oninput="handleMessageInput()"></textarea>
+                        <div class="char-count" id="notificationCharCount">0 / 500</div>
+                    </div>
+                </div>
+                
+                <div class="form-section" id="targetUsersSection" style="display: none;">
+                    <h3>اختيار المستخدمين المستهدفين</h3>
+                    <div class="member-management">
+                        <div class="member-input-section">
+                            <div class="form-group">
+                                <label for="userSearch">البحث عن مستخدم:</label>
+                                <input type="text" id="userSearch" placeholder="ابحث بالاسم أو البريد الإلكتروني..." onkeyup="searchUsers()">
+                            </div>
+                            <div class="search-results" id="userSearchResults" style="display: none;">
+                                <!-- Search results will be displayed here -->
+                            </div>
+                        </div>
+                        
+                        <div class="member-list-section">
+                            <h4>المستخدمون المضافون:</h4>
+                            <div class="member-list" id="targetUsersList">
+                                <!-- Target users will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeNotificationModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="sendNotification()">
+                        <i class="fas fa-paper-plane"></i> إرسال التنبيه
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Announcement Modal -->
     <div class="modal" id="announcementModal">
         <div class="modal-content">

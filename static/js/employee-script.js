@@ -960,8 +960,203 @@ function openChatRoomModal() {
 }
 
 function openNotificationModal() {
-    showNotification('إرسال الإشعارات قيد التطوير', 'info');
+    document.getElementById('notificationModal').style.display = 'flex';
     toggleFabMenu();
+}
+
+function closeNotificationModal() {
+    document.getElementById('notificationModal').style.display = 'none';
+}
+
+let targetUsers = [];
+let allAvailableUsers = [];
+
+// Mock data for available users (in real app, this would come from API)
+function loadAvailableUsers() {
+    allAvailableUsers = [
+        { id: 1, name: 'أحمد محمد', email: 'ahmed@university.edu', role: 'student', status: 'active' },
+        { id: 2, name: 'فاطمة علي', email: 'fatima@university.edu', role: 'student', status: 'active' },
+        { id: 3, name: 'محمد خالد', email: 'mohammed@university.edu', role: 'student', status: 'active' },
+        { id: 4, name: 'نورا سعيد', email: 'nora@university.edu', role: 'student', status: 'active' },
+        { id: 5, name: 'عبدالله إبراهيم', email: 'abdullah@university.edu', role: 'student', status: 'active' },
+        { id: 6, name: 'موظف إداري', email: 'admin@university.edu', role: 'employee', status: 'active' }
+    ];
+}
+
+function searchUsers() {
+    const searchTerm = document.getElementById('userSearch').value.toLowerCase().trim();
+    const searchResults = document.getElementById('userSearchResults');
+    
+    if (searchTerm.length < 2) {
+        searchResults.style.display = 'none';
+        return;
+    }
+    
+    const filteredUsers = allAvailableUsers.filter(user => 
+        user.name.toLowerCase().includes(searchTerm) || 
+        user.email.toLowerCase().includes(searchTerm)
+    );
+    
+    if (filteredUsers.length > 0) {
+        searchResults.innerHTML = `
+            <h4>نتائج البحث:</h4>
+            <div class="search-result-list">
+                ${filteredUsers.map(user => `
+                    <div class="member-item" onclick="addUserToNotification(${user.id})">
+                        <div class="member-info">
+                            <i class="fas fa-user"></i>
+                            <div class="member-details">
+                                <div class="member-name">${user.name}</div>
+                                <div class="member-email">${user.email}</div>
+                                <div class="member-role">${user.role === 'student' ? 'طالب' : 'موظف'}</div>
+                            </div>
+                        </div>
+                        <button class="add-member-btn" onclick="addUserToNotification(${user.id})">
+                            <i class="fas fa-plus"></i> إضافة
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        searchResults.style.display = 'block';
+    } else {
+        searchResults.innerHTML = '<p class="no-results">لم يتم العثور على مستخدمين</p>';
+        searchResults.style.display = 'block';
+    }
+}
+
+function addUserToNotification(userId) {
+    const user = allAvailableUsers.find(u => u.id === userId);
+    if (user && !targetUsers.find(u => u.id === userId)) {
+        targetUsers.push(user);
+        updateTargetUsersList();
+        showNotification(`تم إضافة ${user.name} إلى قائمة التنبيهات`, 'success');
+        
+        // Clear search
+        document.getElementById('userSearch').value = '';
+        document.getElementById('userSearchResults').style.display = 'none';
+    }
+}
+
+function removeUserFromNotification(userId) {
+    targetUsers = targetUsers.filter(u => u.id !== userId);
+    updateTargetUsersList();
+    showNotification('تم حذف المستخدم من قائمة التنبيهات', 'info');
+}
+
+function updateTargetUsersList() {
+    const userList = document.getElementById('targetUsersList');
+    if (targetUsers.length === 0) {
+        userList.innerHTML = '<p class="no-members">لم يتم إضافة مستخدمين بعد</p>';
+    } else {
+        userList.innerHTML = targetUsers.map(user => `
+            <div class="member-item added">
+                <div class="member-info">
+                    <i class="fas fa-user"></i>
+                    <div class="member-details">
+                        <div class="member-name">${user.name}</div>
+                        <div class="member-email">${user.email}</div>
+                        <div class="member-role">${user.role === 'student' ? 'طالب' : 'موظف'}</div>
+                    </div>
+                </div>
+                <button class="remove-member-btn" onclick="removeUserFromNotification(${user.id})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+}
+
+// Handle notification target change
+function handleNotificationTargetChange() {
+    const targetSelect = document.getElementById('notificationTarget');
+    const targetUsersSection = document.getElementById('targetUsersSection');
+    
+    if (targetSelect.value === 'specific') {
+        targetUsersSection.style.display = 'block';
+    } else {
+        targetUsersSection.style.display = 'none';
+        targetUsers = []; // Clear specific targets when not using specific targeting
+        updateTargetUsersList();
+    }
+}
+
+// Handle message character count
+function handleMessageInput() {
+    const messageTextarea = document.getElementById('notificationMessage');
+    const charCount = document.getElementById('notificationCharCount');
+    const currentLength = messageTextarea.value.length;
+    const maxLength = 500;
+    
+    charCount.textContent = `${currentLength} / ${maxLength}`;
+    
+    if (currentLength > maxLength) {
+        charCount.style.color = '#dc3545';
+    } else {
+        charCount.style.color = '#6c757d';
+    }
+}
+
+async function sendNotification() {
+    const title = document.getElementById('notificationTitle').value.trim();
+    const type = document.getElementById('notificationType').value;
+    const priority = document.getElementById('notificationPriority').value;
+    const target = document.getElementById('notificationTarget').value;
+    const message = document.getElementById('notificationMessage').value.trim();
+    
+    if (!title || !message) {
+        showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
+    
+    if (target === 'specific' && targetUsers.length === 0) {
+        showNotification('الرجاء إضافة مستخدم واحد على الأقل', 'error');
+        return;
+    }
+    
+    try {
+        // Create notification data
+        const notificationData = {
+            title: title,
+            type: type,
+            priority: priority,
+            target: target,
+            message: message,
+            targetUsers: target === 'specific' ? targetUsers : [],
+            createdBy: currentUser.fullName,
+            createdAt: new Date().toISOString()
+        };
+        
+        // Here you would normally send to API
+        showNotification('جاري إرسال التنبيه...', 'info');
+        
+        // Simulate sending
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const targetText = target === 'all' ? 'جميع المستخدمين' : 
+                          target === 'students' ? 'الطلاب فقط' : 
+                          target === 'employees' ? 'الموظفين فقط' : 
+                          `${targetUsers.length} مستخدمين محددين`;
+        
+        showNotification(`تم إرسال التنبيه "${title}" إلى ${targetText} بنجاح`, 'success');
+        
+        // Clear form
+        document.getElementById('notificationTitle').value = '';
+        document.getElementById('notificationType').value = 'general';
+        document.getElementById('notificationPriority').value = 'medium';
+        document.getElementById('notificationTarget').value = 'all';
+        document.getElementById('notificationMessage').value = '';
+        document.getElementById('notificationCharCount').textContent = '0 / 500';
+        targetUsers = [];
+        updateTargetUsersList();
+        
+        // Close modal
+        closeNotificationModal();
+        
+    } catch (error) {
+        console.error('Error sending notification:', error);
+        showNotification('حدث خطأ في إرسال التنبيه', 'error');
+    }
 }
 
 // Chat Room Management Functions
