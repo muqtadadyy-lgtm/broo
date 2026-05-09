@@ -260,9 +260,9 @@ def initialize_admin_account():
             if count == 0:
                 print("[INIT] Creating default admin account")
                 cursor.execute("""
-                    INSERT INTO users (full_name, username, email, password_hash, role, created_at) 
-                    VALUES (%s, %s, %s, %s, %s)
-                """, ["الموظف الرئيسي", "admin", "admin@university.edu", make_password("123456"), "employee", timezone.now()])
+                    INSERT INTO users (full_name, username, email, password_hash, role, created_at, updated_at) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, ["الموظف الرئيسي", "admin", "admin@university.edu", make_password("123456"), "employee", timezone.now(), timezone.now()])
                 
                 print("[INIT] Default admin account created successfully")
             else:
@@ -334,9 +334,9 @@ def login(request: HttpRequest) -> JsonResponse:
                         if count == 0:
                             print(f"[LOGIN] Creating emergency admin account: {username}")
                             cursor.execute("""
-                                INSERT INTO users (full_name, username, email, password_hash, role, created_at) 
-                                VALUES (%s, %s, %s, %s, %s, %s)
-                            """, ["الموظف الرئيسي", username, "admin@university.edu", make_password(password), "employee", timezone.now()])
+                                INSERT INTO users (full_name, username, email, password_hash, role, created_at, updated_at) 
+                                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            """, ["الموظف الرئيسي", username, "admin@university.edu", make_password(password), "employee", timezone.now(), timezone.now()])
                             
                             # Get the created user
                             cursor.execute("SELECT id, full_name, username, email, role FROM users WHERE username = %s", [username])
