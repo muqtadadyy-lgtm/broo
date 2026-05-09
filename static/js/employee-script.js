@@ -29,11 +29,14 @@ window.addEventListener('DOMContentLoaded', () => {
     // Check if user is main employee (admin account)
     const isMainEmployee = user.username === 'admin' || user.fullName.includes('الرئيسي');
     
-    // Show FAB only for main employee
+    // Show FAB for main employee, but enable video/image publishing for all staff
     const fabContainer = document.getElementById('fabContainer');
     if (fabContainer) {
-        fabContainer.style.display = isMainEmployee ? 'block' : 'none';
+        fabContainer.style.display = 'block'; // Show FAB for all employees
     }
+    
+    // Update FAB menu items based on user role
+    updateFabMenuItems(isMainEmployee);
     
     // Show create employee button for all employees
     const createBtn = document.getElementById('createEmployeeBtn');
@@ -953,6 +956,27 @@ function openChatRoomModal() {
 function openNotificationModal() {
     showNotification('إرسال الإشعارات قيد التطوير', 'info');
     toggleFabMenu();
+}
+
+// Update FAB menu items based on user role
+function updateFabMenuItems(isMainEmployee) {
+    // Video and Image publishing - available for all staff
+    const videoBtn = document.querySelector('[onclick="openVideoReelModal()"]');
+    const imageBtn = document.querySelector('[onclick="openImageAnnouncementModal()"]');
+    
+    if (videoBtn) videoBtn.style.display = 'flex';
+    if (imageBtn) imageBtn.style.display = 'flex';
+    
+    // Advanced features - only for main employee
+    const contestBtn = document.querySelector('[onclick="openContestModal()"]');
+    const chatBtn = document.querySelector('[onclick="openChatRoomModal()"]');
+    const notificationBtn = document.querySelector('[onclick="openNotificationModal()"]');
+    const announcementBtn = document.querySelector('[onclick="openAnnouncementModal()"]');
+    
+    if (contestBtn) contestBtn.style.display = isMainEmployee ? 'flex' : 'none';
+    if (chatBtn) chatBtn.style.display = isMainEmployee ? 'flex' : 'none';
+    if (notificationBtn) notificationBtn.style.display = isMainEmployee ? 'flex' : 'none';
+    if (announcementBtn) announcementBtn.style.display = isMainEmployee ? 'flex' : 'none';
 }
 
 // Announcement Modal Functions
