@@ -964,6 +964,166 @@ function openNotificationModal() {
     toggleFabMenu();
 }
 
+// Chat Room Management Functions
+function openChatRoomModal() {
+    document.getElementById('chatRoomModal').style.display = 'flex';
+    toggleFabMenu();
+}
+
+function closeChatRoomModal() {
+    document.getElementById('chatRoomModal').style.display = 'none';
+}
+
+let chatRoomMembers = [];
+let allAvailableMembers = [];
+
+// Mock data for available members (in real app, this would come from API)
+function loadAvailableMembers() {
+    allAvailableMembers = [
+        { id: 1, name: 'أحمد محمد', email: 'ahmed@university.edu', role: 'student', status: 'active' },
+        { id: 2, name: 'فاطمة علي', email: 'fatima@university.edu', role: 'student', status: 'active' },
+        { id: 3, name: 'محمد خالد', email: 'mohammed@university.edu', role: 'student', status: 'active' },
+        { id: 4, name: 'نورا سعيد', email: 'nora@university.edu', role: 'student', status: 'active' },
+        { id: 5, name: 'عبدالله إبراهيم', email: 'abdullah@university.edu', role: 'student', status: 'active' }
+    ];
+}
+
+function searchMembers() {
+    const searchTerm = document.getElementById('memberSearch').value.toLowerCase().trim();
+    const searchResults = document.getElementById('memberSearchResults');
+    
+    if (searchTerm.length < 2) {
+        searchResults.style.display = 'none';
+        return;
+    }
+    
+    const filteredMembers = allAvailableMembers.filter(member => 
+        member.name.toLowerCase().includes(searchTerm) || 
+        member.email.toLowerCase().includes(searchTerm)
+    );
+    
+    if (filteredMembers.length > 0) {
+        searchResults.innerHTML = `
+            <h4>نتائج البحث:</h4>
+            <div class="search-result-list">
+                ${filteredMembers.map(member => `
+                    <div class="member-item" onclick="addMemberToChatRoom(${member.id})">
+                        <div class="member-info">
+                            <i class="fas fa-user"></i>
+                            <div class="member-details">
+                                <div class="member-name">${member.name}</div>
+                                <div class="member-email">${member.email}</div>
+                            </div>
+                        </div>
+                        <button class="add-member-btn" onclick="addMemberToChatRoom(${member.id})">
+                            <i class="fas fa-plus"></i> إضافة
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        searchResults.style.display = 'block';
+    } else {
+        searchResults.innerHTML = '<p class="no-results">لم يتم العثور على أعضاء</p>';
+        searchResults.style.display = 'block';
+    }
+}
+
+function addMemberToChatRoom(memberId) {
+    const member = allAvailableMembers.find(m => m.id === memberId);
+    if (member && !chatRoomMembers.find(m => m.id === memberId)) {
+        chatRoomMembers.push(member);
+        updateMemberList();
+        showNotification(`تم إضافة ${member.name} إلى الكروب`, 'success');
+        
+        // Clear search
+        document.getElementById('memberSearch').value = '';
+        document.getElementById('memberSearchResults').style.display = 'none';
+    }
+}
+
+function removeMemberFromChatRoom(memberId) {
+    chatRoomMembers = chatRoomMembers.filter(m => m.id !== memberId);
+    updateMemberList();
+    showNotification('تم حذف العضو من الكروب', 'info');
+}
+
+function updateMemberList() {
+    const memberList = document.getElementById('chatRoomMembers');
+    if (chatRoomMembers.length === 0) {
+        memberList.innerHTML = '<p class="no-members">لم يتم إضافة أعضاء بعد</p>';
+    } else {
+        memberList.innerHTML = chatRoomMembers.map(member => `
+            <div class="member-item added">
+                <div class="member-info">
+                    <i class="fas fa-user"></i>
+                    <div class="member-details">
+                        <div class="member-name">${member.name}</div>
+                        <div class="member-email">${member.email}</div>
+                        <div class="member-role">${member.role === 'student' ? 'طالب' : 'موظف'}</div>
+                    </div>
+                </div>
+                <button class="remove-member-btn" onclick="removeMemberFromChatRoom(${member.id})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+}
+
+async function createChatRoom() {
+    const name = document.getElementById('chatRoomName').value.trim();
+    const description = document.getElementById('chatRoomDescription').value.trim();
+    const type = document.getElementById('chatRoomType').value;
+    const maxMembers = document.getElementById('chatRoomMaxMembers').value;
+    
+    if (!name || !description) {
+        showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
+    
+    if (chatRoomMembers.length === 0) {
+        showNotification('الرجاء إضافة عضو واحد على الأقل', 'error');
+        return;
+    }
+    
+    try {
+        // Create chat room data
+        const chatRoomData = {
+            name: name,
+            description: description,
+            type: type,
+            maxMembers: maxMembers,
+            members: chatRoomMembers,
+            createdBy: currentUser.fullName,
+            createdAt: new Date().toISOString()
+        };
+        
+        // Here you would normally send to API
+        showNotification('جاري إنشاء الكروب...', 'info');
+        
+        // Simulate creation
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        showNotification(`تم إنشاء كروب "${name}" بنجاح`, 'success');
+        
+        // Clear form
+        document.getElementById('chatRoomName').value = '';
+        document.getElementById('chatRoomDescription').value = '';
+        document.getElementById('chatRoomType').value = 'general';
+        document.getElementById('chatRoomMaxMembers').value = '50';
+        chatRoomMembers = [];
+        updateMemberList();
+        
+        // Close modal
+        closeChatRoomModal();
+        
+    } catch (error) {
+        console.error('Error creating chat room:', error);
+        showNotification('حدث خطأ في إنشاء الكروب', 'error');
+    }
+}
+
 // Video Reels Modal Functions
 function openVideoReelModal() {
     document.getElementById('videoReelModal').style.display = 'flex';

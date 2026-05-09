@@ -470,6 +470,80 @@
         </div>
     </div>
 
+    <!-- Chat Room Management Modal -->
+    <div class="modal" id="chatRoomModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-comments"></i> إدارة كروب الدردشة</h2>
+                <button class="close-btn" onclick="closeChatRoomModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="chat-room-form">
+                <div class="form-section">
+                    <h3>معلومات الكروب</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="chatRoomName">اسم الكروب:</label>
+                            <input type="text" id="chatRoomName" placeholder="أدخل اسم الكروب..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="chatRoomDescription">وصف الكروب:</label>
+                            <textarea id="chatRoomDescription" rows="3" placeholder="أدخل وصف الكروب..." required></textarea>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="chatRoomType">نوع الكروب:</label>
+                            <select id="chatRoomType">
+                                <option value="general">عام</option>
+                                <option value="contest">مسابقة</option>
+                                <option value="study">دراسة</option>
+                                <option value="announcement">إعلانات</option>
+                                <option value="private">خاص</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="chatRoomMaxMembers">الحد الأقصى للأعضاء:</label>
+                            <input type="number" id="chatRoomMaxMembers" min="2" max="1000" value="50">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>إضافة أعضاء</h3>
+                    <div class="member-management">
+                        <div class="member-input-section">
+                            <div class="form-group">
+                                <label for="memberSearch">البحث عن عضو:</label>
+                                <input type="text" id="memberSearch" placeholder="ابحث بالاسم أو البريد الإلكتروني..." onkeyup="searchMembers()">
+                            </div>
+                            <div class="search-results" id="memberSearchResults" style="display: none;">
+                                <!-- Search results will be displayed here -->
+                            </div>
+                        </div>
+                        
+                        <div class="member-list-section">
+                            <h4>الأعضاء المضافون:</h4>
+                            <div class="member-list" id="chatRoomMembers">
+                                <!-- Members will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeChatRoomModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="createChatRoom()">
+                        <i class="fas fa-plus"></i> إنشاء الكروب
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Announcement Modal -->
     <div class="modal" id="announcementModal">
         <div class="modal-content">
