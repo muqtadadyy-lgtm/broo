@@ -1054,8 +1054,110 @@ async function publishImageAnnouncement() {
 }
 
 function openContestModal() {
-    showNotification('إنشاء المسابقات قيد التطوير', 'info');
+    document.getElementById('contestModal').style.display = 'flex';
     toggleFabMenu();
+}
+
+function closeContestModal() {
+    document.getElementById('contestModal').style.display = 'none';
+}
+
+async function createContest() {
+    const name = document.getElementById('contestName').value.trim();
+    const type = document.getElementById('contestType').value;
+    const description = document.getElementById('contestDescription').value.trim();
+    const startDate = document.getElementById('contestStartDate').value;
+    const endDate = document.getElementById('contestEndDate').value;
+    const requirements = document.getElementById('contestRequirements').value.trim();
+    const maxParticipants = document.getElementById('contestMaxParticipants').value;
+    const prize = document.getElementById('contestPrize').value.trim();
+    const rules = document.getElementById('contestRules').value.trim();
+    const judges = document.getElementById('contestJudges').value.trim();
+    const status = document.getElementById('contestStatus').value;
+    const visibility = document.getElementById('contestVisibility').value;
+    
+    // Get selected eligibility categories
+    const eligibility = [];
+    document.querySelectorAll('input[name="eligibility"]:checked').forEach(checkbox => {
+        eligibility.push(checkbox.value);
+    });
+    
+    // Validation
+    if (!name || !description || !startDate || !endDate || !requirements || !rules) {
+        showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
+    
+    if (new Date(startDate) >= new Date(endDate)) {
+        showNotification('تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء', 'error');
+        return;
+    }
+    
+    if (eligibility.length === 0) {
+        showNotification('الرجاء اختيار فئة واحدة على الأقل للمشاركة', 'error');
+        return;
+    }
+    
+    try {
+        // Create contest data
+        const contestData = {
+            name: name,
+            type: type,
+            description: description,
+            startDate: startDate,
+            endDate: endDate,
+            eligibility: eligibility,
+            requirements: requirements,
+            maxParticipants: maxParticipants,
+            prize: prize,
+            rules: rules,
+            judges: judges.split(',').map(j => j.trim()).filter(j => j),
+            status: status,
+            visibility: visibility,
+            createdBy: currentUser.fullName,
+            createdAt: new Date().toISOString()
+        };
+        
+        // Here you would normally send to API
+        showNotification('جاري إنشاء المسابقة...', 'info');
+        
+        // Simulate creation
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const typeText = type === 'academic' ? 'أكاديمية' : 
+                        type === 'sports' ? 'رياضية' : 
+                        type === 'art' ? 'فنية' : 
+                        type === 'technology' ? 'تقنية' : 
+                        type === 'general' ? 'عامة' : 'إبداعية';
+        
+        showNotification(`تم إنشاء المسابقة "${name}" (${typeText}) بنجاح`, 'success');
+        
+        // Clear form
+        document.getElementById('contestName').value = '';
+        document.getElementById('contestType').value = 'academic';
+        document.getElementById('contestDescription').value = '';
+        document.getElementById('contestStartDate').value = '';
+        document.getElementById('contestEndDate').value = '';
+        document.getElementById('contestRequirements').value = '';
+        document.getElementById('contestMaxParticipants').value = '50';
+        document.getElementById('contestPrize').value = '';
+        document.getElementById('contestRules').value = '';
+        document.getElementById('contestJudges').value = '';
+        document.getElementById('contestStatus').value = 'draft';
+        document.getElementById('contestVisibility').value = 'public';
+        
+        // Reset eligibility checkboxes
+        document.querySelectorAll('input[name="eligibility"]').forEach(checkbox => {
+            checkbox.checked = checkbox.value === 'students';
+        });
+        
+        // Close modal
+        closeContestModal();
+        
+    } catch (error) {
+        console.error('Error creating contest:', error);
+        showNotification('حدث خطأ في إنشاء المسابقة', 'error');
+    }
 }
 
 function openChatRoomModal() {
