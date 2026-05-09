@@ -469,7 +469,8 @@
 .empty-notifications,
 .empty-images,
 .empty-videos,
-.empty-contests {
+.empty-contests,
+.empty-users {
     text-align: center;
     padding: 60px 20px;
     color: var(--text-muted);
@@ -479,7 +480,8 @@
 .empty-notifications .empty-icon,
 .empty-images .empty-icon,
 .empty-videos .empty-icon,
-.empty-contests .empty-icon {
+.empty-contests .empty-icon,
+.empty-users .empty-icon {
     font-size: 64px;
     color: var(--text-muted);
     margin-bottom: 20px;
@@ -490,7 +492,8 @@
 .empty-notifications h3,
 .empty-images h3,
 .empty-videos h3,
-.empty-contests h3 {
+.empty-contests h3,
+.empty-users h3 {
     color: var(--text-color);
     font-size: 24px;
     margin-bottom: 15px;
@@ -501,7 +504,8 @@
 .empty-notifications p,
 .empty-images p,
 .empty-videos p,
-.empty-contests p {
+.empty-contests p,
+.empty-users p {
     font-size: 16px;
     line-height: 1.6;
     margin-bottom: 20px;
@@ -514,7 +518,8 @@
 .empty-notifications .empty-info,
 .empty-images .empty-info,
 .empty-videos .empty-info,
-.empty-contests .empty-info {
+.empty-contests .empty-info,
+.empty-users .empty-info {
     background: var(--secondary-background);
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -527,7 +532,8 @@
 .empty-notifications .empty-info p,
 .empty-images .empty-info p,
 .empty-videos .empty-info p,
-.empty-contests .empty-info p {
+.empty-contests .empty-info p,
+.empty-users .empty-info p {
     margin: 0;
     font-size: 14px;
     color: var(--text-muted);

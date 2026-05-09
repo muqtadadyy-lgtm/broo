@@ -115,35 +115,27 @@ function closeStudentUsers() {
 }
 
 function loadStudentUsers() {
-    // Mock data for users
-    studentUsers = [
-        {
-            id: 1,
-            name: 'أحمد محمد',
-            role: 'student',
-            status: 'online',
-            avatar: '/static/images/user1.jpg',
-            department: 'هندسة الحاسوب'
-        },
-        {
-            id: 2,
-            name: 'فاطمة علي',
-            role: 'student',
-            status: 'offline',
-            avatar: '/static/images/user2.jpg',
-            department: 'طب الأسنان'
-        },
-        {
-            id: 3,
-            name: 'الأستاذ خالد',
-            role: 'staff',
-            status: 'online',
-            avatar: '/static/images/staff1.jpg',
-            department: 'كلية الطب'
-        }
-    ];
+    // Get only real users from the main system
+    studentUsers = [];
     
-    displayStudentUsers();
+    // Check if there are any real users in the main system
+    if (typeof allUsers !== 'undefined' && allUsers.length > 0) {
+        studentUsers = allUsers.map(user => ({
+            id: user.id,
+            name: user.name,
+            role: user.role,
+            status: user.status === 'active' ? 'online' : 'offline',
+            avatar: user.avatar || '/static/images/default-avatar.jpg',
+            department: user.department || user.email.split('@')[0]
+        }));
+    }
+    
+    // If no real users exist, show empty state
+    if (studentUsers.length === 0) {
+        showEmptyUsersState();
+    } else {
+        displayStudentUsers();
+    }
 }
 
 function displayStudentUsers() {
@@ -197,6 +189,22 @@ function searchStudentUsers() {
 
 function filterStudentUsers() {
     displayStudentUsers();
+}
+
+function showEmptyUsersState() {
+    const container = document.getElementById('studentUsersList');
+    container.innerHTML = `
+        <div class="empty-users">
+            <div class="empty-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3>لا توجد مستخدمين</h3>
+            <p>لم يتم تسجيل أي مستخدمين في النظام بعد. سيتم عرض المستخدمين المسجلين هنا عند وجودهم.</p>
+            <div class="empty-info">
+                <p><i class="fas fa-info-circle"></i> سيتم عرض المستخدمين المسجلين في النظام فقط</p>
+            </div>
+        </div>
+    `;
 }
 
 // Chat Rooms Functions
