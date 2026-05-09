@@ -25,6 +25,16 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Display user name
     document.getElementById('employeeName').textContent = user.fullName;
+    
+    // Check if user is main employee (admin account)
+    const isMainEmployee = user.username === 'admin' || user.fullName.includes('الرئيسي');
+    
+    // Show FAB only for main employee
+    const fabContainer = document.getElementById('fabContainer');
+    if (fabContainer) {
+        fabContainer.style.display = isMainEmployee ? 'block' : 'none';
+    }
+    
     // Show create employee button for all employees
     const createBtn = document.getElementById('createEmployeeBtn');
     if (createBtn) {
