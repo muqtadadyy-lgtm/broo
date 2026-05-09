@@ -1319,6 +1319,24 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
     font-size: 12px;
 }
 
+.chat-btn {
+    background: #6c757d;
+    color: white;
+}
+
+.chat-btn:hover {
+    background: #5a6268;
+}
+
+.add-chat-btn {
+    background: #28a745;
+    color: white;
+}
+
+.add-chat-btn:hover {
+    background: #218838;
+}
+
 .edit-btn {
     background: var(--info-color);
     color: white;

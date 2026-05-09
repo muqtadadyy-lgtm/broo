@@ -2198,6 +2198,12 @@ function displayUsers() {
             <td class="date-cell">${formatDate(user.createdAt)}</td>
             <td class="date-cell">${formatDate(user.lastLogin)}</td>
             <td class="actions-cell">
+                <button class="action-btn chat-btn" onclick="openChatRoomForUser(${user.id})" title="فتح محادثة">
+                    <i class="fas fa-comment"></i>
+                </button>
+                <button class="action-btn add-chat-btn" onclick="addUserToChatRoom(${user.id})" title="إضافة لكروب الدردشة">
+                    <i class="fas fa-user-plus"></i>
+                </button>
                 <button class="action-btn edit-btn" onclick="editUser(${user.id})" title="تعديل">
                     <i class="fas fa-edit"></i>
                 </button>
@@ -2428,6 +2434,74 @@ function editUser(userId) {
     if (user) {
         showNotification(`فتح تعديل المستخدم: ${user.name}`, 'info');
         // In real app, open edit modal
+    }
+}
+
+function addUserToChatRoom(userId) {
+    const user = allUsers.find(u => u.id === userId);
+    if (user) {
+        // Check if user is already in a chat room
+        if (chatRoomMembers.some(member => member.id === userId)) {
+            showNotification('هذا المستخدم موجود بالفعل في كروب الدردشة', 'warning');
+            return;
+        }
+        
+        // Add user to current chat room
+        chatRoomMembers.push({
+            ...user,
+            joinedAt: new Date().toISOString(),
+            role: 'member'
+        });
+        
+        // Update member list
+        updateMemberList();
+        
+        // If chat interface is open, update online members
+        if (document.getElementById('chatInterfaceModal').style.display === 'flex') {
+            onlineMembers.push({
+                ...user,
+                status: 'online',
+                lastSeen: new Date().toISOString(),
+                isTyping: false
+            });
+            updateMemberStatusList();
+            updateRoomInfo();
+        }
+        
+        showNotification(`تم إضافة ${user.name} إلى كروب الدردشة بنجاح`, 'success');
+    }
+}
+
+function openChatRoomForUser(userId) {
+    const user = allUsers.find(u => u.id === userId);
+    if (user) {
+        // Set current room info for this user
+        currentRoom = {
+            id: 'user_' + userId,
+            name: `محادثة مع ${user.name}`,
+            type: 'private',
+            members: [user],
+            createdAt: new Date().toISOString()
+        };
+        
+        // Initialize chat with this user
+        initializeChatRoom();
+        
+        // Open chat interface
+        openChatInterfaceModal();
+        
+        // Add user to online members
+        onlineMembers = [{
+            ...user,
+            status: 'online',
+            lastSeen: new Date().toISOString(),
+            isTyping: false
+        }];
+        
+        updateMemberStatusList();
+        updateRoomInfo();
+        
+        showNotification(`تم فتح محادثة مع ${user.name}`, 'success');
     }
 }
 
