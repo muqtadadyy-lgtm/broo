@@ -6,6 +6,7 @@
     <title>لوحة تحكم الطالب - نظام الأنشطة الطلابية</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="animations.css">
+    <link rel="stylesheet" href="student-control-panel.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="dashboard-body theme-blue-light">
@@ -47,10 +48,6 @@
         <div class="theme-menu" id="themeMenu">
             <div class="theme-menu-header" data-ar="اختر الثيم المفضل" data-en="Choose Your Theme" data-fr="Choisissez votre thème" data-ku="تێمای دڵخواز هەڵبژێرە">اختر الثيم المفضل</div>
             <div class="theme-options">
-                <button class="theme-option" onclick="changeTheme('pink')" data-theme="pink">
-                    <span class="theme-color" style="background-color: #ec4899;"></span>
-                    <span class="theme-name" data-ar="وردي" data-en="Pink" data-fr="Rose" data-ku="سورە">وردي</span>
-                </button>
                 <button class="theme-option" onclick="changeTheme('blue-light')" data-theme="blue-light">
                     <span class="theme-color" style="background-color: #ffffff; border: 2px solid #ddd;"></span>
                     <span class="theme-name" data-ar="أبيض" data-en="White" data-fr="Blanc" data-ku="سپی">أبيض</span>
@@ -210,6 +207,86 @@
             </div>
         </div>
 
+        <!-- Control Panel Section -->
+        <div class="control-panel-section">
+            <h2 class="section-title">
+                <i class="fas fa-th-large"></i>
+                <span data-ar="لوحة التحكم" data-en="Control Panel" data-fr="Panneau de contrôle" data-ku="ڕوواری کۆنترۆڵ">لوحة التحكم</span>
+            </h2>
+
+            <div class="control-panel-grid">
+                <!-- Announcements Card -->
+                <div class="control-card" onclick="openStudentAnnouncements()">
+                    <div class="card-icon">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <h3 data-ar="الإعلانات" data-en="Announcements" data-fr="Annonces" data-ku="ئاگانامەکان">الإعلانات</h3>
+                    <p data-ar="عرض آخر الإعلانات والإشعارات الرسمية" data-en="View latest announcements and official notifications" data-fr="Voir les dernières annonces et notifications officielles" data-ku="دواین ئاگانامە و ئاگادارکردنەوە فەرمییەکان ببینە">عرض آخر الإعلانات والإشعارات الرسمية</p>
+                    <div class="card-badge" id="announcementsCount">0</div>
+                </div>
+
+                <!-- Users Card -->
+                <div class="control-card" onclick="openStudentUsers()">
+                    <div class="card-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 data-ar="المستخدمين" data-en="Users" data-fr="Utilisateurs" data-ku="بەکارهێنەران">المستخدمين</h3>
+                    <p data-ar="عرض قائمة المستخدمين والطلاب النشطين" data-en="View list of users and active students" data-fr="Voir la liste des utilisateurs et des étudiants actifs" data-ku="لیستی بەکارهێنەران و خوێندکاران چالاک ببینە">عرض قائمة المستخدمين والطلاب النشطين</p>
+                    <div class="card-badge" id="usersCount">0</div>
+                </div>
+
+                <!-- Chat Rooms Card -->
+                <div class="control-card" onclick="openStudentChatRooms()">
+                    <div class="card-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h3 data-ar="كروب الدردشة" data-en="Chat Groups" data-fr="Groupes de discussion" data-ku="کۆمەڵەکانی گفتوگۆ">كروب الدردشة</h3>
+                    <p data-ar="الوصول إلى كروبات الدردشة والمحادثات" data-en="Access chat groups and conversations" data-fr="Accéder aux groupes de discussion et conversations" data-ku="دەستبەجێ بە کۆمەڵەکانی گفتوگۆ و گفتوگۆکان">الوصول إلى كروبات الدردشة والمحادثات</p>
+                    <div class="card-badge" id="chatRoomsCount">0</div>
+                </div>
+
+                <!-- Notifications Card -->
+                <div class="control-card" onclick="openStudentNotifications()">
+                    <div class="card-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3 data-ar="إشعارات" data-en="Notifications" data-fr="Notifications" data-ku="ئاگادارکردنەوەکان">إشعارات</h3>
+                    <p data-ar="عرض الإشعارات الشخصية والتحديثات" data-en="View personal notifications and updates" data-fr="Voir les notifications personnelles et les mises à jour" data-ku="ئاگادارکردنەوە کەسییەکان و نوێکردنەوەکان ببینە">عرض الإشعارات الشخصية والتحديثات</p>
+                    <div class="card-badge" id="notificationsCount">0</div>
+                </div>
+
+                <!-- Images Card -->
+                <div class="control-card" onclick="openStudentImages()">
+                    <div class="card-icon">
+                        <i class="fas fa-images"></i>
+                    </div>
+                    <h3 data-ar="صور" data-en="Images" data-fr="Images" data-ku="وێنەکان">صور</h3>
+                    <p data-ar="معرض الصور والفعاليات والأنشطة" data-en="Photo gallery of events and activities" data-fr="Galerie de photos des événements et activités" data-ku="گەلەری وێنەی ڕووداو و چالاکییەکان">معرض الصور والفعاليات والأنشطة</p>
+                    <div class="card-badge" id="imagesCount">0</div>
+                </div>
+
+                <!-- Videos Card -->
+                <div class="control-card" onclick="openStudentVideos()">
+                    <div class="card-icon">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <h3 data-ar="فيديو" data-en="Videos" data-fr="Vidéos" data-ku="ڤیدیۆکان">فيديو</h3>
+                    <p data-ar="مقاطع الفيديو والفعاليات المسجلة" data-en="Video clips and recorded events" data-fr="Clips vidéo et événements enregistrés" data-ku="کلیپە ڤیدیۆییەکان و ڕووداوە تۆمارکراوەکان">مقاطع الفيديو والفعاليات المسجلة</p>
+                    <div class="card-badge" id="videosCount">0</div>
+                </div>
+
+                <!-- Contests Card -->
+                <div class="control-card" onclick="openStudentContests()">
+                    <div class="card-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <h3 data-ar="مسابقات" data-en="Contests" data-fr="Concours" data-ku="پێشبڕکێیەکان">مسابقات</h3>
+                    <p data-ar="المسابقات والتحديات المتاحة للطلاب" data-en="Available contests and challenges for students" data-fr="Concours et défis disponibles pour les étudiants" data-ku="پێشبڕکێ و داهێنانە بەردەستەکان بۆ خوێندکاران">المسابقات والتحديات المتاحة للطلاب</p>
+                    <div class="card-badge" id="contestsCount">0</div>
+                </div>
+            </div>
+        </div>
+
         <!-- My Applications Section -->
         <div class="my-applications-section">
             <h2 class="section-title">
@@ -296,6 +373,221 @@
         </div>
     </div>
 
+    <!-- Student Announcements Modal -->
+    <div class="modal" id="studentAnnouncementsModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-bullhorn"></i> الإعلانات</h2>
+                <button class="close-btn" onclick="closeStudentAnnouncements()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="announcements-content">
+                <div class="announcements-filter">
+                    <select id="announcementFilter" onchange="filterAnnouncements()">
+                        <option value="all">كل الإعلانات</option>
+                        <option value="general">عام</option>
+                        <option value="academic">أكاديمي</option>
+                        <option value="events">فعاليات</option>
+                        <option value="urgent">عاجل</option>
+                    </select>
+                </div>
+                <div id="studentAnnouncementsList" class="announcements-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Users Modal -->
+    <div class="modal" id="studentUsersModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-users"></i> المستخدمين</h2>
+                <button class="close-btn" onclick="closeStudentUsers()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="users-content">
+                <div class="users-filter">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="studentUserSearch" placeholder="البحث عن مستخدم..." onkeyup="searchStudentUsers()">
+                    </div>
+                    <select id="studentUserFilter" onchange="filterStudentUsers()">
+                        <option value="all">كل المستخدمين</option>
+                        <option value="students">طلاب</option>
+                        <option value="staff">الموظفين</option>
+                        <option value="online">متصلين</option>
+                    </select>
+                </div>
+                <div id="studentUsersList" class="users-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Chat Rooms Modal -->
+    <div class="modal" id="studentChatRoomsModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-comments"></i> كروب الدردشة</h2>
+                <button class="close-btn" onclick="closeStudentChatRooms()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="chat-rooms-content">
+                <div id="studentChatRoomsList" class="chat-rooms-grid"></div>
+                <button class="primary-btn" onclick="openStudentChatInterface()">
+                    <i class="fas fa-plus"></i> فتح واجهة الدردشة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Notifications Modal -->
+    <div class="modal" id="studentNotificationsModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-bell"></i> إشعارات</h2>
+                <button class="close-btn" onclick="closeStudentNotifications()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="notifications-content">
+                <div class="notifications-filter">
+                    <select id="notificationFilter" onchange="filterNotifications()">
+                        <option value="all">كل الإشعارات</option>
+                        <option value="unread">غير مقروءة</option>
+                        <option value="read">مقروءة</option>
+                        <option value="important">مهمة</option>
+                    </select>
+                </div>
+                <div id="studentNotificationsList" class="notifications-list"></div>
+                <button class="secondary-btn" onclick="markAllNotificationsAsRead()">
+                    <i class="fas fa-check-double"></i> تعيين الكل كمقروء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Images Modal -->
+    <div class="modal" id="studentImagesModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-images"></i> صور</h2>
+                <button class="close-btn" onclick="closeStudentImages()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="images-content">
+                <div class="images-filter">
+                    <select id="imageFilter" onchange="filterImages()">
+                        <option value="all">كل الصور</option>
+                        <option value="events">فعاليات</option>
+                        <option value="activities">أنشطة</option>
+                        <option value="achievements">إنجازات</option>
+                    </select>
+                </div>
+                <div id="studentImagesGallery" class="images-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Videos Modal -->
+    <div class="modal" id="studentVideosModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-video"></i> فيديو</h2>
+                <button class="close-btn" onclick="closeStudentVideos()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="videos-content">
+                <div class="videos-filter">
+                    <select id="videoFilter" onchange="filterVideos()">
+                        <option value="all">كل الفيديوهات</option>
+                        <option value="lectures">محاضرات</option>
+                        <option value="events">فعاليات</option>
+                        <option value="tutorials">دروس تعليمية</option>
+                    </select>
+                </div>
+                <div id="studentVideosGallery" class="videos-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Contests Modal -->
+    <div class="modal" id="studentContestsModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-trophy"></i> مسابقات</h2>
+                <button class="close-btn" onclick="closeStudentContests()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="contests-content">
+                <div class="contests-filter">
+                    <select id="contestFilter" onchange="filterContests()">
+                        <option value="all">كل المسابقات</option>
+                        <option value="active">نشطة</option>
+                        <option value="upcoming">قادمة</option>
+                        <option value="completed">منتهية</option>
+                    </select>
+                </div>
+                <div id="studentContestsList" class="contests-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Chat Interface Modal -->
+    <div class="modal" id="studentChatInterfaceModal">
+        <div class="modal-content chat-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-comments"></i> واجهة الدردشة</h2>
+                <button class="close-btn" onclick="closeStudentChatInterface()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="chat-interface">
+                <div class="chat-sidebar">
+                    <div class="chat-room-info">
+                        <h3>كروب الدردشة</h3>
+                        <div class="room-details">
+                            <p><strong>الاسم:</strong> <span id="studentCurrentRoomName">كروب الطلاب</span></p>
+                            <p><strong>الأعضاء:</strong> <span id="studentCurrentRoomMembersCount">0</span></p>
+                            <p><strong>المتصلين:</strong> <span id="studentOnlineMembersCount">0</span></p>
+                        </div>
+                    </div>
+                    <div class="members-list">
+                        <h4>الأعضاء</h4>
+                        <div class="member-status-list" id="studentMemberStatusList"></div>
+                    </div>
+                </div>
+                <div class="chat-main">
+                    <div class="chat-messages" id="studentChatMessages">
+                        <div class="welcome-message">
+                            <i class="fas fa-info-circle"></i>
+                            <span>مرحباً بك في كروب الدردشة!</span>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <div class="message-composer">
+                            <div class="input-toolbar">
+                                <button class="toolbar-btn" onclick="addStudentEmoji()" title="إضافة رمز تعبيري"><i class="fas fa-smile"></i></button>
+                                <button class="toolbar-btn" onclick="attachStudentFile()" title="إرفاق ملف"><i class="fas fa-paperclip"></i></button>
+                            </div>
+                            <div class="message-input-container">
+                                <textarea id="studentMessageInput" placeholder="اكتب رسالتك هنا..." onkeypress="handleStudentMessageKeyPress(event)" oninput="handleStudentMessageInput()"></textarea>
+                                <button class="send-btn" onclick="sendStudentMessage()" id="studentSendButton"><i class="fas fa-paper-plane"></i></button>
+                            </div>
+                            <div class="typing-indicator" id="studentTypingIndicator" style="display: none;">
+                                <span id="studentTypingText">أحد الأعضاء يكتب...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Employee Request Details Modal -->
     <div class="modal" id="employeeRequestModal">
         <div class="modal-content large">
@@ -317,6 +609,7 @@
     <script src="script.js"></script>
     <script src="api-client.js"></script>
     <script src="student-script.js"></script>
+    <script src="student-control-panel.js"></script>
     
     <!-- All scripts loaded -->
 
