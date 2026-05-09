@@ -201,6 +201,165 @@
             </div>
         </div>
 
+        <!-- Digital Library Section -->
+        <div class="library-section" id="librarySection" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-book"></i>
+                <span>📚 المكتبة الإلكترونية</span>
+            </h2>
+            
+            <!-- Library Statistics -->
+            <div class="library-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="booksCount">0</h3>
+                        <p>الكتب</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="videosCount">0</h3>
+                        <p>الفيديوهات</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="filesCount">0</h3>
+                        <p>الملفات</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="linksCount">0</h3>
+                        <p>الروابط</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Search Bar -->
+            <div class="library-search">
+                <div class="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="librarySearchInput" placeholder="البحث في المكتبة..." onkeyup="searchLibrary()">
+                    <select id="libraryCategoryFilter" onchange="filterLibrary()">
+                        <option value="">جميع الفئات</option>
+                        <option value="books">الكتب</option>
+                        <option value="videos">الفيديوهات</option>
+                        <option value="files">الملفات</option>
+                        <option value="links">الروابط</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Library Content Grid -->
+            <div class="library-content" id="libraryContent">
+                <div class="library-grid" id="libraryGrid"></div>
+            </div>
+        </div>
+
+        <!-- Library Books Section -->
+        <div class="library-books-section" id="libraryBooksSection" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-file-pdf"></i>
+                <span>📚 الكتب الإلكترونية</span>
+            </h2>
+            
+            <!-- Book Upload Controls -->
+            <div class="book-controls">
+                <div class="control-row">
+                    <select id="bookCollegeFilter" onchange="filterBooks()">
+                        <option value="">جميع الكليات</option>
+                        <option value="medicine">كلية الطب</option>
+                        <option value="engineering">كلية الهندسة</option>
+                        <option value="science">كلية العلوم</option>
+                        <option value="arts">كلية الآداب</option>
+                        <option value="law">كلية الحقوق</option>
+                    </select>
+                    <select id="bookStageFilter" onchange="filterBooks()">
+                        <option value="">جميع المراحل</option>
+                        <option value="first">المرحلة الأولى</option>
+                        <option value="second">المرحلة الثانية</option>
+                        <option value="third">المرحلة الثالثة</option>
+                        <option value="fourth">المرحلة الرابعة</option>
+                        <option value="fifth">المرحلة الخامسة</option>
+                        <option value="sixth">المرحلة السادسة</option>
+                    </select>
+                    <button class="submit-btn" onclick="openBookUploadModal()">
+                        <i class="fas fa-upload"></i> رفع كتاب جديد
+                    </button>
+                </div>
+            </div>
+
+            <!-- Books Grid -->
+            <div class="books-grid" id="booksGrid"></div>
+        </div>
+
+        <!-- Library Videos Section -->
+        <div class="library-videos-section" id="libraryVideosSection" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-video"></i>
+                <span>🎥 الفيديوهات التعليمية</span>
+            </h2>
+            
+            <!-- Video Upload Controls -->
+            <div class="video-controls">
+                <button class="submit-btn" onclick="openVideoUploadModal()">
+                    <i class="fas fa-upload"></i> رفع فيديو جديد
+                </button>
+            </div>
+
+            <!-- Videos Grid -->
+            <div class="videos-grid" id="videosGrid"></div>
+        </div>
+
+        <!-- Library Files Section -->
+        <div class="library-files-section" id="libraryFilesSection" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-file-alt"></i>
+                <span>📄 الملفات والملازم</span>
+            </h2>
+            
+            <!-- File Upload Controls -->
+            <div class="file-controls">
+                <button class="submit-btn" onclick="openFileUploadModal()">
+                    <i class="fas fa-upload"></i> رفع ملف جديد
+                </button>
+            </div>
+
+            <!-- Files Grid -->
+            <div class="files-grid" id="filesGrid"></div>
+        </div>
+
+        <!-- Library Links Section -->
+        <div class="library-links-section" id="libraryLinksSection" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-link"></i>
+                <span>🔗 الروابط الدراسية</span>
+            </h2>
+            
+            <!-- Link Add Controls -->
+            <div class="link-controls">
+                <button class="submit-btn" onclick="openLinkAddModal()">
+                    <i class="fas fa-plus"></i> إضافة رابط جديد
+                </button>
+            </div>
+
+            <!-- Links Grid -->
+            <div class="links-grid" id="linksGrid"></div>
+        </div>
+
     </main>
 
     <!-- Application Details Modal -->
@@ -298,18 +457,6 @@
                     <button type="button" class="cancel-btn" onclick="closeCreateEmployeeModal()"><span data-ar="إلغاء" data-ku="هەڵوەشاندنەوە">إلغاء</span></button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- Supervisor Chat Modal -->
-    <div class="modal" id="supervisorChatModal">
-        <div class="messaging-content">
-            <div class="modal-header">
-                <div class="header-info">
-                    <h2 id="supervisorChatTitle">مدير الموظفين</h2>
-                    <p class="other-user" id="supervisorChatSubtitle"></p>
-                </div>
-                <button class="close-btn" onclick="closeSupervisorChat()"><i class="fas fa-times"></i></button>
             </div>
             <div class="messages-container" id="supervisorMessagesList"></div>
             <div class="message-input-area">
@@ -415,6 +562,34 @@
             <button class="fab-item" onclick="openContestModal()" title="إنشاء مسابقة">
                 <i class="fas fa-trophy"></i>
                 <span>إنشاء مسابقة</span>
+            </button>
+            <button class="fab-item library-fab" onclick="toggleLibraryFAB()" title="المكتبة الإلكترونية">
+                <i class="fas fa-book"></i>
+                <span>المكتبة</span>
+            </button>
+        </div>
+        
+        <!-- Library FAB Submenu -->
+        <div class="fab-submenu" id="libraryFABSubmenu" style="display: none;">
+            <button class="fab-item" onclick="openBookUploadModal()" title="رفع كتاب">
+                <i class="fas fa-file-pdf"></i>
+                <span>رفع كتاب</span>
+            </button>
+            <button class="fab-item" onclick="openVideoUploadModal()" title="رفع فيديو">
+                <i class="fas fa-video"></i>
+                <span>رفع فيديو</span>
+            </button>
+            <button class="fab-item" onclick="openFileUploadModal()" title="رفع ملف">
+                <i class="fas fa-file-alt"></i>
+                <span>رفع ملف</span>
+            </button>
+            <button class="fab-item" onclick="openLinkAddModal()" title="إضافة رابط">
+                <i class="fas fa-link"></i>
+                <span>إضافة رابط</span>
+            </button>
+            <button class="fab-item" onclick="openLibraryAnnouncementModal()" title="إعلان للمكتبة">
+                <i class="fas fa-bullhorn"></i>
+                <span>إعلان</span>
             </button>
         </div>
     </div>
@@ -1706,6 +1881,339 @@
                     </button>
                     <button type="button" class="submit-btn" onclick="createAccount()">
                         <i class="fas fa-user-plus"></i> إنشاء الحساب
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Book Upload Modal -->
+    <div class="modal" id="bookUploadModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-file-pdf"></i> رفع كتاب جديد</h2>
+                <button class="close-btn" onclick="closeBookUploadModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="book-upload-form">
+                <div class="form-section">
+                    <h3>معلومات الكتاب</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bookTitle">عنوان الكتاب:</label>
+                            <input type="text" id="bookTitle" placeholder="أدخل عنوان الكتاب..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="bookAuthor">المؤلف:</label>
+                            <input type="text" id="bookAuthor" placeholder="أدخل اسم المؤلف..." required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bookCollege">الكلية:</label>
+                            <select id="bookCollege" required>
+                                <option value="">اختر الكلية...</option>
+                                <option value="medicine">كلية الطب</option>
+                                <option value="engineering">كلية الهندسة</option>
+                                <option value="science">كلية العلوم</option>
+                                <option value="arts">كلية الآداب</option>
+                                <option value="law">كلية الحقوق</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="bookStage">المرحلة:</label>
+                            <select id="bookStage" required>
+                                <option value="">اختر المرحلة...</option>
+                                <option value="first">المرحلة الأولى</option>
+                                <option value="second">المرحلة الثانية</option>
+                                <option value="third">المرحلة الثالثة</option>
+                                <option value="fourth">المرحلة الرابعة</option>
+                                <option value="fifth">المرحلة الخامسة</option>
+                                <option value="sixth">المرحلة السادسة</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookDescription">وصف الكتاب:</label>
+                        <textarea id="bookDescription" rows="4" placeholder="أدخل وصف الكتاب..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookTags">الوسوم (فصل بينها بفاصلة):</label>
+                        <input type="text" id="bookTags" placeholder="مثال: طب, تشريح, مرجع">
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>رفع الملفات</h3>
+                    <div class="form-group">
+                        <label for="bookFile">ملف الكتاب (PDF):</label>
+                        <input type="file" id="bookFile" accept=".pdf" required onchange="handleBookFileSelect(event)">
+                        <div class="file-info" id="bookFileInfo">لم يتم اختيار ملف بعد</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookCover">غلاف الكتاب (اختياري):</label>
+                        <input type="file" id="bookCover" accept="image/*" onchange="handleBookCoverSelect(event)">
+                        <div class="file-info" id="bookCoverInfo">لم يتم اختيار صورة بعد</div>
+                    </div>
+                    <div class="book-preview" id="bookPreview" style="display: none;">
+                        <h3>معاينة الكتاب:</h3>
+                        <img id="bookCoverPreview" style="width: 150px; height: 200px; object-fit: cover; margin: 10px 0;">
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeBookUploadModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="uploadBook()">
+                        <i class="fas fa-upload"></i> رفع الكتاب
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Upload Modal -->
+    <div class="modal" id="videoUploadModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-video"></i> رفع فيديو تعليمي</h2>
+                <button class="close-btn" onclick="closeVideoUploadModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="video-upload-form">
+                <div class="form-section">
+                    <h3>معلومات الفيديو</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="videoTitle">عنوان الفيديو:</label>
+                            <input type="text" id="videoTitle" placeholder="أدخل عنوان الفيديو..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="videoDuration">المدة:</label>
+                            <input type="text" id="videoDuration" placeholder="مثال: 15:30">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="videoCollege">الكلية:</label>
+                            <select id="videoCollege">
+                                <option value="">اختر الكلية...</option>
+                                <option value="medicine">كلية الطب</option>
+                                <option value="engineering">كلية الهندسة</option>
+                                <option value="science">كلية العلوم</option>
+                                <option value="arts">كلية الآداب</option>
+                                <option value="law">كلية الحقوق</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="videoStage">المرحلة:</label>
+                            <select id="videoStage">
+                                <option value="">اختر المرحلة...</option>
+                                <option value="first">المرحلة الأولى</option>
+                                <option value="second">المرحلة الثانية</option>
+                                <option value="third">المرحلة الثالثة</option>
+                                <option value="fourth">المرحلة الرابعة</option>
+                                <option value="fifth">المرحلة الخامسة</option>
+                                <option value="sixth">المرحلة السادسة</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="videoDescription">وصف الفيديو:</label>
+                        <textarea id="videoDescription" rows="4" placeholder="أدخل وصف الفيديو..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="videoTags">الوسوم (فصل بينها بفاصلة):</label>
+                        <input type="text" id="videoTags" placeholder="مثال: محاضرة, تشريح, طب">
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>رفع الملفات</h3>
+                    <div class="form-group">
+                        <label for="videoFile">ملف الفيديو:</label>
+                        <input type="file" id="videoFile" accept="video/*" required onchange="handleVideoFileSelect(event)">
+                        <div class="file-info" id="videoFileInfo">لم يتم اختيار ملف بعد</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="videoThumbnail">صورة مصغرة (اختياري):</label>
+                        <input type="file" id="videoThumbnail" accept="image/*" onchange="handleVideoThumbnailSelect(event)">
+                        <div class="file-info" id="videoThumbnailInfo">لم يتم اختيار صورة بعد</div>
+                    </div>
+                    <div class="video-preview" id="videoPreview" style="display: none;">
+                        <h3>معاينة الفيديو:</h3>
+                        <video id="previewVideo" controls style="width: 100%; max-height: 300px;"></video>
+                        <img id="previewThumbnail" style="width: 150px; height: 100px; object-fit: cover; margin-top: 10px;">
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeVideoUploadModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="uploadVideo()">
+                        <i class="fas fa-upload"></i> رفع الفيديو
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Upload Modal -->
+    <div class="modal" id="fileUploadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-file-alt"></i> رفع ملف أو مذكرة</h2>
+                <button class="close-btn" onclick="closeFileUploadModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="file-upload-form">
+                <div class="form-group">
+                    <label for="fileTitle">عنوان الملف:</label>
+                    <input type="text" id="fileTitle" placeholder="أدخل عنوان الملف..." required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fileCollege">الكلية:</label>
+                        <select id="fileCollege">
+                            <option value="">اختر الكلية...</option>
+                            <option value="medicine">كلية الطب</option>
+                            <option value="engineering">كلية الهندسة</option>
+                            <option value="science">كلية العلوم</option>
+                            <option value="arts">كلية الآداب</option>
+                            <option value="law">كلية الحقوق</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="fileStage">المرحلة:</label>
+                        <select id="fileStage">
+                            <option value="">اختر المرحلة...</option>
+                            <option value="first">المرحلة الأولى</option>
+                            <option value="second">المرحلة الثانية</option>
+                            <option value="third">المرحلة الثالثة</option>
+                            <option value="fourth">المرحلة الرابعة</option>
+                            <option value="fifth">المرحلة الخامسة</option>
+                            <option value="sixth">المرحلة السادسة</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="fileDescription">وصف الملف:</label>
+                    <textarea id="fileDescription" rows="3" placeholder="أدخل وصف الملف..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="fileFile">الملف:</label>
+                    <input type="file" id="fileFile" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt" required onchange="handleFileSelect(event)">
+                    <div class="file-info" id="fileFileInfo">لم يتم اختيار ملف بعد</div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeFileUploadModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="uploadFile()">
+                        <i class="fas fa-upload"></i> رفع الملف
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link Add Modal -->
+    <div class="modal" id="linkAddModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-link"></i> إضافة رابط دراسي</h2>
+                <button class="close-btn" onclick="closeLinkAddModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="link-add-form">
+                <div class="form-group">
+                    <label for="linkTitle">عنوان الرابط:</label>
+                    <input type="text" id="linkTitle" placeholder="أدخل عنوان الرابط..." required>
+                </div>
+                <div class="form-group">
+                    <label for="linkUrl">رابط URL:</label>
+                    <input type="url" id="linkUrl" placeholder="https://example.com" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="linkCollege">الكلية:</label>
+                        <select id="linkCollege">
+                            <option value="">اختر الكلية...</option>
+                            <option value="medicine">كلية الطب</option>
+                            <option value="engineering">كلية الهندسة</option>
+                            <option value="science">كلية العلوم</option>
+                            <option value="arts">كلية الآداب</option>
+                            <option value="law">كلية الحقوق</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="linkStage">المرحلة:</label>
+                        <select id="linkStage">
+                            <option value="">اختر المرحلة...</option>
+                            <option value="first">المرحلة الأولى</option>
+                            <option value="second">المرحلة الثانية</option>
+                            <option value="third">المرحلة الثالثة</option>
+                            <option value="fourth">المرحلة الرابعة</option>
+                            <option value="fifth">المرحلة الخامسة</option>
+                            <option value="sixth">المرحلة السادسة</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="linkDescription">وصف الرابط:</label>
+                    <textarea id="linkDescription" rows="3" placeholder="أدخل وصف الرابط..." required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeLinkAddModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="addLink()">
+                        <i class="fas fa-plus"></i> إضافة الرابط
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Library Announcement Modal -->
+    <div class="modal" id="libraryAnnouncementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-bullhorn"></i> إعلان للمكتبة</h2>
+                <button class="close-btn" onclick="closeLibraryAnnouncementModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="announcement-form">
+                <div class="form-group">
+                    <label for="libraryAnnouncementTitle">عنوان الإعلان:</label>
+                    <input type="text" id="libraryAnnouncementTitle" placeholder="أدخل عنوان الإعلان..." required>
+                </div>
+                <div class="form-group">
+                    <label for="libraryAnnouncementContent">محتوى الإعلان:</label>
+                    <textarea id="libraryAnnouncementContent" rows="4" placeholder="أدخل محتوى الإعلان..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="libraryAnnouncementType">نوع الإعلان:</label>
+                    <select id="libraryAnnouncementType">
+                        <option value="general">عام</option>
+                        <option value="new_book">كتاب جديد</option>
+                        <option value="maintenance">صيانة المكتبة</option>
+                        <option value="event">فعالية</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeLibraryAnnouncementModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="publishLibraryAnnouncement()">
+                        <i class="fas fa-paper-plane"></i> نشر الإعلان
                     </button>
                 </div>
             </div>

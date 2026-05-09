@@ -3707,6 +3707,878 @@ function createAccount() {
     console.log('Account created:', newAccount);
 }
 
+// Digital Library Functions
+// Library Data Storage
+let libraryBooks = [];
+let libraryVideos = [];
+let libraryFiles = [];
+let libraryLinks = [];
+
+// Library Navigation
+function showSection(sectionName) {
+    // Hide all sections
+    document.querySelectorAll('.applications-management-section, .library-section, .library-books-section, .library-videos-section, .library-files-section, .library-links-section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Remove active class from all nav links
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
+    
+    // Show selected section
+    switch(sectionName) {
+        case 'library':
+            document.getElementById('librarySection').style.display = 'block';
+            loadLibraryContent();
+            break;
+        case 'library-books':
+            document.getElementById('libraryBooksSection').style.display = 'block';
+            loadLibraryBooks();
+            break;
+        case 'library-videos':
+            document.getElementById('libraryVideosSection').style.display = 'block';
+            loadLibraryVideos();
+            break;
+        case 'library-files':
+            document.getElementById('libraryFilesSection').style.display = 'block';
+            loadLibraryFiles();
+            break;
+        case 'library-links':
+            document.getElementById('libraryLinksSection').style.display = 'block';
+            loadLibraryLinks();
+            break;
+        default:
+            document.querySelector('.applications-management-section').style.display = 'block';
+    }
+    
+    // Add active class to clicked nav link
+    event.currentTarget.classList.add('active');
+}
+
+// FAB Library Functions
+function toggleLibraryFAB() {
+    const submenu = document.getElementById('libraryFABSubmenu');
+    const fabButton = document.querySelector('.library-fab');
+    
+    if (submenu.style.display === 'none') {
+        submenu.style.display = 'flex';
+        fabButton.classList.add('active');
+    } else {
+        submenu.style.display = 'none';
+        fabButton.classList.remove('active');
+    }
+}
+
+// Book Upload Functions
+function openBookUploadModal() {
+    document.getElementById('bookUploadModal').style.display = 'flex';
+    closeLibraryFAB();
+}
+
+function closeBookUploadModal() {
+    document.getElementById('bookUploadModal').style.display = 'none';
+    resetBookUploadForm();
+}
+
+function resetBookUploadForm() {
+    document.getElementById('bookTitle').value = '';
+    document.getElementById('bookAuthor').value = '';
+    document.getElementById('bookCollege').value = '';
+    document.getElementById('bookStage').value = '';
+    document.getElementById('bookDescription').value = '';
+    document.getElementById('bookTags').value = '';
+    document.getElementById('bookFile').value = '';
+    document.getElementById('bookCover').value = '';
+    document.getElementById('bookFileInfo').textContent = 'لم يتم اختيار ملف بعد';
+    document.getElementById('bookCoverInfo').textContent = 'لم يتم اختيار صورة بعد';
+    document.getElementById('bookPreview').style.display = 'none';
+}
+
+function handleBookFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        document.getElementById('bookFileInfo').textContent = `تم اختيار: ${file.name} (${formatFileSize(file.size)})`;
+    }
+}
+
+function handleBookCoverSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        document.getElementById('bookCoverInfo').textContent = `تم اختيار: ${file.name} (${formatFileSize(file.size)})`;
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('bookCoverPreview').src = e.target.result;
+            document.getElementById('bookPreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function uploadBook() {
+    const title = document.getElementById('bookTitle').value.trim();
+    const author = document.getElementById('bookAuthor').value.trim();
+    const college = document.getElementById('bookCollege').value;
+    const stage = document.getElementById('bookStage').value;
+    const description = document.getElementById('bookDescription').value.trim();
+    const tags = document.getElementById('bookTags').value.trim();
+    const fileInput = document.getElementById('bookFile');
+    
+    // Validation
+    if (!title || !author || !college || !stage || !description) {
+        showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
+    
+    if (!fileInput.files[0]) {
+        showNotification('الرجاء اختيار ملف الكتاب', 'error');
+        return;
+    }
+    
+    // Create book object
+    const newBook = {
+        id: Date.now(),
+        title: title,
+        author: author,
+        college: college,
+        stage: stage,
+        description: description,
+        tags: tags.split(',').map(tag => tag.trim()),
+        fileName: fileInput.files[0].name,
+        fileSize: fileInput.files[0].size,
+        uploadDate: new Date().toISOString(),
+        uploadedBy: getCurrentUser().name,
+        downloads: 0,
+        rating: 0,
+        coverImage: document.getElementById('bookCoverPreview').src || null
+    };
+    
+    // Add to library books
+    libraryBooks.push(newBook);
+    
+    // Show success message
+    showNotification('تم رفع الكتاب بنجاح', 'success');
+    
+    // Close modal and reset form
+    closeBookUploadModal();
+    
+    // Refresh library content
+    loadLibraryBooks();
+    loadLibraryContent();
+}
+
+// Video Upload Functions
+function openVideoUploadModal() {
+    document.getElementById('videoUploadModal').style.display = 'flex';
+    closeLibraryFAB();
+}
+
+function closeVideoUploadModal() {
+    document.getElementById('videoUploadModal').style.display = 'none';
+    resetVideoUploadForm();
+}
+
+function resetVideoUploadForm() {
+    document.getElementById('videoTitle').value = '';
+    document.getElementById('videoDuration').value = '';
+    document.getElementById('videoCollege').value = '';
+    document.getElementById('videoStage').value = '';
+    document.getElementById('videoDescription').value = '';
+    document.getElementById('videoTags').value = '';
+    document.getElementById('videoFile').value = '';
+    document.getElementById('videoThumbnail').value = '';
+    document.getElementById('videoFileInfo').textContent = 'لم يتم اختيار ملف بعد';
+    document.getElementById('videoThumbnailInfo').textContent = 'لم يتم اختيار صورة بعد';
+    document.getElementById('videoPreview').style.display = 'none';
+}
+
+function handleVideoFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        document.getElementById('videoFileInfo').textContent = `تم اختيار: ${file.name} (${formatFileSize(file.size)})`;
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const video = document.getElementById('previewVideo');
+            video.src = e.target.result;
+            document.getElementById('videoPreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function handleVideoThumbnailSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        document.getElementById('videoThumbnailInfo').textContent = `تم اختيار: ${file.name} (${formatFileSize(file.size)})`;
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewThumbnail').src = e.target.result;
+            document.getElementById('videoPreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function uploadVideo() {
+    const title = document.getElementById('videoTitle').value.trim();
+    const duration = document.getElementById('videoDuration').value.trim();
+    const college = document.getElementById('videoCollege').value;
+    const stage = document.getElementById('videoStage').value;
+    const description = document.getElementById('videoDescription').value.trim();
+    const tags = document.getElementById('videoTags').value.trim();
+    const fileInput = document.getElementById('videoFile');
+    
+    // Validation
+    if (!title || !college || !stage || !description) {
+        showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
+    
+    if (!fileInput.files[0]) {
+        showNotification('الرجاء اختيار ملف الفيديو', 'error');
+        return;
+    }
+    
+    // Create video object
+    const newVideo = {
+        id: Date.now(),
+        title: title,
+        duration: duration,
+        college: college,
+        stage: stage,
+        description: description,
+        tags: tags.split(',').map(tag => tag.trim()),
+        fileName: fileInput.files[0].name,
+        fileSize: fileInput.files[0].size,
+        uploadDate: new Date().toISOString(),
+        uploadedBy: getCurrentUser().name,
+        views: 0,
+        rating: 0,
+        thumbnail: document.getElementById('previewThumbnail').src || null
+    };
+    
+    // Add to library videos
+    libraryVideos.push(newVideo);
+    
+    // Show success message
+    showNotification('تم رفع الفيديو بنجاح', 'success');
+    
+    // Close modal and reset form
+    closeVideoUploadModal();
+    
+    // Refresh library content
+    loadLibraryVideos();
+    loadLibraryContent();
+}
+
+// File Upload Functions
+function openFileUploadModal() {
+    document.getElementById('fileUploadModal').style.display = 'flex';
+    closeLibraryFAB();
+}
+
+function closeFileUploadModal() {
+    document.getElementById('fileUploadModal').style.display = 'none';
+    resetFileUploadForm();
+}
+
+function resetFileUploadForm() {
+    document.getElementById('fileTitle').value = '';
+    document.getElementById('fileCollege').value = '';
+    document.getElementById('fileStage').value = '';
+    document.getElementById('fileDescription').value = '';
+    document.getElementById('fileFile').value = '';
+    document.getElementById('fileFileInfo').textContent = 'لم يتم اختيار ملف بعد';
+}
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        document.getElementById('fileFileInfo').textContent = `تم اختيار: ${file.name} (${formatFileSize(file.size)})`;
+    }
+}
+
+function uploadFile() {
+    const title = document.getElementById('fileTitle').value.trim();
+    const college = document.getElementById('fileCollege').value;
+    const stage = document.getElementById('fileStage').value;
+    const description = document.getElementById('fileDescription').value.trim();
+    const fileInput = document.getElementById('fileFile');
+    
+    // Validation
+    if (!title || !college || !stage || !description) {
+        showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
+    
+    if (!fileInput.files[0]) {
+        showNotification('الرجاء اختيار الملف', 'error');
+        return;
+    }
+    
+    // Create file object
+    const newFile = {
+        id: Date.now(),
+        title: title,
+        college: college,
+        stage: stage,
+        description: description,
+        fileName: fileInput.files[0].name,
+        fileSize: fileInput.files[0].size,
+        fileType: fileInput.files[0].name.split('.').pop().toLowerCase(),
+        uploadDate: new Date().toISOString(),
+        uploadedBy: getCurrentUser().name,
+        downloads: 0
+    };
+    
+    // Add to library files
+    libraryFiles.push(newFile);
+    
+    // Show success message
+    showNotification('تم رفع الملف بنجاح', 'success');
+    
+    // Close modal and reset form
+    closeFileUploadModal();
+    
+    // Refresh library content
+    loadLibraryFiles();
+    loadLibraryContent();
+}
+
+// Link Add Functions
+function openLinkAddModal() {
+    document.getElementById('linkAddModal').style.display = 'flex';
+    closeLibraryFAB();
+}
+
+function closeLinkAddModal() {
+    document.getElementById('linkAddModal').style.display = 'none';
+    resetLinkAddForm();
+}
+
+function resetLinkAddForm() {
+    document.getElementById('linkTitle').value = '';
+    document.getElementById('linkUrl').value = '';
+    document.getElementById('linkCollege').value = '';
+    document.getElementById('linkStage').value = '';
+    document.getElementById('linkDescription').value = '';
+}
+
+function addLink() {
+    const title = document.getElementById('linkTitle').value.trim();
+    const url = document.getElementById('linkUrl').value.trim();
+    const college = document.getElementById('linkCollege').value;
+    const stage = document.getElementById('linkStage').value;
+    const description = document.getElementById('linkDescription').value.trim();
+    
+    // Validation
+    if (!title || !url || !college || !stage || !description) {
+        showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
+    
+    // Validate URL
+    try {
+        new URL(url);
+    } catch (e) {
+        showNotification('الرجاء إدخال رابط صحيح', 'error');
+        return;
+    }
+    
+    // Create link object
+    const newLink = {
+        id: Date.now(),
+        title: title,
+        url: url,
+        college: college,
+        stage: stage,
+        description: description,
+        addedDate: new Date().toISOString(),
+        addedBy: getCurrentUser().name,
+        clicks: 0
+    };
+    
+    // Add to library links
+    libraryLinks.push(newLink);
+    
+    // Show success message
+    showNotification('تم إضافة الرابط بنجاح', 'success');
+    
+    // Close modal and reset form
+    closeLinkAddModal();
+    
+    // Refresh library content
+    loadLibraryLinks();
+    loadLibraryContent();
+}
+
+// Library Announcement Functions
+function openLibraryAnnouncementModal() {
+    document.getElementById('libraryAnnouncementModal').style.display = 'flex';
+    closeLibraryFAB();
+}
+
+function closeLibraryAnnouncementModal() {
+    document.getElementById('libraryAnnouncementModal').style.display = 'none';
+    resetLibraryAnnouncementForm();
+}
+
+function resetLibraryAnnouncementForm() {
+    document.getElementById('libraryAnnouncementTitle').value = '';
+    document.getElementById('libraryAnnouncementContent').value = '';
+    document.getElementById('libraryAnnouncementType').value = 'general';
+}
+
+function publishLibraryAnnouncement() {
+    const title = document.getElementById('libraryAnnouncementTitle').value.trim();
+    const content = document.getElementById('libraryAnnouncementContent').value.trim();
+    const type = document.getElementById('libraryAnnouncementType').value;
+    
+    // Validation
+    if (!title || !content) {
+        showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
+    
+    // Create announcement object
+    const newAnnouncement = {
+        id: Date.now(),
+        title: title,
+        content: content,
+        type: type,
+        targetAudience: 'library',
+        publishDate: new Date().toISOString(),
+        publishedBy: getCurrentUser().name
+    };
+    
+    // Add to announcements (using existing system)
+    if (typeof adminAnnouncements === 'undefined') {
+        window.adminAnnouncements = [];
+    }
+    adminAnnouncements.push(newAnnouncement);
+    
+    // Show success message
+    showNotification('تم نشر الإعلان بنجاح', 'success');
+    
+    // Close modal and reset form
+    closeLibraryAnnouncementModal();
+}
+
+// Library Content Loading Functions
+function loadLibraryContent() {
+    updateLibraryStats();
+    displayLibraryContent();
+}
+
+function updateLibraryStats() {
+    document.getElementById('booksCount').textContent = libraryBooks.length;
+    document.getElementById('videosCount').textContent = libraryVideos.length;
+    document.getElementById('filesCount').textContent = libraryFiles.length;
+    document.getElementById('linksCount').textContent = libraryLinks.length;
+}
+
+function displayLibraryContent() {
+    const grid = document.getElementById('libraryGrid');
+    const allContent = [
+        ...libraryBooks.map(book => ({...book, type: 'book'})),
+        ...libraryVideos.map(video => ({...video, type: 'video'})),
+        ...libraryFiles.map(file => ({...file, type: 'file'})),
+        ...libraryLinks.map(link => ({...link, type: 'link'}))
+    ];
+    
+    if (allContent.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-library">
+                <div class="empty-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <h3>المكتبة فارغة</h3>
+                <p>لم يتم رفع أي محتوى بعد. ابدأ برفع الكتب والفيديوهات والملفات.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = allContent.map(item => {
+        const icon = getContentTypeIcon(item.type);
+        const title = item.title || item.fileName;
+        const description = item.description || item.title;
+        
+        return `
+            <div class="library-item-card" onclick="openLibraryItem('${item.type}', ${item.id})">
+                <div class="item-icon">
+                    <i class="${icon}"></i>
+                </div>
+                <div class="item-content">
+                    <h4>${title}</h4>
+                    <p>${description}</p>
+                    <div class="item-meta">
+                        <span class="item-type">${getContentTypeName(item.type)}</span>
+                        <span class="item-date">${formatDate(item.uploadDate || item.addedDate)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function loadLibraryBooks() {
+    const grid = document.getElementById('booksGrid');
+    
+    if (libraryBooks.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-section">
+                <h3>لا توجد كتب</h3>
+                <p>لم يتم رفع أي كتب بعد.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = libraryBooks.map(book => `
+        <div class="book-card">
+            <div class="book-cover">
+                ${book.coverImage ? `<img src="${book.coverImage}" alt="${book.title}">` : `<i class="fas fa-file-pdf"></i>`}
+            </div>
+            <div class="book-info">
+                <h4>${book.title}</h4>
+                <p class="book-author">${book.author}</p>
+                <p class="book-meta">${getCollegeName(book.college)} - ${getStageName(book.stage)}</p>
+                <div class="book-stats">
+                    <span><i class="fas fa-download"></i> ${book.downloads}</span>
+                    <span><i class="fas fa-star"></i> ${book.rating}</span>
+                </div>
+            </div>
+            <div class="book-actions">
+                <button class="primary-btn" onclick="downloadBook(${book.id})">
+                    <i class="fas fa-download"></i> تحميل
+                </button>
+                <button class="secondary-btn" onclick="editBook(${book.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="danger-btn" onclick="deleteBook(${book.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function loadLibraryVideos() {
+    const grid = document.getElementById('videosGrid');
+    
+    if (libraryVideos.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-section">
+                <h3>لا توجد فيديوهات</h3>
+                <p>لم يتم رفع أي فيديوهات بعد.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = libraryVideos.map(video => `
+        <div class="video-card">
+            <div class="video-thumbnail">
+                ${video.thumbnail ? `<img src="${video.thumbnail}" alt="${video.title}">` : `<i class="fas fa-video"></i>`}
+            </div>
+            <div class="video-info">
+                <h4>${video.title}</h4>
+                <p class="video-duration">${video.duration || 'غير محدد'}</p>
+                <p class="video-meta">${getCollegeName(video.college)} - ${getStageName(video.stage)}</p>
+                <div class="video-stats">
+                    <span><i class="fas fa-eye"></i> ${video.views}</span>
+                    <span><i class="fas fa-star"></i> ${video.rating}</span>
+                </div>
+            </div>
+            <div class="video-actions">
+                <button class="primary-btn" onclick="playVideo(${video.id})">
+                    <i class="fas fa-play"></i> تشغيل
+                </button>
+                <button class="secondary-btn" onclick="editVideo(${video.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="danger-btn" onclick="deleteVideo(${video.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function loadLibraryFiles() {
+    const grid = document.getElementById('filesGrid');
+    
+    if (libraryFiles.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-section">
+                <h3>لا توجد ملفات</h3>
+                <p>لم يتم رفع أي ملفات بعد.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = libraryFiles.map(file => `
+        <div class="file-card">
+            <div class="file-icon">
+                <i class="fas ${getFileIcon(file.fileType)}"></i>
+            </div>
+            <div class="file-info">
+                <h4>${file.title}</h4>
+                <p class="file-name">${file.fileName}</p>
+                <p class="file-meta">${getCollegeName(file.college)} - ${getStageName(file.stage)}</p>
+                <div class="file-stats">
+                    <span><i class="fas fa-download"></i> ${file.downloads}</span>
+                    <span>${formatFileSize(file.fileSize)}</span>
+                </div>
+            </div>
+            <div class="file-actions">
+                <button class="primary-btn" onclick="downloadFile(${file.id})">
+                    <i class="fas fa-download"></i> تحميل
+                </button>
+                <button class="secondary-btn" onclick="editFile(${file.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="danger-btn" onclick="deleteFile(${file.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function loadLibraryLinks() {
+    const grid = document.getElementById('linksGrid');
+    
+    if (libraryLinks.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-section">
+                <h3>لا توجد روابط</h3>
+                <p>لم يتم إضافة أي روابط بعد.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = libraryLinks.map(link => `
+        <div class="link-card">
+            <div class="link-icon">
+                <i class="fas fa-link"></i>
+            </div>
+            <div class="link-info">
+                <h4>${link.title}</h4>
+                <p class="link-url">${link.url}</p>
+                <p class="link-meta">${getCollegeName(link.college)} - ${getStageName(link.stage)}</p>
+                <div class="link-stats">
+                    <span><i class="fas fa-mouse-pointer"></i> ${link.clicks}</span>
+                </div>
+            </div>
+            <div class="link-actions">
+                <button class="primary-btn" onclick="openLink('${link.url}', ${link.id})">
+                    <i class="fas fa-external-link-alt"></i> فتح
+                </button>
+                <button class="secondary-btn" onclick="editLink(${link.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="danger-btn" onclick="deleteLink(${link.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Utility Functions
+function getContentTypeIcon(type) {
+    const icons = {
+        'book': 'fas fa-file-pdf',
+        'video': 'fas fa-video',
+        'file': 'fas fa-file-alt',
+        'link': 'fas fa-link'
+    };
+    return icons[type] || 'fas fa-file';
+}
+
+function getContentTypeName(type) {
+    const names = {
+        'book': 'كتاب',
+        'video': 'فيديو',
+        'file': 'ملف',
+        'link': 'رابط'
+    };
+    return names[type] || 'محتوى';
+}
+
+function getCollegeName(college) {
+    const names = {
+        'medicine': 'كلية الطب',
+        'engineering': 'كلية الهندسة',
+        'science': 'كلية العلوم',
+        'arts': 'كلية الآداب',
+        'law': 'كلية الحقوق'
+    };
+    return names[college] || college;
+}
+
+function getStageName(stage) {
+    const names = {
+        'first': 'المرحلة الأولى',
+        'second': 'المرحلة الثانية',
+        'third': 'المرحلة الثالثة',
+        'fourth': 'المرحلة الرابعة',
+        'fifth': 'المرحلة الخامسة',
+        'sixth': 'المرحلة السادسة'
+    };
+    return names[stage] || stage;
+}
+
+function getFileIcon(fileType) {
+    const icons = {
+        'pdf': 'fa-file-pdf',
+        'doc': 'fa-file-word',
+        'docx': 'fa-file-word',
+        'ppt': 'fa-file-powerpoint',
+        'pptx': 'fa-file-powerpoint',
+        'txt': 'fa-file-alt'
+    };
+    return icons[fileType] || 'fa-file';
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ar-SA');
+}
+
+// Content Actions (placeholders for now)
+function openLibraryItem(type, id) {
+    showSection(`library-${type}s`);
+}
+
+function downloadBook(id) {
+    const book = libraryBooks.find(b => b.id === id);
+    if (book) {
+        book.downloads++;
+        showNotification(`تم بدء تحميل: ${book.title}`, 'success');
+        loadLibraryBooks();
+    }
+}
+
+function playVideo(id) {
+    const video = libraryVideos.find(v => v.id === id);
+    if (video) {
+        video.views++;
+        showNotification(`تم تشغيل: ${video.title}`, 'success');
+        loadLibraryVideos();
+    }
+}
+
+function downloadFile(id) {
+    const file = libraryFiles.find(f => f.id === id);
+    if (file) {
+        file.downloads++;
+        showNotification(`تم بدء تحميل: ${file.title}`, 'success');
+        loadLibraryFiles();
+    }
+}
+
+function openLink(url, id) {
+    const link = libraryLinks.find(l => l.id === id);
+    if (link) {
+        link.clicks++;
+        window.open(url, '_blank');
+        loadLibraryLinks();
+    }
+}
+
+// Edit and Delete Functions (placeholders)
+function editBook(id) {
+    showNotification('تحرير الكتاب - قيد التطوير', 'info');
+}
+
+function deleteBook(id) {
+    if (confirm('هل أنت متأكد من حذف هذا الكتاب؟')) {
+        libraryBooks = libraryBooks.filter(b => b.id !== id);
+        showNotification('تم حذف الكتاب', 'success');
+        loadLibraryBooks();
+        loadLibraryContent();
+    }
+}
+
+function editVideo(id) {
+    showNotification('تحرير الفيديو - قيد التطوير', 'info');
+}
+
+function deleteVideo(id) {
+    if (confirm('هل أنت متأكد من حذف هذا الفيديو؟')) {
+        libraryVideos = libraryVideos.filter(v => v.id !== id);
+        showNotification('تم حذف الفيديو', 'success');
+        loadLibraryVideos();
+        loadLibraryContent();
+    }
+}
+
+function editFile(id) {
+    showNotification('تحرير الملف - قيد التطوير', 'info');
+}
+
+function deleteFile(id) {
+    if (confirm('هل أنت متأكد من حذف هذا الملف؟')) {
+        libraryFiles = libraryFiles.filter(f => f.id !== id);
+        showNotification('تم حذف الملف', 'success');
+        loadLibraryFiles();
+        loadLibraryContent();
+    }
+}
+
+function editLink(id) {
+    showNotification('تحرير الرابط - قيد التطوير', 'info');
+}
+
+function deleteLink(id) {
+    if (confirm('هل أنت متأكد من حذف هذا الرابط؟')) {
+        libraryLinks = libraryLinks.filter(l => l.id !== id);
+        showNotification('تم حذف الرابط', 'success');
+        loadLibraryLinks();
+        loadLibraryContent();
+    }
+}
+
+// Search and Filter Functions
+function searchLibrary() {
+    const searchTerm = document.getElementById('librarySearchInput').value.toLowerCase();
+    const category = document.getElementById('libraryCategoryFilter').value;
+    
+    // Implementation would filter content based on search term and category
+    console.log('Searching for:', searchTerm, 'in category:', category);
+}
+
+function filterLibrary() {
+    searchLibrary();
+}
+
+function filterBooks() {
+    const college = document.getElementById('bookCollegeFilter').value;
+    const stage = document.getElementById('bookStageFilter').value;
+    
+    // Implementation would filter books based on college and stage
+    console.log('Filtering books by college:', college, 'stage:', stage);
+}
+
 // Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeDashboard();
@@ -3715,4 +4587,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadContests();
     loadImages();
     loadVideos();
+    
+    // Initialize library
+    loadLibraryContent();
 });
