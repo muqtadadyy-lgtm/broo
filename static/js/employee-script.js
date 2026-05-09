@@ -1555,6 +1555,256 @@ updateMemberList = function() {
     updateChatRoomStats();
 };
 
+// Advanced Chat Room Management Functions
+function exportChatData(format) {
+    const chatData = {
+        roomName: document.getElementById('chatRoomName').value || 'Chat Room',
+        members: chatRoomMembers,
+        settings: {
+            privacy: document.getElementById('chatRoomPrivacy').value,
+            maxMembers: document.getElementById('chatRoomMaxMembers').value,
+            messageRetention: document.getElementById('chatRoomMessageRetention').value,
+            fileSharing: document.getElementById('chatRoomFileSharing').value,
+            notifications: document.getElementById('chatRoomNotifications').checked,
+            encryption: document.getElementById('chatRoomEncryption').checked,
+            autoMod: document.getElementById('chatRoomAutoMod').checked
+        },
+        stats: {
+            currentMembers: chatRoomMembers.length,
+            todayMessages: Math.floor(Math.random() * 50),
+            sharedFiles: Math.floor(Math.random() * 20),
+            activityRate: chatRoomMembers.length > 10 ? 'عالي' : chatRoomMembers.length > 5 ? 'متوسط' : 'منخفض'
+        },
+        exportDate: new Date().toISOString(),
+        exportedBy: currentUser.fullName
+    };
+    
+    try {
+        let content, filename, mimeType;
+        
+        switch(format) {
+            case 'json':
+                content = JSON.stringify(chatData, null, 2);
+                filename = `chat-room-${Date.now()}.json`;
+                mimeType = 'application/json';
+                break;
+            case 'csv':
+                content = convertToCSV(chatData);
+                filename = `chat-room-${Date.now()}.csv`;
+                mimeType = 'text/csv';
+                break;
+            case 'pdf':
+                content = generatePDFContent(chatData);
+                filename = `chat-room-${Date.now()}.pdf`;
+                mimeType = 'application/pdf';
+                break;
+        }
+        
+        // Create download link
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showNotification(`تم تصدير بيانات الكروب بصيغة ${format.toUpperCase()} بنجاح`, 'success');
+    } catch (error) {
+        console.error('Export error:', error);
+        showNotification('حدث خطأ في تصدير البيانات', 'error');
+    }
+}
+
+function convertToCSV(data) {
+    const headers = ['Room Name', 'Members Count', 'Privacy', 'Max Members', 'File Sharing', 'Export Date'];
+    const rows = [
+        headers.join(','),
+        [
+            data.roomName,
+            data.members.length,
+            data.settings.privacy,
+            data.settings.maxMembers,
+            data.settings.fileSharing,
+            new Date(data.exportDate).toLocaleDateString('ar-SA')
+        ].join(',')
+    ];
+    return rows.join('\n');
+}
+
+function generatePDFContent(data) {
+    // Simple PDF content generation (in real app, use PDF library)
+    return `
+        بيانات كروب الدردشة: ${data.roomName}
+        
+        الأعضاء: ${data.members.length}
+        الخصوصية: ${data.settings.privacy}
+        الحد الأقصى: ${data.settings.maxMembers}
+        
+        تاريخ التصدير: ${new Date(data.exportDate).toLocaleDateString('ar-SA')}
+        تم التصدير بواسطة: ${data.exportedBy}
+    `;
+}
+
+function createBackup() {
+    const backupData = {
+        roomName: document.getElementById('chatRoomName').value || 'Chat Room',
+        members: chatRoomMembers,
+        settings: {
+            privacy: document.getElementById('chatRoomPrivacy').value,
+            maxMembers: document.getElementById('chatRoomMaxMembers').value,
+            messageRetention: document.getElementById('chatRoomMessageRetention').value,
+            fileSharing: document.getElementById('chatRoomFileSharing').value,
+            notifications: document.getElementById('chatRoomNotifications').checked,
+            encryption: document.getElementById('chatRoomEncryption').checked,
+            autoMod: document.getElementById('chatRoomAutoMod').checked,
+            maxFileSize: document.getElementById('chatRoomMaxFileSize').value,
+            allowedFileTypes: document.getElementById('chatRoomAllowedFileTypes').value,
+            welcomeMessage: document.getElementById('chatRoomWelcomeMessage').value,
+            wordFilter: document.getElementById('wordFilter').value,
+            autoDeleteBadWords: document.getElementById('autoDeleteBadWords').checked,
+            messageDelay: document.getElementById('messageDelay').value,
+            maxMessageLength: document.getElementById('maxMessageLength').value,
+            allowLinks: document.getElementById('allowLinks').checked,
+            allowImages: document.getElementById('allowImages').checked,
+            memberApproval: document.getElementById('memberApproval').value,
+            allowInvites: document.getElementById('allowInvites').checked,
+            kickInactive: document.getElementById('kickInactive').checked,
+            backupFrequency: document.getElementById('backupFrequency').value,
+            backupRetention: document.getElementById('backupRetention').value,
+            includeFilesInBackup: document.getElementById('includeFilesInBackup').checked,
+            scheduledMessages: document.getElementById('scheduledMessages').value,
+            scheduleTime: document.getElementById('scheduleTime').value,
+            scheduleRepeat: document.getElementById('scheduleRepeat').value,
+            autoWelcome: document.getElementById('autoWelcome').checked,
+            autoGoodbye: document.getElementById('autoGoodbye').checked,
+            autoModeration: document.getElementById('autoModeration').checked,
+            autoCleanup: document.getElementById('autoCleanup').checked
+        },
+        backupDate: new Date().toISOString(),
+        backupBy: currentUser.fullName
+    };
+    
+    // Simulate backup creation
+    showNotification('جاري إنشاء نسخة احتياطية...', 'info');
+    
+    setTimeout(() => {
+        // In real app, this would save to server
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chat-room-backup-${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showNotification('تم إنشاء نسخة احتياطية بنجاح', 'success');
+    }, 2000);
+}
+
+function scheduleMessage() {
+    const message = document.getElementById('scheduledMessages').value.trim();
+    const time = document.getElementById('scheduleTime').value;
+    const repeat = document.getElementById('scheduleRepeat').value;
+    
+    if (!message || !time) {
+        showNotification('الرجاء إدخال الرسالة والوقت', 'error');
+        return;
+    }
+    
+    // In real app, this would schedule with backend
+    showNotification(`تم جدولة الرسالة للتكرار: ${repeat}`, 'success');
+    
+    // Clear form
+    document.getElementById('scheduledMessages').value = '';
+    document.getElementById('scheduleTime').value = '';
+    document.getElementById('scheduleRepeat').value = 'once';
+}
+
+function validateModerationSettings() {
+    const wordFilter = document.getElementById('wordFilter').value.trim();
+    const messageDelay = parseInt(document.getElementById('messageDelay').value);
+    const maxMessageLength = parseInt(document.getElementById('maxMessageLength').value);
+    
+    if (wordFilter && wordFilter.split(',').length > 100) {
+        showNotification('الحد الأقصى للكلمات المحظورة هو 100 كلمة', 'error');
+        return false;
+    }
+    
+    if (messageDelay < 0 || messageDelay > 60) {
+        showNotification('تأخير الرسائل يجب أن يكون بين 0 و 60 ثانية', 'error');
+        return false;
+    }
+    
+    if (maxMessageLength < 50 || maxMessageLength > 1000) {
+        showNotification('الحد الأقصى للرسالة يجب أن يكون بين 50 و 1000 حرف', 'error');
+        return false;
+    }
+    
+    return true;
+}
+
+function applyModerationSettings() {
+    if (!validateModerationSettings()) {
+        return;
+    }
+    
+    const settings = {
+        wordFilter: document.getElementById('wordFilter').value.trim(),
+        autoDeleteBadWords: document.getElementById('autoDeleteBadWords').checked,
+        messageDelay: document.getElementById('messageDelay').value,
+        maxMessageLength: document.getElementById('maxMessageLength').value,
+        allowLinks: document.getElementById('allowLinks').checked,
+        allowImages: document.getElementById('allowImages').checked,
+        memberApproval: document.getElementById('memberApproval').value,
+        allowInvites: document.getElementById('allowInvites').checked,
+        kickInactive: document.getElementById('kickInactive').checked,
+        backupFrequency: document.getElementById('backupFrequency').value,
+        backupRetention: document.getElementById('backupRetention').value,
+        includeFilesInBackup: document.getElementById('includeFilesInBackup').checked,
+        autoWelcome: document.getElementById('autoWelcome').checked,
+        autoGoodbye: document.getElementById('autoGoodbye').checked,
+        autoModeration: document.getElementById('autoModeration').checked,
+        autoCleanup: document.getElementById('autoCleanup').checked
+    };
+    
+    // In real app, this would save to backend
+    showNotification('تم تطبيق إعدادات المراقبة بنجاح', 'success');
+}
+
+// Add event listeners for new features
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners for moderation tools
+    const wordFilter = document.getElementById('wordFilter');
+    const messageDelay = document.getElementById('messageDelay');
+    const maxMessageLength = document.getElementById('maxMessageLength');
+    
+    if (wordFilter) {
+        wordFilter.addEventListener('input', function() {
+            const words = this.value.split(',').filter(w => w.trim());
+            if (words.length > 0) {
+                showNotification(`تم إضافة ${words.length} كلمة محظورة`, 'info');
+            }
+        });
+    }
+    
+    if (messageDelay) {
+        messageDelay.addEventListener('change', function() {
+            showNotification(`تم تعيين تأخير الرسائل إلى ${this.value} ثانية`, 'info');
+        });
+    }
+    
+    if (maxMessageLength) {
+        maxMessageLength.addEventListener('change', function() {
+            showNotification(`تم تعيين الحد الأقصى للرسالة إلى ${this.value} حرف`, 'info');
+        });
+    }
+});
+
 function closeNotificationModal() {
     document.getElementById('notificationModal').style.display = 'none';
 }

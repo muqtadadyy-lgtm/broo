@@ -713,6 +713,180 @@
                     </div>
                 </div>
                 
+                <div class="form-section">
+                    <h3>أدوات المراقبة المتقدمة</h3>
+                    <div class="moderation-tools">
+                        <div class="tool-group">
+                            <h4>مرشحات الكلمات</h4>
+                            <div class="form-group">
+                                <label for="wordFilter">كلمات محظورة:</label>
+                                <input type="text" id="wordFilter" placeholder="أدخل كلمات محظورة (فصل بينها بفاصلة)">
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="autoDeleteBadWords" checked>
+                                    <span>حذف تلقائي للكلمات السيئة</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="tool-group">
+                            <h4>التحكم في الرسائل</h4>
+                            <div class="form-group">
+                                <label for="messageDelay">تأخير الرسائل (ثانية):</label>
+                                <input type="number" id="messageDelay" min="0" max="60" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="maxMessageLength">الحد الأقصى للرسالة:</label>
+                                <input type="number" id="maxMessageLength" min="50" max="1000" value="500">
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="allowLinks">
+                                    <span>السماح بالروابط</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="allowImages">
+                                    <span>السماح بالصور</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="tool-group">
+                            <h4>التحكم في الأعضاء</h4>
+                            <div class="form-group">
+                                <label for="memberApproval">موافقة العضوية:</label>
+                                <select id="memberApproval">
+                                    <option value="automatic">تلقائي</option>
+                                    <option value="manual">يدوي</option>
+                                    <option value="admin-only">المدير فقط</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="allowInvites">
+                                    <span>السماح بالدعوات</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="kickInactive">
+                                    <span>طرد الأعضاء غير النشطين (7 أيام)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>النسخ الاحتياطي والتصدير</h3>
+                    <div class="backup-tools">
+                        <div class="tool-group">
+                            <h4>النسخ الاحتياطي التلقائي</h4>
+                            <div class="form-group">
+                                <label for="backupFrequency">تكرار النسخ:</label>
+                                <select id="backupFrequency">
+                                    <option value="daily">يومي</option>
+                                    <option value="weekly">أسبوعي</option>
+                                    <option value="monthly">شهري</option>
+                                    <option value="manual">يدوي</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="backupRetention">الاحتفاظ بالنسخ:</label>
+                                <select id="backupRetention">
+                                    <option value="7days">7 أيام</option>
+                                    <option value="30days">30 يوم</option>
+                                    <option value="90days">90 يوم</option>
+                                    <option value="1year">سنة</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="includeFilesInBackup" checked>
+                                    <span>تضمين الملفات في النسخ الاحتياطي</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="tool-group">
+                            <h4>التصدير</h4>
+                            <div class="form-actions">
+                                <button type="button" class="export-btn" onclick="exportChatData('json')">
+                                    <i class="fas fa-download"></i> تصدير JSON
+                                </button>
+                                <button type="button" class="export-btn" onclick="exportChatData('csv')">
+                                    <i class="fas fa-file-csv"></i> تصدير CSV
+                                </button>
+                                <button type="button" class="export-btn" onclick="exportChatData('pdf')">
+                                    <i class="fas fa-file-pdf"></i> تصدير PDF
+                                </button>
+                                <button type="button" class="backup-btn" onclick="createBackup()">
+                                    <i class="fas fa-save"></i> نسخ احتياطي الآن
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>الجدولة والأتمتة</h3>
+                    <div class="scheduling-tools">
+                        <div class="tool-group">
+                            <h4>الجدولة</h4>
+                            <div class="form-group">
+                                <label for="scheduledMessages">الرسائل المجدولة:</label>
+                                <textarea id="scheduledMessages" rows="3" placeholder="أدخل الرسائل المجدولة..."></textarea>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="scheduleTime">وقت الإرسال:</label>
+                                    <input type="datetime-local" id="scheduleTime">
+                                </div>
+                                <div class="form-group">
+                                    <label for="scheduleRepeat">التكرار:</label>
+                                    <select id="scheduleRepeat">
+                                        <option value="once">مرة واحدة</option>
+                                        <option value="daily">يومي</option>
+                                        <option value="weekly">أسبوعي</option>
+                                        <option value="monthly">شهري</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="tool-group">
+                            <h4>الأتمتة</h4>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="autoWelcome">
+                                    <span>رسالة ترحيب تلقائية</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="autoGoodbye">
+                                    <span>رسالة وداع تلقائية</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="autoModeration">
+                                    <span>مراقبة تلقائية 24/7</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="autoCleanup">
+                                    <span>تنظيف تلقائي للرسائل القديمة</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="form-actions">
                     <button type="button" class="secondary-btn" onclick="closeChatRoomModal()">
                         <i class="fas fa-times"></i> إلغاء
