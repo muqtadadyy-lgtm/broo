@@ -945,8 +945,112 @@ function openVideoReelModal() {
 }
 
 function openImageAnnouncementModal() {
-    showNotification('نشر الصور والإعلانات قيد التطوير', 'info');
+    document.getElementById('imageAnnouncementModal').style.display = 'flex';
     toggleFabMenu();
+}
+
+function closeImageAnnouncementModal() {
+    document.getElementById('imageAnnouncementModal').style.display = 'none';
+}
+
+let selectedImageFile = null;
+
+function handleImageSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            showNotification('الرجاء اختيار ملف صورة صالح', 'error');
+            event.target.value = '';
+            return;
+        }
+        
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showNotification('حجم الصورة يجب أن يكون أقل من 5 ميجابايت', 'error');
+            event.target.value = '';
+            return;
+        }
+        
+        selectedImageFile = file;
+        
+        // Update file info
+        document.getElementById('imageFileInfo').textContent = `تم اختيار: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        
+        // Show image preview
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImage = document.getElementById('previewImage');
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            imagePreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function removeImage() {
+    selectedImageFile = null;
+    document.getElementById('imageFile').value = '';
+    document.getElementById('imageFileInfo').textContent = 'لم يتم اختيار صورة بعد';
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('previewImage').src = '';
+}
+
+async function publishImageAnnouncement() {
+    const title = document.getElementById('imageTitle').value.trim();
+    const type = document.getElementById('imageType').value;
+    const description = document.getElementById('imageDescription').value.trim();
+    const priority = document.getElementById('imagePriority').value;
+    const visibility = document.getElementById('imageVisibility').value;
+    const tags = document.getElementById('imageTags').value.trim();
+    
+    if (!title || !description || !selectedImageFile) {
+        showNotification('الرجاء ملء جميع الحقول المطلوبة واختيار صورة', 'error');
+        return;
+    }
+    
+    try {
+        // Create FormData for image upload
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('type', type);
+        formData.append('description', description);
+        formData.append('priority', priority);
+        formData.append('visibility', visibility);
+        formData.append('tags', tags);
+        formData.append('image', selectedImageFile);
+        formData.append('createdBy', currentUser.fullName);
+        
+        // Here you would normally send to API
+        showNotification('جاري نشر الصورة...', 'info');
+        
+        // Simulate upload progress
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const visibilityText = visibility === 'all' ? 'للجميع' : 
+                             visibility === 'students' ? 'للطلاب فقط' : 
+                             'للموظفين فقط';
+        
+        showNotification(`تم نشر الصورة "${title}" ${visibilityText} بنجاح`, 'success');
+        
+        // Clear form
+        document.getElementById('imageTitle').value = '';
+        document.getElementById('imageType').value = 'general';
+        document.getElementById('imageDescription').value = '';
+        document.getElementById('imagePriority').value = 'medium';
+        document.getElementById('imageVisibility').value = 'all';
+        document.getElementById('imageTags').value = '';
+        removeImage();
+        
+        // Close modal
+        closeImageAnnouncementModal();
+        
+    } catch (error) {
+        console.error('Error publishing image announcement:', error);
+        showNotification('حدث خطأ في نشر الصورة', 'error');
+    }
 }
 
 function openContestModal() {

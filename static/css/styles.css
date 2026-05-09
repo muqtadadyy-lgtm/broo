@@ -796,6 +796,43 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
     color: #dc3545;
 }
 
+/* Image Publishing Styles */
+.image-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.image-preview {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.image-preview h4 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 14px;
+}
+
+.image-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.image-actions button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
 @media (min-width:1024px) {
     .auth-card {max-width:600px}
     .language-menu {width:320px}
