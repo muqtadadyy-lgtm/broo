@@ -1452,6 +1452,109 @@ function openNotificationModal() {
     toggleFabMenu();
 }
 
+// Enhanced Chat Room Management Functions
+function applyTemplate(templateType) {
+    const templates = {
+        study: {
+            name: 'كروب الدراسة',
+            description: 'كروب مخصص لمناقشة المواد الدراسية والواجبات والمشاريع',
+            type: 'study',
+            maxMembers: 30,
+            privacy: 'public',
+            rules: '1. احترام جميع الأعضاء\n2. الالتزام بالمواضيع الدراسية\n3. عدم نشر محتوى غير لائق',
+            tags: 'دراسة, واجبات, مشاريع',
+            messageRetention: '90days',
+            fileSharing: 'enabled',
+            maxFileSize: 5,
+            allowedFileTypes: 'pdf, doc, docx, ppt, pptx',
+            welcomeMessage: 'مرحباً بك في كروب الدراسة! لا تتردد في طرح أسئلتك.'
+        },
+        project: {
+            name: 'كروب المشروع',
+            description: 'كروب لتنسيق المشاريع الجماعية ومتابعة التقدم',
+            type: 'project',
+            maxMembers: 20,
+            privacy: 'private',
+            rules: '1. التركيز على أهداف المشروع\n2. تحديث التقدم بانتظام\n3. احترام مواعيد التسليم',
+            tags: 'مشروع, جماعي, تنسيق',
+            messageRetention: '1year',
+            fileSharing: 'enabled',
+            maxFileSize: 50,
+            allowedFileTypes: 'pdf, doc, docx, zip, rar, jpg, png',
+            welcomeMessage: 'أهلاً بك في فريق المشروع! لنبدأ العمل معاً.'
+        },
+        announcement: {
+            name: 'كروب الإعلانات',
+            description: 'كروب رسمي للإعلانات والتواصل الإداري',
+            type: 'announcement',
+            maxMembers: 100,
+            privacy: 'public',
+            rules: '1. الإعلانات فقط من المشرفين\n2. عدم الرد على الإعلانات إلا عند الطلب\n3. احترام المحتوى الرسمي',
+            tags: 'إعلانات, رسمي, تواصل',
+            messageRetention: 'forever',
+            fileSharing: 'admin-only',
+            maxFileSize: 10,
+            allowedFileTypes: 'pdf, jpg, png',
+            welcomeMessage: 'مرحباً بك في كروب الإعلانات الرسمي.'
+        },
+        support: {
+            name: 'كروب الدعم الفني',
+            description: 'كروب للمساعدة الفنية وحل المشاكل التقنية',
+            type: 'support',
+            maxMembers: 50,
+            privacy: 'public',
+            rules: '1. وصف المشكلة بوضوح\n2. الصبر في انتظار المساعدة\n3. احترام فريق الدعم',
+            tags: 'دعم, فني, مساعدة',
+            messageRetention: '30days',
+            fileSharing: 'enabled',
+            maxFileSize: 20,
+            allowedFileTypes: 'jpg, png, gif, zip, log, txt',
+            welcomeMessage: 'مرحباً! كيف يمكننا مساعدتك اليوم؟'
+        }
+    };
+    
+    const template = templates[templateType];
+    if (template) {
+        // Apply template values
+        document.getElementById('chatRoomName').value = template.name;
+        document.getElementById('chatRoomDescription').value = template.description;
+        document.getElementById('chatRoomType').value = template.type;
+        document.getElementById('chatRoomMaxMembers').value = template.maxMembers;
+        document.getElementById('chatRoomPrivacy').value = template.privacy;
+        document.getElementById('chatRoomRules').value = template.rules;
+        document.getElementById('chatRoomTags').value = template.tags;
+        document.getElementById('chatRoomMessageRetention').value = template.messageRetention;
+        document.getElementById('chatRoomFileSharing').value = template.fileSharing;
+        document.getElementById('chatRoomMaxFileSize').value = template.maxFileSize;
+        document.getElementById('chatRoomAllowedFileTypes').value = template.allowedFileTypes;
+        document.getElementById('chatRoomWelcomeMessage').value = template.welcomeMessage;
+        
+        showNotification(`تم تطبيق قالب ${template.name} بنجاح`, 'success');
+    }
+}
+
+function updateChatRoomStats() {
+    // Simulate real-time stats update
+    const stats = {
+        currentMembers: chatRoomMembers.length,
+        todayMessages: Math.floor(Math.random() * 50),
+        sharedFiles: Math.floor(Math.random() * 20),
+        activityRate: chatRoomMembers.length > 10 ? 'عالي' : chatRoomMembers.length > 5 ? 'متوسط' : 'منخفض'
+    };
+    
+    document.getElementById('currentMembersCount').textContent = stats.currentMembers;
+    document.getElementById('todayMessagesCount').textContent = stats.todayMessages;
+    document.getElementById('sharedFilesCount').textContent = stats.sharedFiles;
+    document.getElementById('activityRate').textContent = stats.activityRate;
+}
+
+// Update stats when member list changes
+const originalUpdateMemberList = updateMemberList;
+updateMemberList = function() {
+    originalUpdateMemberList();
+    updateChatRoomStats();
+};
+
 function closeNotificationModal() {
     document.getElementById('notificationModal').style.display = 'none';
 }
@@ -1765,8 +1868,13 @@ async function createChatRoom() {
     const tags = document.getElementById('chatRoomTags').value.trim();
     const messageRetention = document.getElementById('chatRoomMessageRetention').value;
     const fileSharing = document.getElementById('chatRoomFileSharing').value;
+    const maxFileSize = document.getElementById('chatRoomMaxFileSize').value;
+    const allowedFileTypes = document.getElementById('chatRoomAllowedFileTypes').value;
+    const welcomeMessage = document.getElementById('chatRoomWelcomeMessage').value.trim();
     const notifications = document.getElementById('chatRoomNotifications').checked;
     const encryption = document.getElementById('chatRoomEncryption').checked;
+    const autoMod = document.getElementById('chatRoomAutoMod').checked;
+    const readOnly = document.getElementById('chatRoomReadOnly').checked;
     const adminRole = document.getElementById('adminRole').value;
     
     if (!name || !description) {
@@ -1792,8 +1900,13 @@ async function createChatRoom() {
             tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
             messageRetention: messageRetention,
             fileSharing: fileSharing,
+            maxFileSize: maxFileSize,
+            allowedFileTypes: allowedFileTypes.split(',').map(type => type.trim()).filter(type => type),
+            welcomeMessage: welcomeMessage,
             notifications: notifications,
             encryption: encryption,
+            autoMod: autoMod,
+            readOnly: readOnly,
             members: chatRoomMembers.map(member => ({
                 ...member,
                 role: member.id === parseInt(adminRole) ? 'admin' : 'member',
@@ -1804,7 +1917,13 @@ async function createChatRoom() {
             createdAt: new Date().toISOString(),
             lastActivity: new Date().toISOString(),
             messageCount: 0,
-            fileCount: 0
+            fileCount: 0,
+            stats: {
+                currentMembers: chatRoomMembers.length,
+                todayMessages: Math.floor(Math.random() * 50),
+                sharedFiles: Math.floor(Math.random() * 20),
+                activityRate: 'عالي'
+            }
         };
         
         // Here you would normally send to API
@@ -1836,8 +1955,13 @@ async function createChatRoom() {
         document.getElementById('chatRoomTags').value = '';
         document.getElementById('chatRoomMessageRetention').value = 'forever';
         document.getElementById('chatRoomFileSharing').value = 'enabled';
+        document.getElementById('chatRoomMaxFileSize').value = '10';
+        document.getElementById('chatRoomAllowedFileTypes').value = 'pdf, doc, docx, jpg, png, zip';
+        document.getElementById('chatRoomWelcomeMessage').value = '';
         document.getElementById('chatRoomNotifications').checked = true;
         document.getElementById('chatRoomEncryption').checked = false;
+        document.getElementById('chatRoomAutoMod').checked = true;
+        document.getElementById('chatRoomReadOnly').checked = false;
         document.getElementById('adminRole').value = '';
         
         chatRoomMembers = [];
