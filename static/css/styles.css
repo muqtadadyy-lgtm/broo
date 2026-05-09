@@ -46,6 +46,23 @@ body.theme-blue {
     --shadow-hover:0 18px 70px rgba(56,139,255,0.34);
 }
 
+body.theme-pink {
+    --primary-color:#ffffff;
+    --primary-light:#fef2f8;
+    --accent-color:#ec4899;
+    --bg-color:#fdf2f8;
+    --bg-gradient: radial-gradient(circle at 15% 25%, rgba(236,72,153,0.15), transparent 40%), radial-gradient(circle at 85% 15%, rgba(244,114,182,0.12), transparent 35%), linear-gradient(160deg, #fff1f8 0%, #fce7f3 45%, #fbcfe8 100%);
+    --card-bg:#ffffff;
+    --text-primary:#831843;
+    --text-secondary:#9f1239;
+    --border-color:#fbcfe8;
+    --success-color:#10b981;
+    --error-color:#ef4444;
+    --warning-color:#f59e0b;
+    --shadow:0 10px 40px rgba(236,72,153,0.12);
+    --shadow-hover:0 15px 60px rgba(236,72,153,0.18);
+}
+
 body.theme-blue-light {
     --primary-color:#3b82f6;
     --primary-light:#60a5fa;
