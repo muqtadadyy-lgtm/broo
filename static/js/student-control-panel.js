@@ -206,35 +206,50 @@ function closeStudentChatRooms() {
 }
 
 function loadStudentChatRooms() {
-    // Mock data for chat rooms
-    studentChatRooms = [
-        {
-            id: 1,
-            name: 'كروب الطلاب العام',
-            type: 'general',
-            members: 45,
-            lastActivity: new Date().toISOString(),
-            unreadCount: 3
-        },
-        {
-            id: 2,
-            name: 'كروب هندسة الحاسوب',
-            type: 'department',
-            members: 20,
-            lastActivity: new Date().toISOString(),
-            unreadCount: 0
-        },
-        {
-            id: 3,
-            name: 'كروب الأنشطة الثقافية',
-            type: 'activity',
-            members: 15,
-            lastActivity: new Date().toISOString(),
-            unreadCount: 1
-        }
-    ];
+    // Get only admin-created chat rooms from the main system
+    // Filter out test/demo rooms and show only official rooms
+    studentChatRooms = [];
     
-    displayStudentChatRooms();
+    // Check if there are any admin-created rooms in the main chat system
+    if (typeof createdChatRooms !== 'undefined' && createdChatRooms.length > 0) {
+        // Only show rooms that were created by admin
+        studentChatRooms = createdChatRooms.filter(room => 
+            room.createdBy === 'admin' || 
+            room.type === 'official' ||
+            room.official === true
+        ).map(room => ({
+            id: room.id,
+            name: room.name,
+            type: room.type || 'general',
+            members: room.members ? room.members.length : 0,
+            lastActivity: room.lastActivity || new Date().toISOString(),
+            unreadCount: room.unreadCount || 0,
+            description: room.description || ''
+        }));
+    }
+    
+    // If no admin rooms exist, show empty state
+    if (studentChatRooms.length === 0) {
+        showEmptyChatRoomsState();
+    } else {
+        displayStudentChatRooms();
+    }
+}
+
+function showEmptyChatRoomsState() {
+    const container = document.getElementById('studentChatRoomsList');
+    container.innerHTML = `
+        <div class="empty-chat-rooms">
+            <div class="empty-icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <h3>لا توجد كروبات دردشة رسمية</h3>
+            <p>لم يقم المدير بإنشاء أي كروبات دردشة بعد. سيتم عرض الكروبات الرسمية هنا عند إنشائها.</p>
+            <div class="empty-info">
+                <p><i class="fas fa-info-circle"></i> سيتم عرض الكروبات التي ينشئها المدير فقط</p>
+            </div>
+        </div>
+    `;
 }
 
 function displayStudentChatRooms() {
@@ -249,6 +264,7 @@ function displayStudentChatRooms() {
                 <h4>${room.name}</h4>
                 <p>${room.members} عضو</p>
                 <span class="last-activity">${formatTime(room.lastActivity)}</span>
+                ${room.description ? `<p class="room-description">${room.description}</p>` : ''}
             </div>
             <div class="room-actions">
                 ${room.unreadCount > 0 ? `<span class="unread-badge">${room.unreadCount}</span>` : ''}
