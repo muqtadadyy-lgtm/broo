@@ -2122,6 +2122,144 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
     padding: 20px;
 }
 
+/* System Overview Styles */
+.system-overview {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.system-overview h3 {
+    color: var(--primary-color);
+    font-size: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.role-sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.role-card {
+    background: var(--secondary-background);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.role-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.role-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    font-size: 20px;
+    color: white;
+}
+
+.admin-role .role-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.student-role .role-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.teacher-role .role-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.parent-role .role-icon {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.role-card h4 {
+    color: var(--text-color);
+    font-size: 16px;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.role-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.role-card li {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-bottom: 8px;
+    padding-right: 20px;
+    position: relative;
+    line-height: 1.4;
+}
+
+.role-card li::before {
+    content: '•';
+    position: absolute;
+    right: 0;
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.system-note {
+    text-align: center;
+    padding: 15px;
+    background: var(--info-color);
+    color: white;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.system-note p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Responsive Design for System Overview */
+@media (max-width: 768px) {
+    .role-sections {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .role-card {
+        padding: 15px;
+    }
+    
+    .role-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+    
+    .role-card h4 {
+        font-size: 15px;
+    }
+    
+    .role-card li {
+        font-size: 12px;
+    }
+    
+    .system-overview h3 {
+        font-size: 18px;
+    }
+}
+
 @media (min-width:1024px) {
     .auth-card {max-width:600px}
     .language-menu {width:320px}
