@@ -2051,6 +2051,434 @@ function simulateMemberActivity() {
     }
 }
 
+// User Management Functions
+let allUsers = [];
+let filteredUsers = [];
+let currentPage = 1;
+let usersPerPage = 10;
+
+function openUserManagementModal() {
+    document.getElementById('userManagementModal').style.display = 'flex';
+    loadAllUsers();
+    toggleFabMenu();
+}
+
+function closeUserManagementModal() {
+    document.getElementById('userManagementModal').style.display = 'none';
+}
+
+function loadAllUsers() {
+    // Simulate loading all users from database
+    allUsers = [
+        {
+            id: 1,
+            name: 'أحمد محمد',
+            username: 'ahmed_student',
+            email: 'ahmed@university.edu',
+            role: 'student',
+            status: 'active',
+            avatar: '/static/images/user1.jpg',
+            createdAt: '2024-01-15T10:30:00Z',
+            lastLogin: '2024-05-09T14:20:00Z',
+            phone: '+966501234567'
+        },
+        {
+            id: 2,
+            name: 'فاطمة علي',
+            username: 'fatima_student',
+            email: 'fatima@university.edu',
+            role: 'student',
+            status: 'active',
+            avatar: '/static/images/user2.jpg',
+            createdAt: '2024-01-20T09:15:00Z',
+            lastLogin: '2024-05-09T13:45:00Z',
+            phone: '+966502345678'
+        },
+        {
+            id: 3,
+            name: 'محمد خالد',
+            username: 'mohammed_student',
+            email: 'mohammed@university.edu',
+            role: 'student',
+            status: 'inactive',
+            avatar: '/static/images/user3.jpg',
+            createdAt: '2024-02-01T11:00:00Z',
+            lastLogin: '2024-04-15T16:30:00Z',
+            phone: '+966503456789'
+        },
+        {
+            id: 4,
+            name: 'المدير العام',
+            username: 'admin',
+            email: 'admin@university.edu',
+            role: 'admin',
+            status: 'active',
+            avatar: '/static/images/admin.jpg',
+            createdAt: '2024-01-01T00:00:00Z',
+            lastLogin: '2024-05-09T15:00:00Z',
+            phone: '+966500000000'
+        },
+        {
+            id: 5,
+            name: 'سارة أحمد',
+            username: 'sarah_employee',
+            email: 'sarah@university.edu',
+            role: 'employee',
+            status: 'active',
+            avatar: '/static/images/user4.jpg',
+            createdAt: '2024-02-10T08:30:00Z',
+            lastLogin: '2024-05-09T12:00:00Z',
+            phone: '+966504567890'
+        },
+        {
+            id: 6,
+            name: 'عمر خالد',
+            username: 'omar_moderator',
+            email: 'omar@university.edu',
+            role: 'moderator',
+            status: 'suspended',
+            avatar: '/static/images/user5.jpg',
+            createdAt: '2024-03-01T14:00:00Z',
+            lastLogin: '2024-03-20T10:00:00Z',
+            phone: '+966505678901'
+        }
+    ];
+    
+    // Add any users created during chat room management
+    allAvailableMembers.forEach(member => {
+        if (!allUsers.find(u => u.id === member.id)) {
+            allUsers.push({
+                ...member,
+                status: 'active',
+                createdAt: member.createdAt || new Date().toISOString(),
+                lastLogin: new Date().toISOString(),
+                phone: member.phone || ''
+            });
+        }
+    });
+    
+    filteredUsers = [...allUsers];
+    currentPage = 1;
+    displayUsers();
+    updateUsersStats();
+}
+
+function displayUsers() {
+    const tbody = document.getElementById('usersTableBody');
+    const startIndex = (currentPage - 1) * usersPerPage;
+    const endIndex = startIndex + usersPerPage;
+    const usersToDisplay = filteredUsers.slice(startIndex, endIndex);
+    
+    if (usersToDisplay.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="no-users">لا يوجد مستخدمون لعرضهم</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = usersToDisplay.map(user => `
+        <tr class="user-row">
+            <td class="user-cell">
+                <img src="${user.avatar || '/static/images/default-avatar.png'}" alt="${user.name}" class="user-avatar">
+                <div class="user-info">
+                    <span class="user-name">${user.name}</span>
+                </div>
+            </td>
+            <td class="username-cell">${user.username}</td>
+            <td class="email-cell">${user.email}</td>
+            <td class="role-cell">
+                <span class="role-badge ${user.role}">${getRoleText(user.role)}</span>
+            </td>
+            <td class="status-cell">
+                <span class="status-badge ${user.status}">${getStatusText(user.status)}</span>
+            </td>
+            <td class="date-cell">${formatDate(user.createdAt)}</td>
+            <td class="date-cell">${formatDate(user.lastLogin)}</td>
+            <td class="actions-cell">
+                <button class="action-btn edit-btn" onclick="editUser(${user.id})" title="تعديل">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="action-btn suspend-btn" onclick="toggleUserStatus(${user.id})" title="${user.status === 'active' ? 'تعليق' : 'تفعيل'}">
+                    <i class="fas ${user.status === 'active' ? 'fa-ban' : 'fa-check'}"></i>
+                </button>
+                <button class="action-btn delete-btn" onclick="deleteUser(${user.id})" title="حذف">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    
+    updatePagination();
+}
+
+function getRoleText(role) {
+    const roleMap = {
+        'admin': 'مدير',
+        'moderator': 'مشرف',
+        'employee': 'موظف',
+        'student': 'طالب'
+    };
+    return roleMap[role] || role;
+}
+
+function getStatusText(status) {
+    const statusMap = {
+        'active': 'نشط',
+        'inactive': 'غير نشط',
+        'suspended': 'معلق'
+    };
+    return statusMap[status] || status;
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ar-SA', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function updateUsersStats() {
+    const totalUsers = allUsers.length;
+    const activeUsers = allUsers.filter(u => u.status === 'active').length;
+    const inactiveUsers = allUsers.filter(u => u.status === 'inactive').length;
+    const suspendedUsers = allUsers.filter(u => u.status === 'suspended').length;
+    
+    document.getElementById('totalUsers').textContent = totalUsers;
+    document.getElementById('activeUsers').textContent = activeUsers;
+    document.getElementById('inactiveUsers').textContent = inactiveUsers;
+    document.getElementById('suspendedUsers').textContent = suspendedUsers;
+}
+
+function searchUsers() {
+    const searchTerm = document.getElementById('userSearchInput').value.toLowerCase();
+    
+    if (searchTerm === '') {
+        filteredUsers = [...allUsers];
+    } else {
+        filteredUsers = allUsers.filter(user => 
+            user.name.toLowerCase().includes(searchTerm) ||
+            user.username.toLowerCase().includes(searchTerm) ||
+            user.email.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    currentPage = 1;
+    displayUsers();
+}
+
+function filterUsers() {
+    const roleFilter = document.getElementById('roleFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    filteredUsers = allUsers.filter(user => {
+        const roleMatch = roleFilter === 'all' || user.role === roleFilter;
+        const statusMatch = statusFilter === 'all' || user.status === statusFilter;
+        return roleMatch && statusMatch;
+    });
+    
+    currentPage = 1;
+    displayUsers();
+}
+
+function updatePagination() {
+    const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+    const paginationDiv = document.getElementById('usersPagination');
+    
+    if (totalPages <= 1) {
+        paginationDiv.innerHTML = '';
+        return;
+    }
+    
+    let paginationHTML = '<div class="pagination-controls">';
+    
+    // Previous button
+    paginationHTML += `
+        <button class="pagination-btn ${currentPage === 1 ? 'disabled' : ''}" 
+                onclick="changePage(${currentPage - 1})" 
+                ${currentPage === 1 ? 'disabled' : ''}>
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    `;
+    
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+            paginationHTML += `
+                <button class="pagination-btn ${i === currentPage ? 'active' : ''}" 
+                        onclick="changePage(${i})">${i}</button>
+            `;
+        } else if (i === currentPage - 2 || i === currentPage + 2) {
+            paginationHTML += '<span class="pagination-dots">...</span>';
+        }
+    }
+    
+    // Next button
+    paginationHTML += `
+        <button class="pagination-btn ${currentPage === totalPages ? 'disabled' : ''}" 
+                onclick="changePage(${currentPage + 1})" 
+                ${currentPage === totalPages ? 'disabled' : ''}>
+            <i class="fas fa-chevron-left"></i>
+        </button>
+    `;
+    
+    paginationHTML += '</div>';
+    paginationDiv.innerHTML = paginationHTML;
+}
+
+function changePage(page) {
+    const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+    if (page >= 1 && page <= totalPages) {
+        currentPage = page;
+        displayUsers();
+    }
+}
+
+function openCreateUserModal() {
+    document.getElementById('createUserModal').style.display = 'flex';
+    clearCreateUserForm();
+}
+
+function closeCreateUserModal() {
+    document.getElementById('createUserModal').style.display = 'none';
+}
+
+function clearCreateUserForm() {
+    document.getElementById('newUserName').value = '';
+    document.getElementById('newUserUsername').value = '';
+    document.getElementById('newUserEmail').value = '';
+    document.getElementById('newUserRole').value = 'student';
+    document.getElementById('newUserPassword').value = '';
+    document.getElementById('newUserConfirmPassword').value = '';
+    document.getElementById('newUserPhone').value = '';
+}
+
+function createNewUserAccount() {
+    const name = document.getElementById('newUserName').value.trim();
+    const username = document.getElementById('newUserUsername').value.trim();
+    const email = document.getElementById('newUserEmail').value.trim();
+    const role = document.getElementById('newUserRole').value;
+    const password = document.getElementById('newUserPassword').value;
+    const confirmPassword = document.getElementById('newUserConfirmPassword').value;
+    const phone = document.getElementById('newUserPhone').value.trim();
+    
+    // Validation
+    if (!name || !username || !email || !password || !confirmPassword) {
+        showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
+    
+    if (password !== confirmPassword) {
+        showNotification('كلمة المرور وتأكيدها غير متطابقين', 'error');
+        return;
+    }
+    
+    if (password.length < 6) {
+        showNotification('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error');
+        return;
+    }
+    
+    // Check if username already exists
+    if (allUsers.some(u => u.username === username)) {
+        showNotification('اسم المستخدم موجود بالفعل', 'error');
+        return;
+    }
+    
+    // Check if email already exists
+    if (allUsers.some(u => u.email === email)) {
+        showNotification('البريد الإلكتروني موجود بالفعل', 'error');
+        return;
+    }
+    
+    // Create new user
+    const newUser = {
+        id: Date.now(),
+        name: name,
+        username: username,
+        email: email,
+        role: role,
+        password: password, // In real app, this would be hashed
+        phone: phone,
+        status: 'active',
+        avatar: '/static/images/default-avatar.png',
+        createdAt: new Date().toISOString(),
+        lastLogin: null
+    };
+    
+    allUsers.push(newUser);
+    allAvailableMembers.push(newUser);
+    
+    // Update display
+    filteredUsers = [...allUsers];
+    displayUsers();
+    updateUsersStats();
+    
+    closeCreateUserModal();
+    showNotification(`تم إنشاء المستخدم ${name} بنجاح`, 'success');
+}
+
+function editUser(userId) {
+    const user = allUsers.find(u => u.id === userId);
+    if (user) {
+        showNotification(`فتح تعديل المستخدم: ${user.name}`, 'info');
+        // In real app, open edit modal
+    }
+}
+
+function toggleUserStatus(userId) {
+    const user = allUsers.find(u => u.id === userId);
+    if (user) {
+        if (user.status === 'active') {
+            user.status = 'suspended';
+            showNotification(`تم تعليق المستخدم: ${user.name}`, 'warning');
+        } else {
+            user.status = 'active';
+            showNotification(`تم تفعيل المستخدم: ${user.name}`, 'success');
+        }
+        
+        filteredUsers = [...allUsers];
+        displayUsers();
+        updateUsersStats();
+    }
+}
+
+function deleteUser(userId) {
+    const user = allUsers.find(u => u.id === userId);
+    if (user) {
+        if (confirm(`هل أنت متأكد من حذف المستخدم: ${user.name}؟`)) {
+            allUsers = allUsers.filter(u => u.id !== userId);
+            filteredUsers = [...allUsers];
+            displayUsers();
+            updateUsersStats();
+            showNotification(`تم حذف المستخدم: ${user.name}`, 'success');
+        }
+    }
+}
+
+function exportUsers() {
+    const csvContent = [
+        ['الاسم', 'اسم المستخدم', 'البريد الإلكتروني', 'الدور', 'الحالة', 'تاريخ الإنشاء', 'آخر تسجيل دخول'],
+        ...allUsers.map(user => [
+            user.name,
+            user.username,
+            user.email,
+            getRoleText(user.role),
+            getStatusText(user.status),
+            formatDate(user.createdAt),
+            formatDate(user.lastLogin)
+        ])
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `users_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    
+    showNotification('تم تصدير قائمة المستخدمين بنجاح', 'success');
+}
+
 function closeNotificationModal() {
     document.getElementById('notificationModal').style.display = 'none';
 }

@@ -1085,6 +1085,167 @@
         </div>
     </div>
 
+    <!-- User Management Modal -->
+    <div class="modal" id="userManagementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-users-cog"></i> إدارة المستخدمين</h2>
+                <button class="close-btn" onclick="closeUserManagementModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="user-management-content">
+                <div class="user-management-header">
+                    <div class="search-filter-section">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="userSearchInput" placeholder="البحث عن مستخدم..." onkeyup="searchUsers()">
+                        </div>
+                        <div class="filter-section">
+                            <select id="roleFilter" onchange="filterUsers()">
+                                <option value="all">كل الأدوار</option>
+                                <option value="admin">مدير</option>
+                                <option value="moderator">مشرف</option>
+                                <option value="student">طالب</option>
+                                <option value="employee">موظف</option>
+                            </select>
+                            <select id="statusFilter" onchange="filterUsers()">
+                                <option value="all">كل الحالات</option>
+                                <option value="active">نشط</option>
+                                <option value="inactive">غير نشط</option>
+                                <option value="suspended">معلق</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="primary-btn" onclick="openCreateUserModal()">
+                            <i class="fas fa-user-plus"></i> إضافة مستخدم جديد
+                        </button>
+                        <button class="secondary-btn" onclick="exportUsers()">
+                            <i class="fas fa-download"></i> تصدير
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="users-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-users"></i>
+                        <div class="stat-info">
+                            <span class="stat-number" id="totalUsers">0</span>
+                            <span class="stat-label">إجمالي المستخدمين</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-user-check"></i>
+                        <div class="stat-info">
+                            <span class="stat-number" id="activeUsers">0</span>
+                            <span class="stat-label">نشطون</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-user-clock"></i>
+                        <div class="stat-info">
+                            <span class="stat-number" id="inactiveUsers">0</span>
+                            <span class="stat-label">غير نشطين</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-user-slash"></i>
+                        <div class="stat-info">
+                            <span class="stat-number" id="suspendedUsers">0</span>
+                            <span class="stat-label">معلقون</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="users-table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>المستخدم</th>
+                                <th>اسم المستخدم</th>
+                                <th>البريد الإلكتروني</th>
+                                <th>الدور</th>
+                                <th>الحالة</th>
+                                <th>تاريخ الإنشاء</th>
+                                <th>آخر تسجيل دخول</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination" id="usersPagination">
+                    <!-- Pagination will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create User Modal -->
+    <div class="modal" id="createUserModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-plus"></i> إنشاء مستخدم جديد</h2>
+                <button class="close-btn" onclick="closeCreateUserModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="create-user-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newUserName">الاسم الكامل *</label>
+                        <input type="text" id="newUserName" placeholder="أدخل الاسم الكامل">
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserUsername">اسم المستخدم *</label>
+                        <input type="text" id="newUserUsername" placeholder="أدخل اسم المستخدم">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newUserEmail">البريد الإلكتروني *</label>
+                        <input type="email" id="newUserEmail" placeholder="أدخل البريد الإلكتروني">
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserRole">الدور *</label>
+                        <select id="newUserRole">
+                            <option value="student">طالب</option>
+                            <option value="employee">موظف</option>
+                            <option value="moderator">مشرف</option>
+                            <option value="admin">مدير</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newUserPassword">كلمة المرور *</label>
+                        <input type="password" id="newUserPassword" placeholder="أدخل كلمة المرور">
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserConfirmPassword">تأكيد كلمة المرور *</label>
+                        <input type="password" id="newUserConfirmPassword" placeholder="أعد إدخال كلمة المرور">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="newUserPhone">رقم الهاتف</label>
+                    <input type="tel" id="newUserPhone" placeholder="أدخل رقم الهاتف">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeCreateUserModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="primary-btn" onclick="createNewUserAccount()">
+                        <i class="fas fa-save"></i> إنشاء المستخدم
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Real-time Chat Interface Modal -->
     <div class="modal" id="chatInterfaceModal">
         <div class="modal-content chat-modal">
