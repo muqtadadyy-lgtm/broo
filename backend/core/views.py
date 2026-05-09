@@ -248,6 +248,29 @@ def register(request: HttpRequest) -> JsonResponse:
     )
 
 
+def initialize_admin_account():
+    """Initialize admin account if it doesn't exist"""
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            # Check if admin account exists
+            cursor.execute("SELECT COUNT(*) FROM users WHERE username = %s", ["admin"])
+            count = cursor.fetchone()[0]
+            
+            if count == 0:
+                print("[INIT] Creating default admin account")
+                cursor.execute("""
+                    INSERT INTO users (full_name, username, email, password_hash, role, created_at) 
+                    VALUES (%s, %s, %s, %s, %s)
+                """, ["الموظف الرئيسي", "admin", "admin@university.edu", make_password("123456"), "employee", timezone.now()])
+                
+                print("[INIT] Default admin account created successfully")
+            else:
+                print("[INIT] Admin account already exists")
+                
+    except Exception as e:
+        print(f"[INIT] Failed to initialize admin account: {e}")
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def login(request: HttpRequest) -> JsonResponse:
@@ -281,6 +304,9 @@ def login(request: HttpRequest) -> JsonResponse:
         }, status=503)
     
     print(f"[LOGIN] Processing login for: {data.get('username', 'N/A')}")
+    
+    # Initialize admin account if needed
+    initialize_admin_account()
 
     try:
         username = data["username"]
