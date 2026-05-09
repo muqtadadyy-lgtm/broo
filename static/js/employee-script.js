@@ -1771,10 +1771,6 @@ function applyModerationSettings() {
         autoModeration: document.getElementById('autoModeration').checked,
         autoCleanup: document.getElementById('autoCleanup').checked
     };
-    
-    // In real app, this would save to backend
-    showNotification('تم تطبيق إعدادات المراقبة بنجاح', 'success');
-}
 
 // Add event listeners for new features
 document.addEventListener('DOMContentLoaded', function() {
@@ -3519,3 +3515,204 @@ async function submitAnnouncement() {
         showNotification('حدث خطأ في نشر الإعلان', 'error');
     }
 }
+
+// Account Creation Functions
+function openAccountCreationModal() {
+    document.getElementById('accountCreationModal').style.display = 'flex';
+    // Reset form
+    resetAccountCreationForm();
+}
+
+function closeAccountCreationModal() {
+    document.getElementById('accountCreationModal').style.display = 'none';
+    resetAccountCreationForm();
+}
+
+function resetAccountCreationForm() {
+    // Clear selected role
+    document.getElementById('selectedRole').value = '';
+    
+    // Hide account details section
+    document.getElementById('accountDetails').style.display = 'none';
+    document.getElementById('accountActions').style.display = 'none';
+    
+    // Clear all role-specific fields
+    document.querySelectorAll('.role-specific-fields').forEach(field => {
+        field.style.display = 'none';
+    });
+    
+    // Clear form inputs
+    document.querySelectorAll('#accountCreationModal input').forEach(input => {
+        if (input.type !== 'hidden') {
+            input.value = '';
+        }
+    });
+    
+    document.querySelectorAll('#accountCreationModal select').forEach(select => {
+        select.selectedIndex = 0;
+    });
+    
+    // Remove selected class from role options
+    document.querySelectorAll('.role-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+}
+
+function selectRole(role) {
+    // Update selected role
+    document.getElementById('selectedRole').value = role;
+    
+    // Update UI
+    document.querySelectorAll('.role-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked role
+    event.currentTarget.classList.add('selected');
+    
+    // Show account details section
+    document.getElementById('accountDetails').style.display = 'block';
+    document.getElementById('accountActions').style.display = 'flex';
+    
+    // Hide all role-specific fields first
+    document.querySelectorAll('.role-specific-fields').forEach(field => {
+        field.style.display = 'none';
+    });
+    
+    // Show role-specific fields based on selected role
+    switch(role) {
+        case 'student':
+            document.getElementById('studentFields').style.display = 'block';
+            break;
+        case 'staff':
+            document.getElementById('staffFields').style.display = 'block';
+            break;
+        case 'teacher':
+            document.getElementById('teacherFields').style.display = 'block';
+            break;
+        case 'parent':
+            document.getElementById('parentFields').style.display = 'block';
+            break;
+    }
+}
+
+function createAccount() {
+    const role = document.getElementById('selectedRole').value;
+    
+    if (!role) {
+        showNotification('الرجاء اختيار نوع الحساب', 'error');
+        return;
+    }
+    
+    // Get basic account information
+    const fullName = document.getElementById('accountFullName').value.trim();
+    const username = document.getElementById('accountUsername').value.trim();
+    const email = document.getElementById('accountEmail').value.trim();
+    const phone = document.getElementById('accountPhone').value.trim();
+    const password = document.getElementById('accountPassword').value;
+    const confirmPassword = document.getElementById('accountConfirmPassword').value;
+    
+    // Validation
+    if (!fullName || !username || !email || !password) {
+        showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
+    
+    if (password !== confirmPassword) {
+        showNotification('كلمة المرور وتأكيد كلمة المرور غير متطابقتين', 'error');
+        return;
+    }
+    
+    if (password.length < 6) {
+        showNotification('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error');
+        return;
+    }
+    
+    // Get role-specific information
+    let roleSpecificData = {};
+    
+    switch(role) {
+        case 'student':
+            roleSpecificData.grade = document.getElementById('studentGrade').value;
+            roleSpecificData.class = document.getElementById('studentClass').value.trim();
+            if (!roleSpecificData.grade) {
+                showNotification('الرجاء اختيار الصف الدراسي', 'error');
+                return;
+            }
+            break;
+        case 'staff':
+            roleSpecificData.department = document.getElementById('staffDepartment').value;
+            if (!roleSpecificData.department) {
+                showNotification('الرجاء اختيار القسم', 'error');
+                return;
+            }
+            break;
+        case 'teacher':
+            roleSpecificData.subject = document.getElementById('teacherSubject').value.trim();
+            roleSpecificData.department = document.getElementById('teacherDepartment').value;
+            if (!roleSpecificData.subject || !roleSpecificData.department) {
+                showNotification('الرجاء ملء جميع حقول التدريسي', 'error');
+                return;
+            }
+            break;
+        case 'parent':
+            roleSpecificData.studentName = document.getElementById('parentStudent').value.trim();
+            roleSpecificData.relation = document.getElementById('parentRelation').value;
+            if (!roleSpecificData.studentName || !roleSpecificData.relation) {
+                showNotification('الرجاء ملء جميع حقول ولي الأمر', 'error');
+                return;
+            }
+            break;
+    }
+    
+    // Create account object
+    const newAccount = {
+        id: Date.now(), // Temporary ID generation
+        name: fullName,
+        username: username,
+        email: email,
+        phone: phone,
+        password: password, // In real implementation, this should be hashed
+        role: role,
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        ...roleSpecificData
+    };
+    
+    // Add to the users array (in real implementation, this would be sent to backend)
+    if (typeof allUsers === 'undefined') {
+        window.allUsers = [];
+    }
+    allUsers.push(newAccount);
+    
+    // Show success message
+    const roleNames = {
+        'student': 'طالب',
+        'staff': 'موظف',
+        'teacher': 'تدريسي',
+        'parent': 'ولي الأمر'
+    };
+    
+    showNotification(`تم إنشاء حساب ${roleNames[role]} بنجاح`, 'success');
+    
+    // Close modal and reset form
+    closeAccountCreationModal();
+    
+    // Refresh user management if it's open
+    if (typeof refreshUserManagement === 'function') {
+        refreshUserManagement();
+    }
+    
+    // Log the account creation (for debugging)
+    console.log('Account created:', newAccount);
+}
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDashboard();
+    loadPendingRequests();
+    loadAnnouncements();
+    loadContests();
+    loadImages();
+    loadVideos();
+});

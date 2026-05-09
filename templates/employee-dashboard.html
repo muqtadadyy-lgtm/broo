@@ -384,6 +384,10 @@
             <i class="fas fa-plus"></i>
         </button>
         <div class="fab-menu" id="fabMenu">
+            <button class="fab-item" onclick="openAccountCreationModal()" title="إنشاء حساب جديد">
+                <i class="fas fa-user-plus"></i>
+                <span>إنشاء حساب جديد</span>
+            </button>
             <button class="fab-item" onclick="openUserManagementModal()" title="إدارة المستخدمين">
                 <i class="fas fa-users-cog"></i>
                 <span>إدارة المستخدمين</span>
@@ -1539,6 +1543,169 @@
                     </button>
                     <button type="button" class="submit-btn" onclick="submitAnnouncement()">
                         <i class="fas fa-paper-plane"></i> نشر الإعلان
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Creation Modal -->
+    <div class="modal" id="accountCreationModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-plus"></i> إنشاء حساب جديد</h2>
+                <button class="close-btn" onclick="closeAccountCreationModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="account-creation-form">
+                <div class="form-section">
+                    <h3>نوع الحساب</h3>
+                    <div class="role-selection">
+                        <div class="role-option" onclick="selectRole('student')">
+                            <div class="role-icon student">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <h4>طالب</h4>
+                            <p>إنشاء حساب للطالب</p>
+                        </div>
+                        <div class="role-option" onclick="selectRole('staff')">
+                            <div class="role-icon staff">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                            <h4>موظف</h4>
+                            <p>إنشاء حساب للموظف</p>
+                        </div>
+                        <div class="role-option" onclick="selectRole('teacher')">
+                            <div class="role-icon teacher">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                            </div>
+                            <h4>تدريسي</h4>
+                            <p>إنشاء حساب للتدريسي</p>
+                        </div>
+                        <div class="role-option" onclick="selectRole('parent')">
+                            <div class="role-icon parent">
+                                <i class="fas fa-user-friends"></i>
+                            </div>
+                            <h4>ولي الأمر</h4>
+                            <p>إنشاء حساب لولي الأمر</p>
+                        </div>
+                    </div>
+                    <input type="hidden" id="selectedRole" value="">
+                </div>
+
+                <div class="form-section" id="accountDetails" style="display: none;">
+                    <h3>معلومات الحساب</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="accountFullName">الاسم الكامل:</label>
+                            <input type="text" id="accountFullName" placeholder="أدخل الاسم الكامل..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="accountUsername">اسم المستخدم:</label>
+                            <input type="text" id="accountUsername" placeholder="أدخل اسم المستخدم..." required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="accountEmail">البريد الإلكتروني:</label>
+                            <input type="email" id="accountEmail" placeholder="أدخل البريد الإلكتروني..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="accountPhone">رقم الهاتف:</label>
+                            <input type="tel" id="accountPhone" placeholder="أدخل رقم الهاتف...">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="accountPassword">كلمة المرور:</label>
+                            <input type="password" id="accountPassword" placeholder="أدخل كلمة المرور..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="accountConfirmPassword">تأكيد كلمة المرور:</label>
+                            <input type="password" id="accountConfirmPassword" placeholder="أكد كلمة المرور..." required>
+                        </div>
+                    </div>
+
+                    <!-- Role-specific fields -->
+                    <div id="studentFields" class="role-specific-fields" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="studentGrade">الصف الدراسي:</label>
+                                <select id="studentGrade">
+                                    <option value="">اختر الصف...</option>
+                                    <option value="1">الصف الأول</option>
+                                    <option value="2">الصف الثاني</option>
+                                    <option value="3">الصف الثالث</option>
+                                    <option value="4">الصف الرابع</option>
+                                    <option value="5">الصف الخامس</option>
+                                    <option value="6">الصف السادس</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="studentClass">الشعبة:</label>
+                                <input type="text" id="studentClass" placeholder="أدخل الشعبة...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="staffFields" class="role-specific-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="staffDepartment">القسم:</label>
+                            <select id="staffDepartment">
+                                <option value="">اختر القسم...</option>
+                                <option value="administration">الإدارة</option>
+                                <option value="accounting">المحاسبة</option>
+                                <option value="hr">الموارد البشرية</option>
+                                <option value="it">تقنية المعلومات</option>
+                                <option value="library">المكتبة</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="teacherFields" class="role-specific-fields" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="teacherSubject">المادة التي يدرسها:</label>
+                                <input type="text" id="teacherSubject" placeholder="أدخل المادة...">
+                            </div>
+                            <div class="form-group">
+                                <label for="teacherDepartment">القسم التعليمي:</label>
+                                <select id="teacherDepartment">
+                                    <option value="">اختر القسم...</option>
+                                    <option value="science">العلوم</option>
+                                    <option value="math">الرياضيات</option>
+                                    <option value="arabic">اللغة العربية</option>
+                                    <option value="english">اللغة الإنجليزية</option>
+                                    <option value="computer">الحاسوب</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="parentFields" class="role-specific-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="parentStudent">اسم الطالب:</label>
+                            <input type="text" id="parentStudent" placeholder="أدخل اسم الطالب...">
+                        </div>
+                        <div class="form-group">
+                            <label for="parentRelation">صلة القرابة:</label>
+                            <select id="parentRelation">
+                                <option value="">اختر صلة القرابة...</option>
+                                <option value="father">الأب</option>
+                                <option value="mother">الأم</option>
+                                <option value="guardian">الوصي</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions" id="accountActions" style="display: none;">
+                    <button type="button" class="secondary-btn" onclick="closeAccountCreationModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="createAccount()">
+                        <i class="fas fa-user-plus"></i> إنشاء الحساب
                     </button>
                 </div>
             </div>
