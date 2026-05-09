@@ -825,6 +825,74 @@
         </div>
     </div>
 
+    <!-- Student Requests Management Modal -->
+    <div class="modal" id="studentRequestsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-graduate"></i> إدارة طلبات الطلاب</h2>
+                <button class="close-btn" onclick="closeStudentRequestsModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="student-requests-form">
+                <div class="form-section">
+                    <h3>طلبات الانضمام لكروب الدردشة</h3>
+                    <div class="requests-tabs">
+                        <button class="tab-btn active" onclick="showRequestsTab('pending')" id="pendingTab">
+                            <i class="fas fa-clock"></i> طلبات معلقة
+                            <span class="tab-badge" id="pendingCount">0</span>
+                        </button>
+                        <button class="tab-btn" onclick="showRequestsTab('approved')" id="approvedTab">
+                            <i class="fas fa-check"></i> طلبات معتمدة
+                            <span class="tab-badge" id="approvedCount">0</span>
+                        </button>
+                        <button class="tab-btn" onclick="showRequestsTab('rejected')" id="rejectedTab">
+                            <i class="fas fa-times"></i> طلبات مرفوضة
+                            <span class="tab-badge" id="rejectedCount">0</span>
+                        </button>
+                    </div>
+                    
+                    <div class="requests-content" id="requestsContent">
+                        <!-- Requests will be displayed here -->
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>إضافة طالب مباشرة</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="studentUsername">اسم المستخدم للطالب:</label>
+                            <input type="text" id="studentUsername" placeholder="أدخل اسم مستخدم الطالب..." onkeyup="checkStudentUsername(event)">
+                            <div class="username-status" id="studentUsernameStatus"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="targetChatRoom">الكروب المستهدف:</label>
+                            <select id="targetChatRoom">
+                                <option value="">اختر الكروب...</option>
+                                <option value="general">كروب العام</option>
+                                <option value="study">كروب الدراسة</option>
+                                <option value="contest">كروب المسابقات</option>
+                                <option value="announcement">كروب الإعلانات</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="requestReason">سبب الإضافة:</label>
+                        <textarea id="requestReason" rows="3" placeholder="أدخل سبب إضافة الطالب إلى الكروب..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="secondary-btn" onclick="clearStudentRequest()">
+                            <i class="fas fa-eraser"></i> مسح
+                        </button>
+                        <button type="button" class="submit-btn" onclick="addStudentToChatRoom()">
+                            <i class="fas fa-user-plus"></i> إضافة الطالب
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Contest Creation Modal -->
     <div class="modal" id="contestModal">
         <div class="modal-content">

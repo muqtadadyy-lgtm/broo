@@ -1165,6 +1165,288 @@ function openChatRoomModal() {
     toggleFabMenu();
 }
 
+// Student Requests Management Functions
+let studentRequests = [];
+let currentRequestsTab = 'pending';
+
+function openStudentRequestsModal() {
+    document.getElementById('studentRequestsModal').style.display = 'flex';
+    loadStudentRequests();
+    showRequestsTab('pending');
+    toggleFabMenu();
+}
+
+function closeStudentRequestsModal() {
+    document.getElementById('studentRequestsModal').style.display = 'none';
+}
+
+function loadStudentRequests() {
+    // Mock data for student requests
+    studentRequests = [
+        {
+            id: 1,
+            studentName: 'أحمد محمد',
+            username: 'ahmed_student',
+            email: 'ahmed@university.edu',
+            targetRoom: 'general',
+            reason: 'أريد الانضمام لمناقشة المشاريع الدراسية',
+            status: 'pending',
+            requestedAt: new Date().toISOString(),
+            requestedBy: currentUser.fullName
+        },
+        {
+            id: 2,
+            studentName: 'فاطمة علي',
+            username: 'fatima_student',
+            email: 'fatima@university.edu',
+            targetRoom: 'study',
+            reason: 'أحتاج المساعدة في مواد الرياضيات',
+            status: 'approved',
+            approvedAt: new Date().toISOString(),
+            approvedBy: currentUser.fullName,
+            requestedAt: new Date(Date.now() - 86400000).toISOString(),
+            requestedBy: currentUser.fullName
+        },
+        {
+            id: 3,
+            studentName: 'محمد خالد',
+            username: 'mohammed_student',
+            email: 'mohammed@university.edu',
+            targetRoom: 'contest',
+            reason: 'أراد المشاركة في مسابقة البرمجة',
+            status: 'rejected',
+            rejectedAt: new Date(Date.now() - 172800000).toISOString(),
+            rejectedBy: currentUser.fullName,
+            rejectionReason: 'الكروب ممتلئ حالياً',
+            requestedAt: new Date(Date.now() - 259200000).toISOString(),
+            requestedBy: currentUser.fullName
+        }
+    ];
+    
+    updateRequestCounts();
+}
+
+function showRequestsTab(tab) {
+    currentRequestsTab = tab;
+    
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(tab + 'Tab').classList.add('active');
+    
+    // Display requests based on tab
+    const requestsContent = document.getElementById('requestsContent');
+    const filteredRequests = studentRequests.filter(req => req.status === tab);
+    
+    if (filteredRequests.length === 0) {
+        requestsContent.innerHTML = `
+            <div class="no-requests">
+                <i class="fas fa-inbox"></i>
+                <p>لا توجد طلبات ${tab === 'pending' ? 'معلقة' : tab === 'approved' ? 'معتمدة' : 'مرفوضة'}</p>
+            </div>
+        `;
+    } else {
+        requestsContent.innerHTML = `
+            <div class="requests-list">
+                ${filteredRequests.map(request => createRequestCard(request)).join('')}
+            </div>
+        `;
+    }
+}
+
+function createRequestCard(request) {
+    const statusIcon = request.status === 'pending' ? 'fa-clock' : 
+                       request.status === 'approved' ? 'fa-check-circle' : 'fa-times-circle';
+    
+    const statusClass = request.status === 'pending' ? 'status-pending' : 
+                        request.status === 'approved' ? 'status-approved' : 'status-rejected';
+    
+    const roomText = request.targetRoom === 'general' ? 'كروب العام' : 
+                    request.targetRoom === 'study' ? 'كروب الدراسة' : 
+                    request.targetRoom === 'contest' ? 'كروب المسابقات' : 'كروب الإعلانات';
+    
+    return `
+        <div class="request-card ${statusClass}">
+            <div class="request-header">
+                <div class="request-info">
+                    <h4>${request.studentName}</h4>
+                    <p><i class="fas fa-user"></i> ${request.username}</p>
+                    <p><i class="fas fa-envelope"></i> ${request.email}</p>
+                </div>
+                <div class="request-status">
+                    <i class="fas ${statusIcon}"></i>
+                    <span>${request.status === 'pending' ? 'معلق' : 
+                           request.status === 'approved' ? 'معتمد' : 'مرفوض'}</span>
+                </div>
+            </div>
+            <div class="request-details">
+                <p><strong>الكروب المستهدف:</strong> ${roomText}</p>
+                <p><strong>السبب:</strong> ${request.reason}</p>
+                <p><strong>تاريخ الطلب:</strong> ${new Date(request.requestedAt).toLocaleDateString('ar-SA')}</p>
+                ${request.status === 'approved' ? `<p><strong>تاريخ الموافقة:</strong> ${new Date(request.approvedAt).toLocaleDateString('ar-SA')}</p>` : ''}
+                ${request.status === 'rejected' ? `<p><strong>سبب الرفض:</strong> ${request.rejectionReason}</p>` : ''}
+            </div>
+            <div class="request-actions">
+                ${request.status === 'pending' ? `
+                    <button class="approve-btn" onclick="approveRequest(${request.id})">
+                        <i class="fas fa-check"></i> موافقة
+                    </button>
+                    <button class="reject-btn" onclick="rejectRequest(${request.id})">
+                        <i class="fas fa-times"></i> رفض
+                    </button>
+                ` : ''}
+                ${request.status === 'approved' ? `
+                    <button class="add-to-room-btn" onclick="addApprovedStudentToRoom(${request.id})">
+                        <i class="fas fa-user-plus"></i> إضافة للكروب
+                    </button>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function updateRequestCounts() {
+    const pendingCount = studentRequests.filter(req => req.status === 'pending').length;
+    const approvedCount = studentRequests.filter(req => req.status === 'approved').length;
+    const rejectedCount = studentRequests.filter(req => req.status === 'rejected').length;
+    
+    document.getElementById('pendingCount').textContent = pendingCount;
+    document.getElementById('approvedCount').textContent = approvedCount;
+    document.getElementById('rejectedCount').textContent = rejectedCount;
+}
+
+function checkStudentUsername(event) {
+    const username = document.getElementById('studentUsername').value.trim();
+    const statusDiv = document.getElementById('studentUsernameStatus');
+    
+    if (username.length < 3) {
+        statusDiv.innerHTML = '<span class="status-error">اسم المستخدم يجب أن يكون 3 أحرف على الأقل</span>';
+        return;
+    }
+    
+    if (username.length > 20) {
+        statusDiv.innerHTML = '<span class="status-error">اسم المستخدم يجب أن يكون 20 حرف كحد أقصى</span>';
+        return;
+    }
+    
+    // Check if username exists in student requests
+    const existingRequest = studentRequests.find(req => req.username === username && req.status === 'pending');
+    if (existingRequest) {
+        statusDiv.innerHTML = '<span class="status-warning">يوجد طلب معلق لهذا المستخدم</span>';
+        return;
+    }
+    
+    statusDiv.innerHTML = '<span class="status-success">المستخدم متاح للإضافة</span>';
+    
+    // Allow adding with Enter key
+    if (event.key === 'Enter') {
+        addStudentToChatRoom();
+    }
+}
+
+function addStudentToChatRoom() {
+    const username = document.getElementById('studentUsername').value.trim();
+    const targetRoom = document.getElementById('targetChatRoom').value;
+    const reason = document.getElementById('requestReason').value.trim();
+    const statusDiv = document.getElementById('studentUsernameStatus');
+    
+    if (!username || !targetRoom || !reason) {
+        showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
+    
+    if (username.length < 3) {
+        statusDiv.innerHTML = '<span class="status-error">اسم المستخدم يجب أن يكون 3 أحرف على الأقل</span>';
+        return;
+    }
+    
+    // Check if username exists in student requests
+    const existingRequest = studentRequests.find(req => req.username === username && req.status === 'pending');
+    if (existingRequest) {
+        showNotification('يوجد طلب معلق لهذا المستخدم', 'error');
+        return;
+    }
+    
+    // Create new student request
+    const newRequest = {
+        id: Date.now(),
+        studentName: username,
+        username: username,
+        email: `${username}@university.edu`,
+        targetRoom: targetRoom,
+        reason: reason,
+        status: 'pending',
+        requestedAt: new Date().toISOString(),
+        requestedBy: currentUser.fullName
+    };
+    
+    studentRequests.push(newRequest);
+    updateRequestCounts();
+    showRequestsTab('pending');
+    
+    // Clear form
+    document.getElementById('studentUsername').value = '';
+    document.getElementById('targetChatRoom').value = '';
+    document.getElementById('requestReason').value = '';
+    statusDiv.innerHTML = '';
+    
+    showNotification(`تم إنشاء طلب لـ ${username} بنجاح`, 'success');
+}
+
+function approveRequest(requestId) {
+    const request = studentRequests.find(req => req.id === requestId);
+    if (request) {
+        request.status = 'approved';
+        request.approvedAt = new Date().toISOString();
+        request.approvedBy = currentUser.fullName;
+        
+        updateRequestCounts();
+        showRequestsTab(currentRequestsTab);
+        showNotification(`تمت الموافقة على طلب ${request.studentName}`, 'success');
+    }
+}
+
+function rejectRequest(requestId) {
+    const reason = prompt('أدخل سبب الرفض:');
+    if (!reason) return;
+    
+    const request = studentRequests.find(req => req.id === requestId);
+    if (request) {
+        request.status = 'rejected';
+        request.rejectedAt = new Date().toISOString();
+        request.rejectedBy = currentUser.fullName;
+        request.rejectionReason = reason;
+        
+        updateRequestCounts();
+        showRequestsTab(currentRequestsTab);
+        showNotification(`تم رفض طلب ${request.studentName}`, 'info');
+    }
+}
+
+function addApprovedStudentToRoom(requestId) {
+    const request = studentRequests.find(req => req.id === requestId);
+    if (request) {
+        // Add to chat room members (simulate)
+        const memberData = {
+            id: request.id,
+            name: request.studentName,
+            username: request.username,
+            email: request.email,
+            role: 'student',
+            status: 'active'
+        };
+        
+        // Here you would normally add to the actual chat room
+        showNotification(`تمت إضافة ${request.studentName} إلى الكروب بنجاح`, 'success');
+    }
+}
+
+function clearStudentRequest() {
+    document.getElementById('studentUsername').value = '';
+    document.getElementById('targetChatRoom').value = '';
+    document.getElementById('requestReason').value = '';
+    document.getElementById('studentUsernameStatus').innerHTML = '';
+}
+
 function openNotificationModal() {
     document.getElementById('notificationModal').style.display = 'flex';
     toggleFabMenu();
