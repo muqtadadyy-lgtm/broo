@@ -456,59 +456,6 @@ def update_profile(request: HttpRequest) -> JsonResponse:
 # ==================== ACTIVITY ENDPOINTS ====================
 
 
-@csrf_exempt
-@require_http_methods(["GET"])
-def get_announcements(request: HttpRequest) -> JsonResponse:
-    """Get all announcements with media"""
-    try:
-        from django.db import connection
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT id, title, content, type, created_at, updated_at
-                FROM announcements 
-                ORDER BY created_at DESC
-            """)
-            announcements_data = cursor.fetchall()
-            
-            # Get media for each announcement
-            announcements = []
-            for announcement in announcements_data:
-                cursor.execute("""
-                    SELECT type, url, caption 
-                    FROM announcement_media 
-                    WHERE announcement_id = %s
-                    ORDER BY created_at ASC
-                """, [announcement[0]])
-                media_data = cursor.fetchall()
-                
-                announcements.append({
-                    'id': announcement[0],
-                    'title': announcement[1],
-                    'content': announcement[2],
-                    'type': announcement[3],
-                    'created_at': announcement[4],
-                    'updated_at': announcement[5],
-                    'media': [{
-                        'type': media[0],
-                        'url': media[1],
-                        'caption': media[2]
-                    } for media in media_data]
-                })
-            
-            return JsonResponse({
-                "success": True,
-                "announcements": announcements
-            })
-            
-    except Exception as e:
-        print(f"[ANNOUNCEMENTS] Error fetching announcements: {e}")
-        return JsonResponse({
-            "success": False,
-            "message": "فشل تحميل الإعلانات"
-        }, status=500)
-
-
-@csrf_exempt
 @jwt_required
 @require_http_methods(["GET"])
 def get_activities(request: HttpRequest) -> JsonResponse:
