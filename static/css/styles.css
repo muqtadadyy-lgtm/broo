@@ -868,6 +868,40 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
     user-select: none;
 }
 
+/* Enhanced Chat Room Management Styles */
+.member-actions {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.role-btn {
+    padding: 5px 8px;
+    background: #17a2b8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.role-btn:hover {
+    background: #138496;
+}
+
+.moderator-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.role-assignment {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
 @media (min-width:1024px) {
     .auth-card {max-width:600px}
     .language-menu {width:320px}

@@ -1477,6 +1477,15 @@ async function createChatRoom() {
     const description = document.getElementById('chatRoomDescription').value.trim();
     const type = document.getElementById('chatRoomType').value;
     const maxMembers = document.getElementById('chatRoomMaxMembers').value;
+    const privacy = document.getElementById('chatRoomPrivacy').value;
+    const status = document.getElementById('chatRoomStatus').value;
+    const rules = document.getElementById('chatRoomRules').value.trim();
+    const tags = document.getElementById('chatRoomTags').value.trim();
+    const messageRetention = document.getElementById('chatRoomMessageRetention').value;
+    const fileSharing = document.getElementById('chatRoomFileSharing').value;
+    const notifications = document.getElementById('chatRoomNotifications').checked;
+    const encryption = document.getElementById('chatRoomEncryption').checked;
+    const adminRole = document.getElementById('adminRole').value;
     
     if (!name || !description) {
         showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
@@ -1489,32 +1498,69 @@ async function createChatRoom() {
     }
     
     try {
-        // Create chat room data
+        // Create enhanced chat room data
         const chatRoomData = {
             name: name,
             description: description,
             type: type,
             maxMembers: maxMembers,
-            members: chatRoomMembers,
+            privacy: privacy,
+            status: status,
+            rules: rules,
+            tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+            messageRetention: messageRetention,
+            fileSharing: fileSharing,
+            notifications: notifications,
+            encryption: encryption,
+            members: chatRoomMembers.map(member => ({
+                ...member,
+                role: member.id === parseInt(adminRole) ? 'admin' : 'member',
+                joinedAt: new Date().toISOString()
+            })),
+            adminId: adminRole || chatRoomMembers[0].id,
             createdBy: currentUser.fullName,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            lastActivity: new Date().toISOString(),
+            messageCount: 0,
+            fileCount: 0
         };
         
         // Here you would normally send to API
-        showNotification('جاري إنشاء الكروب...', 'info');
+        showNotification('جاري إنشاء الكروب المتقدم...', 'info');
         
-        // Simulate creation
+        // Simulate creation with enhanced features
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        showNotification(`تم إنشاء كروب "${name}" بنجاح`, 'success');
+        const typeText = type === 'general' ? 'عام' : 
+                        type === 'contest' ? 'مسابقة' : 
+                        type === 'study' ? 'دراسة' : 
+                        type === 'announcement' ? 'إعلانات' : 
+                        type === 'private' ? 'خاص' : 
+                        type === 'support' ? 'دعم فني' : 'مشروع';
+        
+        const privacyText = privacy === 'public' ? 'عام' : 
+                           privacy === 'private' ? 'خاص' : 'دعوة فقط';
+        
+        showNotification(`تم إنشاء كروب "${name}" (${typeText} - ${privacyText}) بنجاح`, 'success');
         
         // Clear form
         document.getElementById('chatRoomName').value = '';
         document.getElementById('chatRoomDescription').value = '';
         document.getElementById('chatRoomType').value = 'general';
         document.getElementById('chatRoomMaxMembers').value = '50';
+        document.getElementById('chatRoomPrivacy').value = 'public';
+        document.getElementById('chatRoomStatus').value = 'active';
+        document.getElementById('chatRoomRules').value = '';
+        document.getElementById('chatRoomTags').value = '';
+        document.getElementById('chatRoomMessageRetention').value = 'forever';
+        document.getElementById('chatRoomFileSharing').value = 'enabled';
+        document.getElementById('chatRoomNotifications').checked = true;
+        document.getElementById('chatRoomEncryption').checked = false;
+        document.getElementById('adminRole').value = '';
+        
         chatRoomMembers = [];
         updateMemberList();
+        updateRoleAssignments();
         
         // Close modal
         closeChatRoomModal();
@@ -1522,6 +1568,76 @@ async function createChatRoom() {
     } catch (error) {
         console.error('Error creating chat room:', error);
         showNotification('حدث خطأ في إنشاء الكروب', 'error');
+    }
+}
+
+function updateRoleAssignments() {
+    const adminSelect = document.getElementById('adminRole');
+    const moderatorSelection = document.querySelector('.moderator-selection');
+    
+    // Update admin options
+    adminSelect.innerHTML = '<option value="">اختر مدير الكروب</option>';
+    chatRoomMembers.forEach(member => {
+        const option = document.createElement('option');
+        option.value = member.id;
+        option.textContent = member.name;
+        adminSelect.appendChild(option);
+    });
+    
+    // Update moderator selection
+    moderatorSelection.innerHTML = '';
+    if (chatRoomMembers.length > 0) {
+        moderatorSelection.innerHTML = `
+            <div class="moderator-checkboxes">
+                ${chatRoomMembers.map(member => `
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="moderators" value="${member.id}">
+                        <span>${member.name}</span>
+                    </label>
+                `).join('')}
+            </div>
+        `;
+    }
+}
+
+function updateMemberList() {
+    const memberList = document.getElementById('chatRoomMembers');
+    if (chatRoomMembers.length === 0) {
+        memberList.innerHTML = '<p class="no-members">لم يتم إضافة أعضاء بعد</p>';
+    } else {
+        memberList.innerHTML = chatRoomMembers.map(member => `
+            <div class="member-item added">
+                <div class="member-info">
+                    <i class="fas fa-user"></i>
+                    <div class="member-details">
+                        <div class="member-name">${member.name}</div>
+                        <div class="member-email">${member.email}</div>
+                        <div class="member-role">${member.role === 'student' ? 'طالب' : 'موظف'}</div>
+                    </div>
+                </div>
+                <div class="member-actions">
+                    <button class="role-btn" onclick="assignRole(${member.id})" title="تعيين دور">
+                        <i class="fas fa-user-tag"></i>
+                    </button>
+                    <button class="remove-member-btn" onclick="removeMemberFromChatRoom(${member.id})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    // Update role assignments when member list changes
+    updateRoleAssignments();
+}
+
+function assignRole(memberId) {
+    const member = chatRoomMembers.find(m => m.id === memberId);
+    if (member) {
+        // Toggle between member and moderator role
+        member.isModerator = !member.isModerator;
+        updateMemberList();
+        showNotification(`تم تغيير دور ${member.name} إلى ${member.isModerator ? 'مشرف' : 'عضو'}`, 'info');
     }
 }
 

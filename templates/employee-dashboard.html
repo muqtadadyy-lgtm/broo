@@ -470,7 +470,7 @@
         </div>
     </div>
 
-    <!-- Chat Room Management Modal -->
+    <!-- Enhanced Chat Room Management Modal -->
     <div class="modal" id="chatRoomModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -501,6 +501,8 @@
                                 <option value="study">دراسة</option>
                                 <option value="announcement">إعلانات</option>
                                 <option value="private">خاص</option>
+                                <option value="support">دعم فني</option>
+                                <option value="project">مشروع</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -511,7 +513,37 @@
                 </div>
                 
                 <div class="form-section">
-                    <h3>إضافة أعضاء</h3>
+                    <h3>إعدادات الكروب</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="chatRoomPrivacy">الخصوصية:</label>
+                            <select id="chatRoomPrivacy">
+                                <option value="public">عام</option>
+                                <option value="private">خاص</option>
+                                <option value="invite-only">دعوة فقط</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="chatRoomStatus">الحالة:</label>
+                            <select id="chatRoomStatus">
+                                <option value="active">نشط</option>
+                                <option value="archived">مؤرشف</option>
+                                <option value="readonly">للقراءة فقط</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="chatRoomRules">قواعد الكروب:</label>
+                        <textarea id="chatRoomRules" rows="3" placeholder="أدخل قواعد الكروب..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="chatRoomTags">الوسوم:</label>
+                        <input type="text" id="chatRoomTags" placeholder="أدخل وسوم (فصل بينها بفاصلة)">
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>إدارة الأعضاء</h3>
                     <div class="member-management">
                         <div class="member-input-section">
                             <div class="form-group">
@@ -529,6 +561,59 @@
                                 <!-- Members will be displayed here -->
                             </div>
                         </div>
+                        
+                        <div class="member-roles-section">
+                            <h4>الأدوار والصلاحيات:</h4>
+                            <div class="role-assignment">
+                                <div class="form-group">
+                                    <label for="adminRole">مدير الكروب:</label>
+                                    <select id="adminRole">
+                                        <option value="">اختر مدير الكروب</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="moderatorRole">المشرفون:</label>
+                                    <div class="moderator-selection">
+                                        <!-- Moderators will be displayed here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>إعدادات متقدمة</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="chatRoomMessageRetention">الاحتفاظ بالرسائل:</label>
+                            <select id="chatRoomMessageRetention">
+                                <option value="forever">للأبد</option>
+                                <option value="30days">30 يوم</option>
+                                <option value="90days">90 يوم</option>
+                                <option value="1year">سنة واحدة</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="chatRoomFileSharing">مشاركة الملفات:</label>
+                            <select id="chatRoomFileSharing">
+                                <option value="enabled">مفعلة</option>
+                                <option value="disabled">معطلة</option>
+                                <option value="admin-only">للمدير فقط</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="chatRoomNotifications" checked>
+                            <span>تفعيل الإشعارات</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="chatRoomEncryption">
+                            <span>تشفير الرسائل</span>
+                        </label>
                     </div>
                 </div>
                 
