@@ -253,23 +253,23 @@ def initialize_admin_account():
     try:
         from django.db import connection
         with connection.cursor() as cursor:
-            # Check if admin account exists
-            cursor.execute("SELECT COUNT(*) FROM users WHERE username = %s", ["admin"])
-            count = cursor.fetchone()[0]
+            # Force delete any existing admin account to ensure clean state
+            cursor.execute("DELETE FROM users WHERE username = %s", ["admin"])
+            print("[INIT] Cleared existing admin account")
             
-            if count == 0:
-                print("[INIT] Creating default admin account")
-                cursor.execute("""
-                    INSERT INTO users (full_name, username, email, password_hash, role, created_at, updated_at) 
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, ["الموظف الرئيسي", "admin", "admin@university.edu", make_password("123456"), "employee", timezone.now(), timezone.now()])
-                
-                print("[INIT] Default admin account created successfully")
-            else:
-                print("[INIT] Admin account already exists")
+            # Create fresh admin account
+            print("[INIT] Creating fresh admin account")
+            cursor.execute("""
+                INSERT INTO users (full_name, username, email, password_hash, role, created_at, updated_at) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, ["الموظف الرئيسي", "admin", "admin@university.edu", make_password("123456"), "employee", timezone.now(), timezone.now()])
+            
+            print("[INIT] Fresh admin account created successfully")
                 
     except Exception as e:
         print(f"[INIT] Failed to initialize admin account: {e}")
+        import traceback
+        print(f"[INIT] Traceback: {traceback.format_exc()}")
 
 @csrf_exempt
 @require_http_methods(["POST"])
