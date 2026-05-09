@@ -302,25 +302,56 @@ def login(request: HttpRequest) -> JsonResponse:
                     from django.db import connection
                     with connection.cursor() as cursor:
                         cursor.execute("SELECT COUNT(*) FROM users WHERE username = %s", [username])
-                        if cursor.fetchone()[0] == 0:
+                        count = cursor.fetchone()[0]
+                        print(f"[LOGIN] Admin account count: {count}")
+                        
+                        if count == 0:
                             print(f"[LOGIN] Creating emergency admin account: {username}")
                             cursor.execute("""
                                 INSERT INTO users (full_name, username, email, password_hash, role, created_at) 
                                 VALUES (%s, %s, %s, %s, %s, %s)
                             """, ["الموظف الرئيسي", username, "admin@university.edu", make_password(password), "employee", timezone.now()])
+                            
+                            # Get the created user
+                            cursor.execute("SELECT id, full_name, username, email, role FROM users WHERE username = %s", [username])
+                            created_user = cursor.fetchone()
+                            
+                            print(f"[LOGIN] Emergency admin created successfully: {created_user}")
+                            
                             return JsonResponse({
                                 "success": True,
-                                "token": create_access_token(1),  # Temporary ID
+                                "token": create_access_token(created_user[0]),
                                 "user": {
-                                    "id": 1,
-                                    "fullName": "الموظف الرئيسي",
-                                    "username": username,
-                                    "email": "admin@university.edu",
-                                    "role": "employee",
+                                    "id": created_user[0],
+                                    "fullName": created_user[1],
+                                    "username": created_user[2],
+                                    "email": created_user[3],
+                                    "role": created_user[4],
                                 },
                             })
+                        else:
+                            # Account exists, try to login normally
+                            print(f"[LOGIN] Admin account exists, trying normal login")
+                            user = User.objects.filter(username=username, role="employee").first()
+                            if user and check_password(password, user.password_hash):
+                                print(f"[LOGIN] Emergency admin login successful: {user.username}")
+                                access_token = create_access_token(user.id)
+                                return JsonResponse({
+                                    "success": True,
+                                    "token": access_token,
+                                    "user": {
+                                        "id": user.id,
+                                        "fullName": user.full_name,
+                                        "username": user.username,
+                                        "email": user.email,
+                                        "role": user.role,
+                                    },
+                                })
+                            
                 except Exception as create_error:
                     print(f"[LOGIN] Failed to create emergency admin: {create_error}")
+                    import traceback
+                    print(f"[LOGIN] Traceback: {traceback.format_exc()}")
             
             return JsonResponse({"success": False, "message": "اسم المستخدم أو كلمة المرور غير صحيحة. يرجى التحقق من البيانات والمحاولة مرة أخرى."}, status=401)
             
