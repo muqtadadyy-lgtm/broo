@@ -22,6 +22,7 @@ from .models import (
     EmployeeDirectMessage,
     EmployeeRequest,
     Message,
+    StudentJoinRequest,
     User,
 )
 
@@ -260,6 +261,19 @@ def register(request: HttpRequest) -> JsonResponse:
         print(f"[REGISTER] User object created: {user}")
         user.save()
         print(f"[REGISTER] User saved successfully with ID: {user.id}")
+        
+        # Automatically create join request for student
+        if role == "student":
+            try:
+                StudentJoinRequest.objects.create(
+                    student=user,
+                    activity_type="general",
+                    request_message="أرغب في الانضمام للأنشطة الطلابية"
+                )
+                print(f"[REGISTER] Join request created for student {user.id}")
+            except Exception as req_exc:
+                print(f"[REGISTER] Warning: Failed to create join request: {req_exc}")
+        
     except Exception as exc:  # pragma: no cover - defensive
         print(f"[REGISTER] Error creating user: {exc}")
         import traceback
@@ -1988,6 +2002,134 @@ def delete_user(request: HttpRequest, user_id: int) -> JsonResponse:
         return JsonResponse({"success": True, "message": "تم حذف المستخدم بنجاح"})
     except User.DoesNotExist:
         return _error("المستخدم غير موجود", status=404)
+    except Exception as exc:
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+
+# ==================== STUDENT JOIN REQUESTS ====================
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_student_join_requests(request: HttpRequest) -> JsonResponse:
+    """
+    جلب طلبات انضمام الطلاب.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        caller = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if caller.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    requests = StudentJoinRequest.objects.select_related("student", "processed_by").order_by("-created_at")
+    
+    result = []
+    for req in requests:
+        result.append({
+            "id": req.id,
+            "student": {
+                "id": req.student.id,
+                "fullName": req.student.full_name,
+                "username": req.student.username,
+                "email": req.student.email,
+            },
+            "activityType": req.activity_type,
+            "requestMessage": req.request_message,
+            "status": req.status,
+            "createdAt": req.created_at.isoformat(),
+            "processedAt": req.processed_at.isoformat() if req.processed_at else None,
+            "processedBy": {
+                "fullName": req.processed_by.full_name
+            } if req.processed_by else None
+        })
+
+    return JsonResponse({
+        "success": True,
+        "requests": result,
+        "total": len(result),
+        "pending": sum(1 for r in result if r["status"] == "pending"),
+        "approved": sum(1 for r in result if r["status"] == "approved"),
+        "rejected": sum(1 for r in result if r["status"] == "rejected")
+    })
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["PUT"])
+def process_join_request(request: HttpRequest, request_id: int) -> JsonResponse:
+    """
+    معالجة طلب انضمام طالب (قبول أو رفض).
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        caller = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if caller.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    data = _parse_json(request)
+    action = data.get("action")  # "approve" or "reject"
+    
+    if action not in ["approve", "reject"]:
+        return _error("الإجراء غير صالح. يجب أن يكون 'approve' أو 'reject'", status=400)
+
+    try:
+        join_request = StudentJoinRequest.objects.get(pk=request_id)
+    except StudentJoinRequest.DoesNotExist:
+        return _error("الطلب غير موجود", status=404)
+
+    if join_request.status != "pending":
+        return _error("الطلب تمت معالجته بالفعل", status=400)
+
+    # Update the request
+    join_request.status = "approved" if action == "approve" else "rejected"
+    join_request.processed_by = caller
+    join_request.processed_at = timezone.now()
+    join_request.save()
+
+    action_text = "موافقة" if action == "approve" else "رفض"
+    return JsonResponse({
+        "success": True,
+        "message": f"تم {action_text} على طلب الانضمام بنجاح",
+        "request": {
+            "id": join_request.id,
+            "status": join_request.status,
+            "processedAt": join_request.processed_at.isoformat()
+        }
+    })
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def approve_all_requests(request: HttpRequest) -> JsonResponse:
+    """
+    الموافقة على جميع طلبات الانضمام المعلقة.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        caller = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if caller.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    try:
+        # Update all pending requests
+        updated_count = StudentJoinRequest.objects.filter(status="pending").update(
+            status="approved",
+            processed_by=caller,
+            processed_at=timezone.now()
+        )
+
+        return JsonResponse({
+            "success": True,
+            "message": f"تم الموافقة على {updated_count} طلب بنجاح",
+            "approvedCount": updated_count
+        })
     except Exception as exc:
         return _error(f"حدث خطأ: {exc}", status=500)
 

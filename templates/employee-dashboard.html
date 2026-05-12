@@ -547,51 +547,31 @@
                 </div>
                 
                 <div class="form-section">
-                    <h3>إدارة الأعضاء</h3>
-                    <div class="member-management">
-                        <div class="member-input-section">
-                            <div class="form-group">
-                                <label for="memberSearch">البحث عن عضو:</label>
-                                <input type="text" id="memberSearch" placeholder="ابحث بالاسم أو البريد الإلكتروني..." onkeyup="searchMembers()">
-                            </div>
-                            <div class="form-group">
-                                <label for="usernameInput">إضافة عضو باسم المستخدم:</label>
-                                <div class="username-input-group">
-                                    <input type="text" id="usernameInput" placeholder="أدخل اسم المستخدم..." onkeyup="checkUsernameAvailability(event)">
-                                    <button type="button" class="add-username-btn" onclick="addMemberByUsername()">
-                                        <i class="fas fa-user-plus"></i>
-                                    </button>
+                    <h3>طلبات الانضمام للطلاب</h3>
+                    <div class="student-requests">
+                        <div class="requests-info">
+                            <p><i class="fas fa-info-circle"></i> يمكن للطلاب إنشاء حسابات وطلب الانضمام للأنشطة. سيتم مراجعة الطلبات والموافقة عليها تلقائياً.</p>
+                        </div>
+                        
+                        <div class="requests-list-section">
+                            <h4>طلبات الانضمام الحالية:</h4>
+                            <div class="requests-list" id="studentJoinRequests">
+                                <!-- Student requests will be displayed here -->
+                                <div class="no-requests">
+                                    <i class="fas fa-inbox"></i>
+                                    <p>لا توجد طلبات انضمام حالية</p>
+                                    <small>سيظهر هنا الطلاب الذين طلبوا الانضمام للأنشطة</small>
                                 </div>
-                                <div class="username-status" id="usernameStatus"></div>
-                            </div>
-                            <div class="search-results" id="memberSearchResults" style="display: none;">
-                                <!-- Search results will be displayed here -->
                             </div>
                         </div>
                         
-                        <div class="member-list-section">
-                            <h4>الأعضاء المضافون:</h4>
-                            <div class="member-list" id="chatRoomMembers">
-                                <!-- Members will be displayed here -->
-                            </div>
-                        </div>
-                        
-                        <div class="member-roles-section">
-                            <h4>الأدوار والصلاحيات:</h4>
-                            <div class="role-assignment">
-                                <div class="form-group">
-                                    <label for="adminRole">مدير الكروب:</label>
-                                    <select id="adminRole">
-                                        <option value="">اختر مدير الكروب</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="moderatorRole">المشرفون:</label>
-                                    <div class="moderator-selection">
-                                        <!-- Moderators will be displayed here -->
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="requests-actions">
+                            <button type="button" class="approve-all-btn" onclick="approveAllRequests()">
+                                <i class="fas fa-check-double"></i> موافقة على كل الطلبات
+                            </button>
+                            <button type="button" class="refresh-requests-btn" onclick="refreshStudentRequests()">
+                                <i class="fas fa-sync"></i> تحديث الطلبات
+                            </button>
                         </div>
                     </div>
                 </div>

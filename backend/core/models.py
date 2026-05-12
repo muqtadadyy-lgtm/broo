@@ -291,5 +291,52 @@ class Announcement(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover - debug representation only
         return f"Announcement {self.id} - {self.title} ({'Active' if self.is_active else 'Inactive'})"
+
+
+class StudentJoinRequest(models.Model):
+    """
+    نموذج طلبات انضمام الطلاب للأنشطة.
+    يتم إنشاؤه تلقائياً عند تسجيل الطالب.
+    """
+
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name="join_requests")
+    activity_type = models.CharField(max_length=100, default="general")
+    request_message = models.TextField(default="أرغب في الانضمام للأنشطة الطلابية")
+    status = models.CharField(
+        max_length=20, 
+        choices=[
+            ("pending", "قيد الانتظار"),
+            ("approved", "موافقة"),
+            ("rejected", "مرفوض")
+        ], 
+        default="pending"
+    )
+    processed_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name="processed_requests"
+    )
+    processed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "student_join_requests"
+        indexes = [
+            models.Index(fields=["student"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["activity_type"]),
+        ]
+        ordering = ["-created_at"]
+
+    def save(self, *args, **kwargs):
+        self.updated_at = timezone.now()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:  # pragma: no cover - debug representation only
+        return f"JoinRequest {self.id} - {self.student.full_name} ({self.status})"
     
     

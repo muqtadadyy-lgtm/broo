@@ -240,6 +240,40 @@ async function apiUploadImage(imageFile) {
     }
 }
 
+async function apiGetStudentJoinRequests() {
+    try {
+        const response = await apiRequest('/student-requests', {
+            method: 'GET'
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message, requests: [] };
+    }
+}
+
+async function apiProcessJoinRequest(requestId, action) {
+    try {
+        const response = await apiRequest(`/student-requests/${requestId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ action })
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+}
+
+async function apiApproveAllRequests() {
+    try {
+        const response = await apiRequest('/student-requests/approve-all', {
+            method: 'POST'
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+}
+
 // ==================== SUPERVISOR MESSAGES ====================
 
 async function apiGetSupervisorMessages(employeeId = null) {

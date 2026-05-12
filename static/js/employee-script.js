@@ -69,6 +69,9 @@ window.addEventListener('DOMContentLoaded', () => {
     // Load applications
     loadApplications();
     loadEmployees();
+    
+    // Load student join requests
+    refreshStudentRequests();
 });
 
 // Theme Management
@@ -1061,6 +1064,125 @@ async function publishImageAnnouncement() {
 function openContestModal() {
     document.getElementById('contestModal').style.display = 'flex';
     toggleFabMenu();
+}
+
+// ==================== STUDENT JOIN REQUESTS ====================
+
+let studentJoinRequests = [];
+
+async function refreshStudentRequests() {
+    try {
+        const result = await apiGetStudentJoinRequests();
+        if (result.success) {
+            studentJoinRequests = result.requests || [];
+            displayStudentRequests();
+            showNotification('تم تحديث قائمة الطلبات', 'success');
+        } else {
+            showNotification(result.message || 'فشل تحديث الطلبات', 'error');
+        }
+    } catch (error) {
+        showNotification('حدث خطأ أثناء تحديث الطلابات', 'error');
+    }
+}
+
+function displayStudentRequests() {
+    const container = document.getElementById('studentJoinRequests');
+    if (!container) return;
+
+    if (studentJoinRequests.length === 0) {
+        container.innerHTML = `
+            <div class="no-requests">
+                <i class="fas fa-inbox"></i>
+                <p>لا توجد طلبات انضمام حالية</p>
+                <small>سيظهر هنا الطلاب الذين طلبوا الانضمام للأنشطة</small>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = studentJoinRequests.map(request => {
+        const statusClass = request.status === 'pending' ? 'pending' : 
+                           request.status === 'approved' ? 'approved' : 'rejected';
+        const statusText = request.status === 'pending' ? 'قيد الانتظار' :
+                          request.status === 'approved' ? 'موافقة' : 'مرفوض';
+        const statusIcon = request.status === 'pending' ? 'clock' :
+                          request.status === 'approved' ? 'check-circle' : 'times-circle';
+
+        return `
+            <div class="request-item ${statusClass}">
+                <div class="request-header">
+                    <div class="student-info">
+                        <h4>${request.student.fullName}</h4>
+                        <p><i class="fas fa-user"></i> ${request.student.username}</p>
+                        <p><i class="fas fa-envelope"></i> ${request.student.email}</p>
+                    </div>
+                    <span class="request-status">
+                        <i class="fas fa-${statusIcon}"></i> ${statusText}
+                    </span>
+                </div>
+                <div class="request-content">
+                    <p><strong>نوع النشاط:</strong> ${request.activityType}</p>
+                    <p><strong>رسالة الطالب:</strong> ${request.requestMessage}</p>
+                    <p><strong>تاريخ الطلب:</strong> ${new Date(request.createdAt).toLocaleDateString('ar-IQ')}</p>
+                    ${request.processedAt ? `<p><strong>تاريخ المعالجة:</strong> ${new Date(request.processedAt).toLocaleDateString('ar-IQ')}</p>` : ''}
+                    ${request.processedBy ? `<p><strong>معالج بواسطة:</strong> ${request.processedBy.fullName}</p>` : ''}
+                </div>
+                ${request.status === 'pending' ? `
+                    <div class="request-actions">
+                        <button class="approve-btn" onclick="processRequest(${request.id}, 'approve')">
+                            <i class="fas fa-check"></i> موافقة
+                        </button>
+                        <button class="reject-btn" onclick="processRequest(${request.id}, 'reject')">
+                            <i class="fas fa-times"></i> رفض
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+async function processRequest(requestId, action) {
+    try {
+        const actionText = action === 'approve' ? 'الموافقة' : 'الرفض';
+        if (!confirm(`هل أنت متأكد من ${actionText} على هذا الطلب؟`)) {
+            return;
+        }
+
+        const result = await apiProcessJoinRequest(requestId, action);
+        if (result.success) {
+            showNotification(result.message, 'success');
+            refreshStudentRequests(); // Refresh the list
+        } else {
+            showNotification(result.message || 'فشل معالجة الطلب', 'error');
+        }
+    } catch (error) {
+        showNotification('حدث خطأ أثناء معالجة الطلب', 'error');
+    }
+}
+
+async function approveAllRequests() {
+    try {
+        const pendingCount = studentJoinRequests.filter(r => r.status === 'pending').length;
+        if (pendingCount === 0) {
+            showNotification('لا توجد طلبات معلقة للموافقة', 'info');
+            return;
+        }
+
+        if (!confirm(`هل أنت متأكد من الموافقة على جميع ${pendingCount} طلب معلق؟`)) {
+            return;
+        }
+
+        const result = await apiApproveAllRequests();
+        if (result.success) {
+            showNotification(result.message, 'success');
+            refreshStudentRequests(); // Refresh the list
+        } else {
+            showNotification(result.message || 'فشل الموافقة على الطلبات', 'error');
+        }
+    } catch (error) {
+        showNotification('حدث خطأ أثناء الموافقة على الطلابات', 'error');
+    }
 }
 
 function closeContestModal() {

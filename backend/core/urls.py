@@ -42,4 +42,8 @@ urlpatterns = [
     path("users/<int:user_id>", views.delete_user, name="delete_user"),
     # Image upload
     path("upload/image", views.upload_image, name="upload_image"),
+    # Student join requests
+    path("student-requests", views.get_student_join_requests, name="get_student_join_requests"),
+    path("student-requests/<int:request_id>", views.process_join_request, name="process_join_request"),
+    path("student-requests/approve-all", views.approve_all_requests, name="approve_all_requests"),
 ]
