@@ -224,6 +224,30 @@ def register(request: HttpRequest) -> JsonResponse:
     if role not in ["student", "employee"]:
         return _error("الدور غير صالح. يجب أن يكون 'student' أو 'employee'", status=403)
 
+    # Strict validation for real student accounts
+    if role == "student":
+        # Check for Arabic name (required for real students)
+        arabic_chars = 'ابثجحخدذرزسشصضطظعغفقكلمنهويءآأإئؤة'
+        if not any(char in data["fullName"] for char in arabic_chars):
+            return _error("يجب أن يكون الاسم الكامل باللغة العربية للطلاب", status=400)
+        
+        # Check for university email pattern
+        email = data["email"].lower()
+        if not ('.edu' in email or 'university' in email):
+            return _error("يجب استخدام بريد جامعي (.edu أو university)", status=400)
+        
+        # Exclude common test patterns
+        test_patterns = ['test', 'demo', 'example', 'fake', 'sample', 'temp']
+        combined_text = f"{data['username']} {data['email']} {data['fullName']}".lower()
+        for pattern in test_patterns:
+            if pattern in combined_text:
+                return _error("بيانات غير صالحة. يرجى استخدام معلومات حقيقية", status=400)
+        
+        # Exclude generic usernames
+        generic_usernames = ['student', 'user', 'test', 'demo', 'admin', 'employee']
+        if data["username"].lower() in generic_usernames:
+            return _error("اسم المستخدم عام جداً. يرجى اختيار اسم فريد", status=400)
+
     try:
         print(f"[REGISTER] Creating user with data: {data}")
         user = User(
@@ -1834,19 +1858,30 @@ def get_all_users(request: HttpRequest) -> JsonResponse:
     if caller.role != "employee":
         return _error("هذه العملية متاحة للموظفين فقط", status=403)
 
-    # Filter out test/fake users - only show real registered users
-    # Exclude obvious test accounts and show only users with realistic data
+    # Filter out test/fake users - only show real registered students
+    # Very strict filtering to show only authentic student accounts
     real_users = User.objects.filter(
-        # Exclude test usernames
-        ~Q(username__in=['test', 'demo', 'admin', 'root', 'user', 'student', 'employee']),
-        # Exclude test emails
+        # Exclude all common test and generic usernames
+        ~Q(username__in=[
+            'test', 'demo', 'admin', 'root', 'user', 'student', 'employee', 'moderator',
+            'ahmed', 'mohammed', 'fatima', 'sarah', 'omar', 'ali', 'hassan', 'hussein'
+        ]),
+        # Exclude all test and generic email patterns
         ~Q(email__icontains='test'),
         ~Q(email__icontains='demo'),
         ~Q(email__icontains='example'),
+        ~Q(email__icontains='fake'),
+        ~Q(email__icontains='sample'),
+        ~Q(email__icontains='temp'),
         # Exclude obvious fake names
-        ~Q(full_name__in=['Test User', 'Demo User', 'Test Student', 'Demo Employee']),
-        # Only include users with reasonable creation dates (not too old/future)
-        created_at__gte=timezone.now() - timedelta(days=365),
+        ~Q(full_name__in=[
+            'Test User', 'Demo User', 'Test Student', 'Demo Employee',
+            'أحمد محمد', 'فاطمة علي', 'محمد خالد', 'سارة أحمد', 'عمر خالد'
+        ]),
+        # Only include users with valid university emails
+        Q(email__icontains='.edu') | Q(email__icontains='university'),
+        # Only include users created in the last 6 months (active students)
+        created_at__gte=timezone.now() - timedelta(days=180),
         created_at__lte=timezone.now()
     ).order_by("-created_at")
 
@@ -1876,27 +1911,53 @@ def get_all_users(request: HttpRequest) -> JsonResponse:
 def _is_real_user(user: User) -> bool:
     """
     التحقق من أن المستخدم حقيقي وليس بيانات تجريبية.
+    إجراءات صارمة جداً لإظهار فقط الطلاب الحقيقيين الذين سجلوا في النظام.
     """
     # Check for realistic data patterns
-    if not user.full_name or len(user.full_name.strip()) < 3:
+    if not user.full_name or len(user.full_name.strip()) < 5:
         return False
     
-    if not user.email or '@' not in user.email or len(user.email) < 5:
+    if not user.email or '@' not in user.email or len(user.email) < 8:
         return False
     
-    if not user.username or len(user.username) < 3:
+    if not user.username or len(user.username) < 4:
         return False
     
-    # Exclude obvious test patterns
-    test_patterns = ['test', 'demo', 'example', 'fake', 'sample', 'temp']
+    # Exclude ALL test patterns - very strict filtering
+    test_patterns = [
+        'test', 'demo', 'example', 'fake', 'sample', 'temp', 'admin', 'root',
+        'user', 'student', 'employee', 'moderator', 'ahmed', 'mohammed', 'fatima',
+        'sarah', 'omar', 'ali', 'hassan', 'hussein'
+    ]
     user_lower = user.username.lower() + ' ' + user.email.lower() + ' ' + user.full_name.lower()
     
     for pattern in test_patterns:
         if pattern in user_lower:
             return False
     
-    # Check for Arabic names (realistic for this system)
-    if not any(char in user.full_name for char in 'ابثجحخدذرزسشصضطظعغفقكلمنهوي'):
+    # Check for Arabic names (must contain Arabic characters)
+    arabic_chars = 'ابثجحخدذرزسشصضطظعغفقكلمنهويءآأإئؤة'
+    if not any(char in user.full_name for char in arabic_chars):
+        return False
+    
+    # Must have valid university email pattern
+    if not ('.edu' in user.email.lower() or 'university' in user.email.lower()):
+        return False
+    
+    # Exclude common test emails
+    test_email_patterns = ['test@', 'demo@', 'example@', 'fake@', 'sample@']
+    for pattern in test_email_patterns:
+        if pattern in user.email.lower():
+            return False
+    
+    # Username must not be generic
+    generic_usernames = ['student', 'user', 'test', 'demo', 'admin', 'employee']
+    if user.username.lower() in generic_usernames:
+        return False
+    
+    # Must be created recently (last 6 months) to be considered active
+    six_months_ago = timezone.now() - timedelta(days=180)
+    if not user.created_at or user.created_at < six_months_ago:
         return False
     
     return True
