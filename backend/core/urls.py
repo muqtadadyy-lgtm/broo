@@ -40,4 +40,6 @@ urlpatterns = [
     # User management
     path("users/all", views.get_all_users, name="get_all_users"),
     path("users/<int:user_id>", views.delete_user, name="delete_user"),
+    # Image upload
+    path("upload/image", views.upload_image, name="upload_image"),
 ]

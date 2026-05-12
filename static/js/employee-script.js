@@ -1012,40 +1012,45 @@ async function publishImageAnnouncement() {
     }
     
     try {
-        // Create FormData for image upload
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('type', type);
-        formData.append('description', description);
-        formData.append('priority', priority);
-        formData.append('visibility', visibility);
-        formData.append('tags', tags);
-        formData.append('image', selectedImageFile);
-        formData.append('createdBy', currentUser.fullName);
+        showNotification('جاري رفع الصورة...', 'info');
         
-        // Here you would normally send to API
-        showNotification('جاري نشر الصورة...', 'info');
+        // Upload image to server
+        const uploadResult = await apiUploadImage(selectedImageFile);
         
-        // Simulate upload progress
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        if (!uploadResult.success) {
+            showNotification(uploadResult.message || 'فشل رفع الصورة', 'error');
+            return;
+        }
         
-        const visibilityText = visibility === 'all' ? 'للجميع' : 
-                             visibility === 'students' ? 'للطلاب فقط' : 
-                             'للموظفين فقط';
+        // Create announcement with uploaded image
+        const announcementData = {
+            title: title,
+            content: `${description}\n\nالصورة: ${uploadResult.imageUrl}\nالنوع: ${type}\nالأولوية: ${priority}\nالوسوم: ${tags}`,
+            created_by: currentUser.fullName
+        };
         
-        showNotification(`تم نشر الصورة "${title}" ${visibilityText} بنجاح`, 'success');
+        const announcementResult = await apiCreateAnnouncement(announcementData);
         
-        // Clear form
-        document.getElementById('imageTitle').value = '';
-        document.getElementById('imageType').value = 'general';
-        document.getElementById('imageDescription').value = '';
-        document.getElementById('imagePriority').value = 'medium';
-        document.getElementById('imageVisibility').value = 'all';
-        document.getElementById('imageTags').value = '';
-        removeImage();
-        
-        // Close modal
-        closeImageAnnouncementModal();
+        if (announcementResult.success) {
+            const visibilityText = visibility === 'all' ? 'للجميع' : 
+                                visibility === 'students' ? 'للطلاب' : 'للموظفين';
+            
+            showNotification(`تم نشر الصورة "${title}" ${visibilityText} بنجاح`, 'success');
+            
+            // Clear form
+            document.getElementById('imageTitle').value = '';
+            document.getElementById('imageType').value = 'general';
+            document.getElementById('imageDescription').value = '';
+            document.getElementById('imagePriority').value = 'medium';
+            document.getElementById('imageVisibility').value = 'all';
+            document.getElementById('imageTags').value = '';
+            removeImage();
+            
+            // Close modal
+            closeImageAnnouncementModal();
+        } else {
+            showNotification(announcementResult.message || 'فشل نشر الإعلان', 'error');
+        }
         
     } catch (error) {
         console.error('Error publishing image announcement:', error);

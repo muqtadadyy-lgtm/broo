@@ -224,6 +224,22 @@ async function apiDeleteUser(userId) {
     }
 }
 
+async function apiUploadImage(imageFile) {
+    try {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+
+        const response = await apiRequest('/upload/image', {
+            method: 'POST',
+            body: formData,
+            headers: {} // Let browser set Content-Type for FormData
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+}
+
 // ==================== SUPERVISOR MESSAGES ====================
 
 async function apiGetSupervisorMessages(employeeId = null) {

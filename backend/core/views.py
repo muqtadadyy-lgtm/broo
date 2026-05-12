@@ -1548,6 +1548,8 @@ def serve_static(request: HttpRequest, path: str) -> HttpResponse:
         root / "static" / "css" / safe_path.name,
         root / "static" / "js" / safe_path.name,
         root / "static" / "img" / safe_path.name,
+        root / "static" / "uploads" / safe_path,  # Handle uploaded files
+        root / "static" / "uploads" / "images" / safe_path.name,  # Handle uploaded images
     ]
 
     file_path = None
@@ -1561,6 +1563,68 @@ def serve_static(request: HttpRequest, path: str) -> HttpResponse:
 
     content_type, _ = mimetypes.guess_type(str(file_path))
     return FileResponse(open(file_path, "rb"), content_type=content_type or "application/octet-stream")
+# ==================== IMAGE UPLOAD ====================
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def upload_image(request: HttpRequest) -> JsonResponse:
+    """
+    رفع صورة للإعلانات أو المحتوى.
+    يدعم صيغ: JPEG, PNG, GIF, WebP
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    if 'image' not in request.FILES:
+        return _error("لم يتم اختيار ملف صورة", status=400)
+
+    uploaded_file = request.FILES['image']
+    
+    # Validate file type
+    allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if uploaded_file.content_type not in allowed_types:
+        return _error("نوع الملف غير مدعوم. يرجى اختيار صورة (JPEG, PNG, GIF, WebP)", status=400)
+    
+    # Validate file size (max 10MB)
+    if uploaded_file.size > 10 * 1024 * 1024:
+        return _error("حجم الملف كبير جداً. الحد الأقصى 10 ميجابايت", status=400)
+
+    try:
+        # Create uploads directory if it doesn't exist
+        uploads_dir = Path(settings.BASE_DIR).parent / "static" / "uploads" / "images"
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate unique filename
+        file_extension = Path(uploaded_file.name).suffix
+        unique_filename = f"image_{user_id}_{int(timezone.now().timestamp())}{file_extension}"
+        file_path = uploads_dir / unique_filename
+        
+        # Save the file
+        with open(file_path, 'wb') as f:
+            for chunk in uploaded_file.chunks():
+                f.write(chunk)
+        
+        # Return file URL
+        file_url = f"/static/uploads/images/{unique_filename}"
+        
+        return JsonResponse({
+            "success": True,
+            "message": "تم رفع الصورة بنجاح",
+            "imageUrl": file_url,
+            "filename": unique_filename
+        }, status=201)
+        
+    except Exception as exc:
+        return _error(f"حدث خطأ أثناء رفع الصورة: {exc}", status=500)
+
+
 @csrf_exempt
 @jwt_required
 @require_http_methods(["POST"])
