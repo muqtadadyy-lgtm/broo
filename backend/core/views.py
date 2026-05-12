@@ -1751,3 +1751,119 @@ def toggle_announcement(request: HttpRequest, announcement_id: int) -> JsonRespo
     })
 
 
+# ==================== USER MANAGEMENT ====================
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_all_users(request: HttpRequest) -> JsonResponse:
+    """
+    جلب جميع المستخدمين الحقيقيين (المسجلين فعلياً) فقط.
+    يستثني المستخدمين التجريبيين والبيانات الوهمية.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        caller = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if caller.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    # Filter out test/fake users - only show real registered users
+    # Exclude obvious test accounts and show only users with realistic data
+    real_users = User.objects.filter(
+        # Exclude test usernames
+        ~Q(username__in=['test', 'demo', 'admin', 'root', 'user', 'student', 'employee']),
+        # Exclude test emails
+        ~Q(email__icontains='test'),
+        ~Q(email__icontains='demo'),
+        ~Q(email__icontains='example'),
+        # Exclude obvious fake names
+        ~Q(full_name__in=['Test User', 'Demo User', 'Test Student', 'Demo Employee']),
+        # Only include users with reasonable creation dates (not too old/future)
+        created_at__gte=timezone.now() - timedelta(days=365),
+        created_at__lte=timezone.now()
+    ).order_by("-created_at")
+
+    result = []
+    for user in real_users:
+        # Additional filtering for realistic data
+        if _is_real_user(user):
+            result.append({
+                "id": user.id,
+                "fullName": user.full_name,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role,
+                "createdAt": user.created_at.isoformat() if user.created_at else None,
+                "status": "نشط" if user.created_at and user.created_at > timezone.now() - timedelta(days=30) else "غير نشط"
+            })
+
+    return JsonResponse({
+        "success": True, 
+        "users": result,
+        "total": len(result),
+        "active": sum(1 for u in result if u["status"] == "نشط"),
+        "inactive": sum(1 for u in result if u["status"] == "غير نشط")
+    })
+
+
+def _is_real_user(user: User) -> bool:
+    """
+    التحقق من أن المستخدم حقيقي وليس بيانات تجريبية.
+    """
+    # Check for realistic data patterns
+    if not user.full_name or len(user.full_name.strip()) < 3:
+        return False
+    
+    if not user.email or '@' not in user.email or len(user.email) < 5:
+        return False
+    
+    if not user.username or len(user.username) < 3:
+        return False
+    
+    # Exclude obvious test patterns
+    test_patterns = ['test', 'demo', 'example', 'fake', 'sample', 'temp']
+    user_lower = user.username.lower() + ' ' + user.email.lower() + ' ' + user.full_name.lower()
+    
+    for pattern in test_patterns:
+        if pattern in user_lower:
+            return False
+    
+    # Check for Arabic names (realistic for this system)
+    if not any(char in user.full_name for char in 'ابثجحخدذرزسشصضطظعغفقكلمنهوي'):
+        return False
+    
+    return True
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["DELETE"])
+def delete_user(request: HttpRequest, user_id: int) -> JsonResponse:
+    """
+    حذف مستخدم من قبل الموظف الرئيسي فقط.
+    """
+    caller_id = get_jwt_identity(request)
+    try:
+        caller = User.objects.get(pk=caller_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if caller.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    if user_id == caller_id:
+        return _error("لا يمكن حذف حسابك بنفسك", status=400)
+
+    try:
+        target = User.objects.get(pk=user_id)
+        target.delete()
+        return JsonResponse({"success": True, "message": "تم حذف المستخدم بنجاح"})
+    except User.DoesNotExist:
+        return _error("المستخدم غير موجود", status=404)
+    except Exception as exc:
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+

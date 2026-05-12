@@ -37,4 +37,7 @@ urlpatterns = [
     path("announcements", views.create_announcement, name="create_announcement"),
     path("announcements/<int:announcement_id>", views.update_announcement, name="update_announcement"),
     path("announcements/<int:announcement_id>/toggle", views.toggle_announcement, name="toggle_announcement"),
+    # User management
+    path("users/all", views.get_all_users, name="get_all_users"),
+    path("users/<int:user_id>", views.delete_user, name="delete_user"),
 ]

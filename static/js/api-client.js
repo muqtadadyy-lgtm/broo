@@ -202,6 +202,28 @@ async function apiDeleteEmployee(employeeId) {
     }
 }
 
+async function apiGetAllUsers() {
+    try {
+        const response = await apiRequest('/users/all', {
+            method: 'GET'
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message, users: [] };
+    }
+}
+
+async function apiDeleteUser(userId) {
+    try {
+        const response = await apiRequest(`/users/${userId}`, {
+            method: 'DELETE'
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+}
+
 // ==================== SUPERVISOR MESSAGES ====================
 
 async function apiGetSupervisorMessages(employeeId = null) {

@@ -2067,105 +2067,62 @@ function closeUserManagementModal() {
     document.getElementById('userManagementModal').style.display = 'none';
 }
 
-function loadAllUsers() {
-    // Start with base users
-    allUsers = [
-        {
-            id: 1,
-            name: 'أحمد محمد',
-            username: 'ahmed_student',
-            email: 'ahmed@university.edu',
-            role: 'student',
-            status: 'active',
-            avatar: '/static/images/user1.jpg',
-            createdAt: '2024-01-15T10:30:00Z',
-            lastLogin: '2024-05-09T14:20:00Z',
-            phone: '+966501234567'
-        },
-        {
-            id: 2,
-            name: 'فاطمة علي',
-            username: 'fatima_student',
-            email: 'fatima@university.edu',
-            role: 'student',
-            status: 'active',
-            avatar: '/static/images/user2.jpg',
-            createdAt: '2024-01-20T09:15:00Z',
-            lastLogin: '2024-05-09T13:45:00Z',
-            phone: '+966502345678'
-        },
-        {
-            id: 3,
-            name: 'محمد خالد',
-            username: 'mohammed_student',
-            email: 'mohammed@university.edu',
-            role: 'student',
-            status: 'inactive',
-            avatar: '/static/images/user3.jpg',
-            createdAt: '2024-02-01T11:00:00Z',
-            lastLogin: '2024-04-15T16:30:00Z',
-            phone: '+966503456789'
-        },
-        {
-            id: 4,
-            name: 'المدير العام',
-            username: 'admin',
-            email: 'admin@university.edu',
-            role: 'admin',
-            status: 'active',
-            avatar: '/static/images/admin.jpg',
-            createdAt: '2024-01-01T00:00:00Z',
-            lastLogin: '2024-05-09T15:00:00Z',
-            phone: '+966500000000'
-        },
-        {
-            id: 5,
-            name: 'سارة أحمد',
-            username: 'sarah_employee',
-            email: 'sarah@university.edu',
-            role: 'employee',
-            status: 'active',
-            avatar: '/static/images/user4.jpg',
-            createdAt: '2024-02-10T08:30:00Z',
-            lastLogin: '2024-05-09T12:00:00Z',
-            phone: '+966504567890'
-        },
-        {
-            id: 6,
-            name: 'عمر خالد',
-            username: 'omar_moderator',
-            email: 'omar@university.edu',
-            role: 'moderator',
-            status: 'suspended',
-            avatar: '/static/images/user5.jpg',
-            createdAt: '2024-03-01T14:00:00Z',
-            lastLogin: '2024-03-20T10:00:00Z',
-            phone: '+966505678901'
-        }
-    ];
-    
-    // Add any users created during chat room management
-    allAvailableMembers.forEach(member => {
-        if (!allUsers.find(u => u.id === member.id)) {
-            allUsers.push({
-                ...member,
-                status: 'active',
-                createdAt: member.createdAt || new Date().toISOString(),
-                lastLogin: new Date().toISOString(),
-                phone: member.phone || ''
+async function loadAllUsers() {
+    try {
+        // Load real users from database
+        const result = await apiGetAllUsers();
+        
+        if (result.success && result.users) {
+            // Convert API response to frontend format
+            allUsers = result.users.map(user => ({
+                id: user.id,
+                name: user.fullName,
+                username: user.username,
+                email: user.email,
+                role: user.role === 'student' ? 'student' : 'employee',
+                status: user.status === 'نشط' ? 'active' : 'inactive',
+                avatar: `/static/images/user${user.id}.jpg`,
+                createdAt: user.createdAt,
+                lastLogin: user.lastLogin || null,
+                phone: ''
+            }));
+            
+            // Add any users created during chat room management that aren't in the database
+            allAvailableMembers.forEach(member => {
+                if (!allUsers.find(u => u.id === member.id)) {
+                    allUsers.push({
+                        ...member,
+                        status: 'active',
+                        createdAt: member.createdAt || new Date().toISOString(),
+                        lastLogin: new Date().toISOString(),
+                        phone: member.phone || ''
+                    });
+                }
             });
+            
+            console.log('Loaded real users from database. Total count:', allUsers.length);
+            console.log('All users:', allUsers);
+            
+            filteredUsers = [...allUsers];
+            currentPage = 1;
+            displayUsers();
+            updateUsersStats();
+        } else {
+            console.error('Failed to load users:', result.message || 'Unknown error');
+            // Fallback to empty list if API fails
+            allUsers = [];
+            filteredUsers = [];
+            displayUsers();
+            updateUsersStats();
         }
-    });
-    
-    // Also sync with any users created through the create new user function
-    // This ensures all created accounts are visible
-    console.log('Loading all users. Total count:', allUsers.length);
-    console.log('All users:', allUsers);
-    
-    filteredUsers = [...allUsers];
-    currentPage = 1;
-    displayUsers();
-    updateUsersStats();
+    } catch (error) {
+        console.error('Error loading users:', error);
+        // Fallback to empty list if API fails
+        allUsers = [];
+        filteredUsers = [];
+        displayUsers();
+        updateUsersStats();
+    }
 }
 
 function displayUsers() {
@@ -2522,15 +2479,24 @@ function toggleUserStatus(userId) {
     }
 }
 
-function deleteUser(userId) {
+async function deleteUser(userId) {
     const user = allUsers.find(u => u.id === userId);
     if (user) {
         if (confirm(`هل أنت متأكد من حذف المستخدم: ${user.name}؟`)) {
-            allUsers = allUsers.filter(u => u.id !== userId);
-            filteredUsers = [...allUsers];
-            displayUsers();
-            updateUsersStats();
-            showNotification(`تم حذف المستخدم: ${user.name}`, 'success');
+            try {
+                const result = await apiDeleteUser(userId);
+                if (result.success) {
+                    allUsers = allUsers.filter(u => u.id !== userId);
+                    filteredUsers = [...allUsers];
+                    displayUsers();
+                    updateUsersStats();
+                    showNotification(`تم حذف المستخدم: ${user.name}`, 'success');
+                } else {
+                    showNotification(result.message || 'فشل حذف المستخدم', 'error');
+                }
+            } catch (error) {
+                showNotification('حدث خطأ أثناء حذف المستخدم', 'error');
+            }
         }
     }
 }
