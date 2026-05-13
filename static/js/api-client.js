@@ -276,12 +276,18 @@ async function apiApproveAllRequests() {
 
 async function apiCreateChatRoom(chatRoomData) {
     try {
+        console.log('[API CLIENT] Creating chat room with data:', chatRoomData);
+        console.log('[API CLIENT] Making request to /chat-rooms');
+        
         const response = await apiRequest('/chat-rooms', {
             method: 'POST',
             body: JSON.stringify(chatRoomData)
         });
+        
+        console.log('[API CLIENT] Chat room creation response:', response);
         return response;
     } catch (error) {
+        console.error('[API CLIENT] Error creating chat room:', error);
         return { success: false, message: error.message };
     }
 }

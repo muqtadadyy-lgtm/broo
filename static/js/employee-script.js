@@ -3757,11 +3757,26 @@ function updateMemberList() {
 
 async function createChatRoom() {
     console.log('[CHAT ROOM] createChatRoom function called');
+    console.log('[CHAT ROOM] Current user:', currentUser);
+    console.log('[CHAT ROOM] User authenticated:', !!currentUser);
+    
+    if (!currentUser) {
+        console.error('[CHAT ROOM] No current user found');
+        showNotification('يجب تسجيل الدخول لإنشاء الكروبات', 'error');
+        return;
+    }
     
     try {
         // Check if elements exist
         const nameElement = document.getElementById('chatRoomName');
         const descElement = document.getElementById('chatRoomDescription');
+        
+        console.log('[CHAT ROOM] Form elements:', {
+            nameElement: !!nameElement,
+            descElement: !!descElement,
+            nameValue: nameElement?.value,
+            descValue: descElement?.value
+        });
         
         if (!nameElement || !descElement) {
             console.error('[CHAT ROOM] Required elements not found');
@@ -3829,9 +3844,12 @@ async function createChatRoom() {
         showNotification('جاري إنشاء الكروب...', 'info');
         
         // Send to real API
+        console.log('[CHAT ROOM] Calling apiCreateChatRoom...');
         const result = await apiCreateChatRoom(chatRoomData);
         
         console.log('[CHAT ROOM] API result:', result);
+        console.log('[CHAT ROOM] API result success:', result.success);
+        console.log('[CHAT ROOM] API result message:', result.message);
         
         if (result.success) {
             showNotification(`تم إنشاء كروب "${name}" بنجاح`, 'success');
