@@ -3210,12 +3210,51 @@ let currentGroupsTab = 'all';
 
 function openGroupsManagementModal() {
     console.log('[GROUPS MGMT] Opening groups management modal');
-    document.getElementById('groupsManagementModal').style.display = 'flex';
-    loadGroupsData();
+    console.log('[GROUPS MGMT] Available modals:', document.querySelectorAll('.modal').length);
+    console.log('[GROUPS MGMT] Looking for modal with ID: groupsManagementModal');
+    
+    try {
+        const modal = document.getElementById('groupsManagementModal');
+        console.log('[GROUPS MGMT] Modal element:', modal);
+        
+        if (!modal) {
+            console.error('[GROUPS MGMT] Modal not found!');
+            console.log('[GROUPS MGMT] All modals in document:', document.querySelectorAll('.modal'));
+            showNotification('خطأ: واجهة إدارة الكروبات غير موجودة', 'error');
+            return;
+        }
+        
+        console.log('[GROUPS MGMT] Modal found, current display:', modal.style.display);
+        console.log('[GROUPS MGMT] Modal classes:', modal.className);
+        
+        // Force display with multiple methods
+        modal.style.display = 'flex';
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        modal.style.zIndex = '9999';
+        
+        console.log('[GROUPS MGMT] Modal displayed, new display:', modal.style.display);
+        
+        // Load data after modal is displayed
+        setTimeout(() => {
+            loadGroupsData();
+        }, 100);
+        
+    } catch (error) {
+        console.error('[GROUPS MGMT] Error opening modal:', error);
+        showNotification('خطأ في فتح واجهة إدارة الكروبات', 'error');
+    }
 }
 
 function closeGroupsManagementModal() {
-    document.getElementById('groupsManagementModal').style.display = 'none';
+    try {
+        const modal = document.getElementById('groupsManagementModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('[GROUPS MGMT] Error closing modal:', error);
+    }
 }
 
 async function loadGroupsData() {
@@ -3587,6 +3626,19 @@ function removeMemberFromGroup(groupId, userId) {
         refreshGroupsData();
     }
 }
+
+// Test function for debugging - can be called from browser console
+function testGroupsModal() {
+    console.log('[TEST] Testing groups modal functionality...');
+    console.log('[TEST] Modal element:', document.getElementById('groupsManagementModal'));
+    console.log('[TEST] Function exists:', typeof openGroupsManagementModal);
+    
+    // Try to open the modal
+    openGroupsManagementModal();
+}
+
+// Make test function available globally
+window.testGroupsModal = testGroupsModal;
 
 // Mock data for available members (in real app, this would come from API)
 function loadAvailableMembers() {
