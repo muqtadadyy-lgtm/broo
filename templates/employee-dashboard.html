@@ -147,6 +147,19 @@
                     <p data-ar="إجمالي الطلبات" data-en="Total Requests" data-fr="Nombre total de demandes" data-ku="کۆی داواکانی گشتی">إجمالي الطلبات</p>
                 </div>
             </div>
+            <div class="stat-card">
+                <div class="stat-icon groups">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="totalGroupsCount">0</h3>
+                    <p data-ar="الكروبات" data-en="Groups" data-fr="Groupes" data-ku="کۆمەڵەکان">الكروبات</p>
+                </div>
+                <button class="manage-groups-btn" onclick="openGroupsManagementModal()">
+                    <i class="fas fa-cogs"></i>
+                    <span data-ar="إدارة الكروبات" data-en="Manage Groups" data-fr="Gérer les groupes" data-ku="بەڕێوەبردنی کۆمەڵەکان">إدارة الكروبات</span>
+                </button>
+            </div>
         </div>
 
         <!-- Filter Section -->
@@ -1111,26 +1124,55 @@
                         <button class="primary-btn" onclick="openCreateUserModal()">
                             <i class="fas fa-user-plus"></i> إضافة مستخدم جديد
                         </button>
-                <div class="users-stats">
-                    <div class="stat-item">
-                        <i class="fas fa-users"></i>
-                        <div class="stat-info">
-                            <span class="stat-number" id="totalUsers">0</span>
-                            <span class="stat-label">إجمالي المستخدمين</span>
+                        <div class="stats-card">
+                            <h3><i class="fas fa-users-cog"></i> إدارة الكروبات</h3>
+                            <div class="stats-content">
+                                <div class="stat-item">
+                                    <span class="stat-label">إجمالي الكروبات:</span>
+                                    <span class="stat-value" id="totalChatRooms">0</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">كروبات نشطة:</span>
+                                    <span class="stat-value" id="activeChatRooms">0</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">إجمالي الأعضاء:</span>
+                                    <span class="stat-value" id="totalChatMembers">0</span>
+                                </div>
+                                <button class="primary-btn" onclick="openGroupsManagementModal()">
+                                    <i class="fas fa-cogs"></i> إدارة الكروبات
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="stat-item">
-                        <i class="fas fa-user-check"></i>
-                        <div class="stat-info">
-                            <span class="stat-number" id="activeUsers">0</span>
-                            <span class="stat-label">نشطون</span>
-                        </div>
-                    </div>
-                    <div class="stat-item">
-                        <i class="fas fa-user-clock"></i>
-                        <div class="stat-info">
-                            <span class="stat-number" id="inactiveUsers">0</span>
-                            <span class="stat-label">غير نشطين</span>
+                        <div class="users-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-users"></i>
+                                <div class="stat-info">
+                                    <span class="stat-number" id="totalUsers">0</span>
+                                    <span class="stat-label">إجمالي المستخدمين</span>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-user-check"></i>
+                                <div class="stat-info">
+                                    <span class="stat-number" id="activeUsers">0</span>
+                                    <span class="stat-label">نشطون</span>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-user-clock"></i>
+                                <div class="stat-info">
+                                    <span class="stat-number" id="inactiveUsers">0</span>
+                                    <span class="stat-label">غير نشطين</span>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-user-slash"></i>
+                                <div class="stat-info">
+                                    <span class="stat-number" id="suspendedUsers">0</span>
+                                    <span class="stat-label">معلقون</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="stat-item">
@@ -1367,6 +1409,76 @@
                             <i class="fas fa-user-plus"></i> إضافة الطالب
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Groups Management Modal -->
+    <div class="modal" id="groupsManagementModal">
+        <div class="modal-content groups-management-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-users-cog"></i> إدارة الكروبات</h2>
+                <button class="close-btn" onclick="closeGroupsManagementModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="groups-management-content">
+                <div class="groups-overview">
+                    <div class="overview-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-users"></i>
+                            <div class="stat-info">
+                                <span class="stat-number" id="mgmtTotalGroups">0</span>
+                                <span class="stat-label">إجمالي الكروبات</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-user-check"></i>
+                            <div class="stat-info">
+                                <span class="stat-number" id="mgmtTotalMembers">0</span>
+                                <span class="stat-label">إجمالي الأعضاء</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-clock"></i>
+                            <div class="stat-info">
+                                <span class="stat-number" id="mgmtPendingRequests">0</span>
+                                <span class="stat-label">طلبات معلقة</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="actions-bar">
+                        <button class="primary-btn" onclick="refreshGroupsData()">
+                            <i class="fas fa-sync-alt"></i> تحديث البيانات
+                        </button>
+                        <button class="secondary-btn" onclick="exportGroupsData()">
+                            <i class="fas fa-download"></i> تصدير البيانات
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="groups-tabs">
+                    <button class="tab-btn active" onclick="showGroupsTab('all')" id="allGroupsTab">
+                        <i class="fas fa-users"></i> جميع الكروبات
+                        <span class="tab-badge" id="allGroupsCount">0</span>
+                    </button>
+                    <button class="tab-btn" onclick="showGroupsTab('active')" id="activeGroupsTab">
+                        <i class="fas fa-check-circle"></i> كروبات نشطة
+                        <span class="tab-badge" id="activeGroupsCount">0</span>
+                    </button>
+                    <button class="tab-btn" onclick="showGroupsTab('members')" id="membersTab">
+                        <i class="fas fa-user-friends"></i> الأعضاء
+                        <span class="tab-badge" id="totalMembersCount">0</span>
+                    </button>
+                    <button class="tab-btn" onclick="showGroupsTab('requests')" id="requestsTab">
+                        <i class="fas fa-user-plus"></i> طلبات الانضمام
+                        <span class="tab-badge" id="requestsCount">0</span>
+                    </button>
+                </div>
+                
+                <div class="groups-content" id="groupsContent">
+                    <!-- Groups content will be loaded here -->
                 </div>
             </div>
         </div>

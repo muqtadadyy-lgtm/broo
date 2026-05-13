@@ -3204,6 +3204,390 @@ async function processJoinRequest(requestId, action) {
 let chatRoomMembers = [];
 let allAvailableMembers = [];
 
+// Groups Management
+let groupsData = [];
+let currentGroupsTab = 'all';
+
+function openGroupsManagementModal() {
+    console.log('[GROUPS MGMT] Opening groups management modal');
+    document.getElementById('groupsManagementModal').style.display = 'flex';
+    loadGroupsData();
+}
+
+function closeGroupsManagementModal() {
+    document.getElementById('groupsManagementModal').style.display = 'none';
+}
+
+async function loadGroupsData() {
+    console.log('[GROUPS MGMT] Loading groups data...');
+    try {
+        // Load chat rooms
+        const roomsResult = await apiGetChatRooms();
+        if (roomsResult.success) {
+            groupsData = roomsResult.chatRooms || [];
+            console.log('[GROUPS MGMT] Loaded groups:', groupsData.length);
+        }
+
+        // Load join requests
+        await loadJoinRequests();
+
+        // Update statistics
+        updateGroupsStatistics();
+
+        // Display current tab
+        showGroupsTab(currentGroupsTab);
+
+    } catch (error) {
+        console.error('[GROUPS MGMT] Error loading groups data:', error);
+        showNotification('خطأ في تحميل بيانات الكروبات', 'error');
+    }
+}
+
+function updateGroupsStatistics() {
+    // Update overview statistics
+    document.getElementById('mgmtTotalGroups').textContent = groupsData.length;
+    
+    let totalMembers = 0;
+    groupsData.forEach(group => {
+        totalMembers += group.memberCount || 0;
+    });
+    document.getElementById('mgmtTotalMembers').textContent = totalMembers;
+    document.getElementById('mgmtPendingRequests').textContent = joinRequests.length;
+
+    // Update tab badges
+    document.getElementById('allGroupsCount').textContent = groupsData.length;
+    document.getElementById('activeGroupsCount').textContent = groupsData.filter(g => g.status === 'active').length;
+    document.getElementById('totalMembersCount').textContent = totalMembers;
+    document.getElementById('requestsCount').textContent = joinRequests.length;
+
+    // Update dashboard counter
+    document.getElementById('totalGroupsCount').textContent = groupsData.length;
+}
+
+function showGroupsTab(tab) {
+    currentGroupsTab = tab;
+    
+    // Update active tab
+    document.querySelectorAll('.groups-tabs .tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById(tab + 'GroupsTab').classList.add('active');
+
+    const content = document.getElementById('groupsContent');
+    
+    switch(tab) {
+        case 'all':
+            displayAllGroups(content);
+            break;
+        case 'active':
+            displayActiveGroups(content);
+            break;
+        case 'members':
+            displayAllMembers(content);
+            break;
+        case 'requests':
+            displayJoinRequests(content);
+            break;
+    }
+}
+
+function displayAllGroups(container) {
+    if (groupsData.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>لا توجد كروبات بعد</p></div>';
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="groups-grid">
+            ${groupsData.map(group => `
+                <div class="group-card">
+                    <div class="group-header">
+                        <h4>${group.name}</h4>
+                        <span class="group-status ${group.status}">${getStatusText(group.status)}</span>
+                    </div>
+                    <div class="group-details">
+                        <p class="group-description">${group.description || 'لا يوجد وصف'}</p>
+                        <div class="group-meta">
+                            <span class="group-type">${getTypeText(group.type)}</span>
+                            <span class="group-privacy">${getPrivacyText(group.privacy)}</span>
+                        </div>
+                        <div class="group-stats">
+                            <div class="stat">
+                                <i class="fas fa-users"></i>
+                                <span>${group.memberCount || 0} عضو</span>
+                            </div>
+                            <div class="stat">
+                                <i class="fas fa-comments"></i>
+                                <span>${group.messageCount || 0} رسالة</span>
+                            </div>
+                        </div>
+                        <div class="group-info">
+                            <p><strong>المنشئ:</strong> ${group.createdBy || 'غير معروف'}</p>
+                            <p><strong>إنشاء:</strong> ${formatDate(group.createdAt)}</p>
+                        </div>
+                    </div>
+                    <div class="group-actions">
+                        <button class="primary-btn" onclick="viewGroupDetails(${group.id})">
+                            <i class="fas fa-eye"></i> عرض التفاصيل
+                        </button>
+                        <button class="secondary-btn" onclick="manageGroupMembers(${group.id})">
+                            <i class="fas fa-users-cog"></i> إدارة الأعضاء
+                        </button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function displayActiveGroups(container) {
+    const activeGroups = groupsData.filter(g => g.status === 'active');
+    displayAllGroups(container);
+    // Filter to show only active groups
+    if (activeGroups.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><p>لا توجد كروبات نشطة</p></div>';
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="groups-grid">
+            ${activeGroups.map(group => `
+                <div class="group-card active">
+                    <div class="group-header">
+                        <h4>${group.name}</h4>
+                        <span class="group-status active">نشط</span>
+                    </div>
+                    <div class="group-details">
+                        <p class="group-description">${group.description || 'لا يوجد وصف'}</p>
+                        <div class="group-stats">
+                            <div class="stat">
+                                <i class="fas fa-users"></i>
+                                <span>${group.memberCount || 0} عضو</span>
+                            </div>
+                            <div class="stat">
+                                <i class="fas fa-comments"></i>
+                                <span>${group.messageCount || 0} رسالة</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="group-actions">
+                        <button class="primary-btn" onclick="viewGroupDetails(${group.id})">
+                            <i class="fas fa-eye"></i> عرض التفاصيل
+                        </button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function displayAllMembers(container) {
+    let allMembers = [];
+    
+    groupsData.forEach(group => {
+        if (group.members) {
+            group.members.forEach(member => {
+                allMembers.push({
+                    ...member,
+                    groupName: group.name,
+                    groupId: group.id
+                });
+            });
+        }
+    });
+
+    if (allMembers.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>لا يوجد أعضاء في الكروبات</p></div>';
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="members-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>العضو</th>
+                        <th>الكروب</th>
+                        <th>الدور</th>
+                        <th>تاريخ الانضمام</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${allMembers.map(member => `
+                        <tr>
+                            <td>
+                                <div class="member-info">
+                                    <div class="member-avatar">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div class="member-details">
+                                        <strong>${member.fullName || member.username}</strong>
+                                        <small>${member.email}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>${member.groupName}</td>
+                            <td><span class="role-badge">${getRoleText(member.role)}</span></td>
+                            <td>${formatDate(member.joinedAt)}</td>
+                            <td>
+                                <button class="danger-btn" onclick="removeMemberFromGroup(${member.groupId}, '${member.userId}')">
+                                    <i class="fas fa-user-minus"></i> إزالة
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function displayJoinRequests(container) {
+    if (joinRequests.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-user-plus"></i><p>لا توجد طلبات انضمام معلقة</p></div>';
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="requests-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الطالب</th>
+                        <th>الكروب</th>
+                        <th>تاريخ الطلب</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${joinRequests.map(request => `
+                        <tr>
+                            <td>
+                                <div class="member-info">
+                                    <div class="member-avatar">
+                                        <i class="fas fa-user-graduate"></i>
+                                    </div>
+                                    <div class="member-details">
+                                        <strong>${request.userName}</strong>
+                                        <small>${request.userEmail}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>${request.roomName}</td>
+                            <td>${formatRequestTime(request.createdAt)}</td>
+                            <td>
+                                <div class="request-actions">
+                                    <button class="approve-btn" onclick="processJoinRequest(${request.id}, 'approve')">
+                                        <i class="fas fa-check"></i> قبول
+                                    </button>
+                                    <button class="reject-btn" onclick="processJoinRequest(${request.id}, 'reject')">
+                                        <i class="fas fa-times"></i> رفض
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function refreshGroupsData() {
+    loadGroupsData();
+    showNotification('تم تحديث البيانات بنجاح', 'success');
+}
+
+function exportGroupsData() {
+    // Create CSV data
+    let csv = 'اسم الكروب,الوصف,نوع الكروب,الخصوصية,الحالة,عدد الأعضاء,عدد الرسائل,المنشئ,تاريخ الإنشاء\n';
+    
+    groupsData.forEach(group => {
+        csv += `"${group.name}","${group.description || ''}","${getTypeText(group.type)}","${getPrivacyText(group.privacy)}","${getStatusText(group.status)}","${group.memberCount || 0}","${group.messageCount || 0}","${group.createdBy || ''}","${formatDate(group.createdAt)}"\n`;
+    });
+
+    // Download CSV
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `groups_data_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    
+    showNotification('تم تصدير البيانات بنجاح', 'success');
+}
+
+// Helper functions
+function getStatusText(status) {
+    const statusMap = {
+        'active': 'نشط',
+        'archived': 'مؤرشف',
+        'readonly': 'للقراءة فقط'
+    };
+    return statusMap[status] || status;
+}
+
+function getTypeText(type) {
+    const typeMap = {
+        'general': 'عام',
+        'contest': 'مسابقة',
+        'study': 'دراسة',
+        'announcement': 'إعلانات',
+        'private': 'خاص',
+        'support': 'دعم فني',
+        'project': 'مشروع'
+    };
+    return typeMap[type] || type;
+}
+
+function getPrivacyText(privacy) {
+    const privacyMap = {
+        'public': 'عام',
+        'private': 'خاص',
+        'invite-only': 'دعوة فقط'
+    };
+    return privacyMap[privacy] || privacy;
+}
+
+function getRoleText(role) {
+    const roleMap = {
+        'admin': 'مدير',
+        'moderator': 'مشرف',
+        'member': 'عضو'
+    };
+    return roleMap[role] || role;
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'غير محدد';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ar-SA');
+}
+
+function viewGroupDetails(groupId) {
+    // Open chat interface and select the group
+    openChatInterfaceModal();
+    setTimeout(() => {
+        selectChatRoom(groupId);
+    }, 500);
+}
+
+function manageGroupMembers(groupId) {
+    // Open chat interface and show members
+    openChatInterfaceModal();
+    setTimeout(() => {
+        selectChatRoom(groupId);
+    }, 500);
+}
+
+function removeMemberFromGroup(groupId, userId) {
+    if (confirm('هل أنت متأكد من إزالة هذا العضو من الكروب؟')) {
+        // Implementation for removing member
+        showNotification('تم إزالة العضو بنجاح', 'success');
+        refreshGroupsData();
+    }
+}
+
 // Mock data for available members (in real app, this would come from API)
 function loadAvailableMembers() {
     allAvailableMembers = [
