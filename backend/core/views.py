@@ -2245,6 +2245,18 @@ def create_chat_room(request: HttpRequest) -> JsonResponse:
         return _error("يجب إضافة عضو واحد على الأقل", status=400)
 
     try:
+        # Handle admin assignment
+        admin_user = None
+        admin_id = data.get("adminId")
+        if admin_id:
+            try:
+                admin_user = User.objects.get(pk=admin_id)
+            except User.DoesNotExist:
+                print(f"[CHAT_ROOM] Admin user {admin_id} not found, using creator as admin")
+                admin_user = creator
+        else:
+            admin_user = creator
+
         # Create chat room
         chat_room = ChatRoom.objects.create(
             name=data["name"],
@@ -2254,7 +2266,7 @@ def create_chat_room(request: HttpRequest) -> JsonResponse:
             status=data.get("status", "active"),
             max_members=data.get("maxMembers", 50),
             created_by=creator,
-            admin=data.get("adminId"),
+            admin=admin_user,
             rules=data.get("rules", ""),
             tags=",".join(data.get("tags", [])),
             welcome_message=data.get("welcomeMessage", ""),
