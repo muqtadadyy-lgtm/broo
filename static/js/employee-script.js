@@ -1903,13 +1903,22 @@ function applyModerationSettings() {
         autoModeration: document.getElementById('autoModeration').checked,
         autoCleanup: document.getElementById('autoCleanup').checked
     };
-    
-    // In real app, this would save to backend
     showNotification('تم تطبيق إعدادات المراقبة بنجاح', 'success');
 }
 
 // Add event listeners for new features
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize dashboard
+    loadDashboardData();
+    loadUserActivities();
+    loadUserApplications();
+    loadEmployeeActivities();
+    loadUserStatistics();
+    loadAnnouncements();
+    loadStudentRequests();
+    loadAllUsers();
+    loadJoinRequests(); // Load chat room join requests
+    
     // Add event listeners for moderation tools
     const wordFilter = document.getElementById('wordFilter');
     const messageDelay = document.getElementById('messageDelay');
@@ -3038,6 +3047,131 @@ function displayMessages(messages) {
 function formatMessageTime(timestamp) {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Join Requests Management
+let joinRequests = [];
+
+async function loadJoinRequests() {
+    console.log('[JOIN REQUESTS] Loading join requests...');
+    try {
+        const response = await fetch('/api/chat-rooms/join-requests', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        console.log('[JOIN REQUESTS] API result:', result);
+        
+        if (result.success) {
+            joinRequests = result.joinRequests || [];
+            displayJoinRequests();
+            updateJoinRequestsCount();
+        } else {
+            console.error('[JOIN REQUESTS] Failed to load join requests:', result.message);
+        }
+    } catch (error) {
+        console.error('[JOIN REQUESTS] Error loading join requests:', error);
+    }
+}
+
+function displayJoinRequests() {
+    const requestsList = document.getElementById('joinRequestsList');
+    
+    if (!requestsList) {
+        console.error('[JOIN REQUESTS] Requests list element not found');
+        return;
+    }
+    
+    if (joinRequests.length === 0) {
+        requestsList.innerHTML = '<p class="no-requests">لا توجد طلبات انضمام معلقة</p>';
+        return;
+    }
+    
+    requestsList.innerHTML = joinRequests.map(request => `
+        <div class="join-request-item">
+            <div class="request-info">
+                <div class="request-header">
+                    <strong>${request.userName}</strong>
+                    <span class="request-time">${formatRequestTime(request.createdAt)}</span>
+                </div>
+                <div class="request-details">
+                    <p><strong>البريد:</strong> ${request.userEmail}</p>
+                    <p><strong>الكروب:</strong> ${request.roomName}</p>
+                </div>
+            </div>
+            <div class="request-actions">
+                <button class="approve-btn" onclick="processJoinRequest(${request.id}, 'approve')">
+                    <i class="fas fa-check"></i> قبول
+                </button>
+                <button class="reject-btn" onclick="processJoinRequest(${request.id}, 'reject')">
+                    <i class="fas fa-times"></i> رفض
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateJoinRequestsCount() {
+    const countElement = document.getElementById('pendingJoinRequests');
+    if (countElement) {
+        countElement.textContent = joinRequests.length;
+    }
+}
+
+function formatRequestTime(timestamp) {
+    if (!timestamp) return 'غير محدد';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'الآن';
+    if (diffMins < 60) return `منذ ${diffMins} دقيقة`;
+    if (diffHours < 24) return `منذ ${diffHours} ساعة`;
+    if (diffDays < 7) return `منذ ${diffDays} يوم`;
+    return date.toLocaleDateString('ar-SA');
+}
+
+async function processJoinRequest(requestId, action) {
+    try {
+        console.log(`[JOIN REQUESTS] Processing request ${requestId} with action: ${action}`);
+        
+        const response = await fetch(`/api/chat-rooms/join-requests/${requestId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ action: action })
+        });
+        
+        const result = await response.json();
+        console.log('[JOIN REQUESTS] Process result:', result);
+        
+        if (result.success) {
+            showNotification(result.message, 'success');
+            // Remove processed request from list
+            joinRequests = joinRequests.filter(req => req.id !== requestId);
+            displayJoinRequests();
+            updateJoinRequestsCount();
+            
+            // Refresh chat rooms list if approved
+            if (action === 'approve') {
+                loadChatRooms();
+            }
+        } else {
+            showNotification(result.message || 'فشل معالجة الطلب', 'error');
+        }
+    } catch (error) {
+        console.error('[JOIN REQUESTS] Error processing request:', error);
+        showNotification('حدث خطأ في معالجة الطلب', 'error');
+    }
 }
 
 let chatRoomMembers = [];

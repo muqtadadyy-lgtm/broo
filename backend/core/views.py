@@ -2277,17 +2277,8 @@ def create_chat_room(request: HttpRequest) -> JsonResponse:
         
         print(f"[CHAT_ROOM] Chat room created with ID: {chat_room.id}")
 
-        # Add creator as member automatically
-        try:
-            ChatRoomMember.objects.create(
-                chat_room=chat_room,
-                user=creator,
-                role="admin"
-            )
-            print("[CHAT_ROOM] Creator added as admin member")
-        except Exception as member_exc:
-            print(f"[CHAT_ROOM] Error adding creator as member: {member_exc}")
-            # Continue even if member addition fails
+        # Don't add creator as member automatically - group should be empty initially
+        print("[CHAT_ROOM] Group created empty - no members added automatically")
 
         # Add other members if provided
         members = data.get("members", [])
@@ -2457,16 +2448,47 @@ def join_chat_room(request: HttpRequest, room_id: int) -> JsonResponse:
         if current_members >= chat_room.max_members:
             return _error("الكروب ممتلئ، لا يمكن الانضمام حالياً", status=400)
 
-        # Add user as member
-        ChatRoomMember.objects.create(
-            chat_room=chat_room,
-            user=user,
-            role="member"
-        )
+        # Create join request instead of adding as member immediately
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_join_requests';")
+            table_exists = cursor.fetchone()
+        
+        if not table_exists:
+            # Create join requests table if it doesn't exist
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS chat_room_join_requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    chat_room_id INTEGER NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    status VARCHAR(20) DEFAULT 'pending',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    processed_at DATETIME NULL,
+                    processed_by_id INTEGER NULL,
+                    FOREIGN KEY (chat_room_id) REFERENCES chat_rooms(id),
+                    FOREIGN KEY (user_id) REFERENCES users(id),
+                    FOREIGN KEY (processed_by_id) REFERENCES users(id)
+                )
+            """)
+        
+        # Check if user already has a pending request
+        cursor.execute("""
+            SELECT COUNT(*) FROM chat_room_join_requests 
+            WHERE chat_room_id = %s AND user_id = %s AND status = 'pending'
+        """, [chat_room.id, user.id])
+        
+        if cursor.fetchone()[0] > 0:
+            return _error("لديك طلب انضمام معلق بالفعل", status=400)
+        
+        # Create join request
+        cursor.execute("""
+            INSERT INTO chat_room_join_requests (chat_room_id, user_id, status, created_at)
+            VALUES (%s, %s, 'pending', %s)
+        """, [chat_room.id, user.id, timezone.now()])
 
         return JsonResponse({
             "success": True,
-            "message": "تم الانضمام إلى الكروب بنجاح"
+            "message": "تم إرسال طلب الانضمام بنجاح. في انتظار موافقة المدير"
         })
 
     except ChatRoom.DoesNotExist:
@@ -2474,6 +2496,160 @@ def join_chat_room(request: HttpRequest, room_id: int) -> JsonResponse:
     except Exception as exc:
         print(f"[CHAT_ROOM] Error joining chat room: {exc}")
         return _error(f"حدث خطأ أثناء الانضمام للكروب: {exc}", status=500)
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["GET"])
+def get_chat_room_join_requests(request: HttpRequest) -> JsonResponse:
+    """
+    جلب طلبات الانضمام للكروبات (للمديرين فقط).
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للمديرين فقط", status=403)
+
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_join_requests';")
+            table_exists = cursor.fetchone()
+        
+        if not table_exists:
+            return JsonResponse({
+                "success": True,
+                "joinRequests": [],
+                "total": 0
+            })
+
+        # Get all pending join requests
+        cursor.execute("""
+            SELECT 
+                jr.id,
+                jr.chat_room_id,
+                jr.user_id,
+                jr.status,
+                jr.created_at,
+                cr.name as room_name,
+                u.full_name as user_name,
+                u.email as user_email,
+                u.username as username
+            FROM chat_room_join_requests jr
+            JOIN chat_rooms cr ON jr.chat_room_id = cr.id
+            JOIN users u ON jr.user_id = u.id
+            WHERE jr.status = 'pending'
+            ORDER BY jr.created_at DESC
+        """)
+        
+        requests = cursor.fetchall()
+        
+        result = []
+        for req in requests:
+            result.append({
+                "id": req[0],
+                "roomId": req[1],
+                "userId": req[2],
+                "status": req[3],
+                "createdAt": req[4].isoformat() if req[4] else None,
+                "roomName": req[5],
+                "userName": req[6],
+                "userEmail": req[7],
+                "username": req[8]
+            })
+
+        return JsonResponse({
+            "success": True,
+            "joinRequests": result,
+            "total": len(result)
+        })
+
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error getting join requests: {exc}")
+        return JsonResponse({
+            "success": True,
+            "joinRequests": [],
+            "total": 0
+        })
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["PUT"])
+def process_chat_room_join_request(request: HttpRequest, request_id: int) -> JsonResponse:
+    """
+    معالجة طلب انضمام للكروب (قبول أو رفض).
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        processor = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if processor.role != "employee":
+        return _error("هذه العملية متاحة للمديرين فقط", status=403)
+
+    data = _parse_json(request)
+    action = data.get("action")  # "approve" or "reject"
+    
+    if action not in ["approve", "reject"]:
+        return _error("الإجراء غير صالح. يجب أن يكون 'approve' أو 'reject'", status=400)
+
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            # Get request details
+            cursor.execute("""
+                SELECT chat_room_id, user_id, status 
+                FROM chat_room_join_requests 
+                WHERE id = %s
+            """, [request_id])
+            
+            request_data = cursor.fetchone()
+            if not request_data:
+                return _error("الطلب غير موجود", status=404)
+            
+            if request_data[2] != "pending":
+                return _error("الطلب تمت معالجته بالفعل", status=400)
+            
+            chat_room_id = request_data[0]
+            user_request_id = request_data[1]
+            
+            # Update request status
+            cursor.execute("""
+                UPDATE chat_room_join_requests 
+                SET status = %s, processed_at = %s, processed_by_id = %s
+                WHERE id = %s
+            """, [action, timezone.now(), user_id, request_id])
+            
+            if action == "approve":
+                # Add user as member
+                cursor.execute("""
+                    INSERT INTO chat_room_members (chat_room_id, user_id, role, is_active, joined_at)
+                    VALUES (%s, %s, 'member', 1, %s)
+                """, [chat_room_id, user_request_id, timezone.now()])
+                
+                action_text = "قبول"
+                message = f"تم قبول طلب الانضمام وإضافة العضو للكروب"
+            else:
+                action_text = "رفض"
+                message = f"تم رفض طلب الانضمام"
+
+        return JsonResponse({
+            "success": True,
+            "message": message,
+            "request": {
+                "id": request_id,
+                "action": action_text,
+                "processedAt": timezone.now().isoformat()
+            }
+        })
+
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error processing join request: {exc}")
+        return _error(f"حدث خطأ في معالجة الطلب: {exc}", status=500)
 
 @csrf_exempt
 @jwt_required
