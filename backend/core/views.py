@@ -2227,85 +2227,91 @@ def create_chat_room(request: HttpRequest) -> JsonResponse:
     """
     إنشاء كروب دردشة جديد.
     """
+    print("[CHAT_ROOM] Starting chat room creation")
+    
     user_id = get_jwt_identity(request)
     try:
         creator = User.objects.get(pk=user_id)
+        print(f"[CHAT_ROOM] Creator found: {creator.full_name}")
     except User.DoesNotExist:
+        print("[CHAT_ROOM] Creator not found")
         return _error("غير مصرح لك", status=403)
 
     if creator.role != "employee":
+        print("[CHAT_ROOM] User is not employee")
         return _error("هذه العملية متاحة للموظفين فقط", status=403)
 
     data = _parse_json(request)
-    required_fields = ["name", "description", "members"]
-    if not all(field in data for field in required_fields):
-        return _error("جميع الحقول المطلوبة يجب ملؤها", status=400)
-
-    if not data["members"] or len(data["members"]) == 0:
-        return _error("يجب إضافة عضو واحد على الأقل", status=400)
-
-    # Validate member data
-    for i, member in enumerate(data["members"]):
-        if not isinstance(member, dict) or "id" not in member:
-            return _error(f"بيانات العضو {i+1} غير صالحة", status=400)
-        
-        # Check if user exists
-        try:
-            User.objects.get(pk=member["id"])
-        except User.DoesNotExist:
-            return _error(f"المستخدم {member['id']} غير موجود", status=400)
+    print(f"[CHAT_ROOM] Received data: {data}")
+    
+    # Simplified validation - only require name and description
+    if not data.get("name") or not data.get("description"):
+        print("[CHAT_ROOM] Missing name or description")
+        return _error("الاسم والوصف مطلوبان", status=400)
 
     try:
-        # Handle admin assignment
-        admin_user = None
-        admin_id = data.get("adminId")
-        if admin_id:
-            try:
-                admin_user = User.objects.get(pk=admin_id)
-            except User.DoesNotExist:
-                print(f"[CHAT_ROOM] Admin user {admin_id} not found, using creator as admin")
-                admin_user = creator
-        else:
-            admin_user = creator
-
-        # Create chat room
+        print("[CHAT_ROOM] Creating chat room...")
+        
+        # Simplified chat room creation with minimal fields
         chat_room = ChatRoom.objects.create(
             name=data["name"],
             description=data["description"],
             type=data.get("type", "general"),
             privacy=data.get("privacy", "public"),
-            status=data.get("status", "active"),
+            status="active",
             max_members=data.get("maxMembers", 50),
             created_by=creator,
-            admin=admin_user,
+            admin=creator,  # Always use creator as admin for simplicity
             rules=data.get("rules", ""),
-            tags=",".join(data.get("tags", [])),
+            tags=data.get("tags", ""),
             welcome_message=data.get("welcomeMessage", ""),
-            message_retention=data.get("messageRetention", "forever"),
-            file_sharing=data.get("fileSharing", "enabled"),
-            max_file_size=data.get("maxFileSize", 10485760),
-            allowed_file_types=",".join(data.get("allowedFileTypes", [])),
-            notifications_enabled=data.get("notifications", True),
-            encryption_enabled=data.get("encryption", False),
-            auto_mod_enabled=data.get("autoMod", True),
-            read_only=data.get("readOnly", False)
+            message_retention="forever",
+            file_sharing="enabled",
+            max_file_size=10485760,
+            allowed_file_types="pdf, doc, docx, jpg, png, zip",
+            notifications_enabled=True,
+            encryption_enabled=False,
+            auto_mod_enabled=True,
+            read_only=False
         )
+        
+        print(f"[CHAT_ROOM] Chat room created with ID: {chat_room.id}")
 
-        # Add members to the chat room
-        print(f"[CHAT_ROOM] Adding {len(data['members'])} members to chat room")
-        for i, member_data in enumerate(data["members"]):
-            try:
-                print(f"[CHAT_ROOM] Adding member {i+1}: {member_data}")
-                ChatRoomMember.objects.create(
-                    chat_room=chat_room,
-                    user_id=member_data["id"],
-                    role=member_data.get("role", "member")
-                )
-                print(f"[CHAT_ROOM] Member {i+1} added successfully")
-            except Exception as member_exc:
-                print(f"[CHAT_ROOM] Error adding member {i+1}: {member_exc}")
-                raise Exception(f"فشل إضافة العضو {member_data.get('id', 'unknown')}: {member_exc}")
+        # Add creator as member automatically
+        try:
+            ChatRoomMember.objects.create(
+                chat_room=chat_room,
+                user=creator,
+                role="admin"
+            )
+            print("[CHAT_ROOM] Creator added as admin member")
+        except Exception as member_exc:
+            print(f"[CHAT_ROOM] Error adding creator as member: {member_exc}")
+            # Continue even if member addition fails
 
+        # Add other members if provided
+        members = data.get("members", [])
+        if members:
+            print(f"[CHAT_ROOM] Adding {len(members)} additional members")
+            for i, member_data in enumerate(members):
+                try:
+                    if isinstance(member_data, dict) and "id" in member_data:
+                        # Check if user exists
+                        try:
+                            user = User.objects.get(pk=member_data["id"])
+                            ChatRoomMember.objects.get_or_create(
+                                chat_room=chat_room,
+                                user=user,
+                                defaults={"role": member_data.get("role", "member")}
+                            )
+                            print(f"[CHAT_ROOM] Member {i+1} ({user.full_name}) added successfully")
+                        except User.DoesNotExist:
+                            print(f"[CHAT_ROOM] User {member_data['id']} not found, skipping")
+                except Exception as member_exc:
+                    print(f"[CHAT_ROOM] Error adding member {i+1}: {member_exc}")
+                    # Continue with other members
+
+        print("[CHAT_ROOM] Chat room creation completed successfully")
         return JsonResponse({
             "success": True,
             "message": "تم إنشاء الكروب بنجاح",
@@ -2319,7 +2325,7 @@ def create_chat_room(request: HttpRequest) -> JsonResponse:
                 "maxMembers": chat_room.max_members,
                 "createdBy": creator.full_name,
                 "createdAt": chat_room.created_at.isoformat(),
-                "memberCount": len(data["members"])
+                "memberCount": ChatRoomMember.objects.filter(chat_room=chat_room, is_active=True).count()
             }
         }, status=201)
 

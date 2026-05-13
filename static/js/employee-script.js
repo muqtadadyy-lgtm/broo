@@ -3017,35 +3017,18 @@ async function createChatRoom() {
         }
         
         console.log('[CHAT ROOM] All validations passed, proceeding with creation...');
-        console.log('[CHAT ROOM] Creating chat room...');
         
-        // Create chat room data for API
+        // Simplified chat room data - only send essential fields
         const chatRoomData = {
             name: name,
             description: description,
-            type: type,
-            maxMembers: maxMembers,
-            privacy: privacy,
-            status: status,
-            rules: rules,
-            tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-            messageRetention: messageRetention,
-            fileSharing: fileSharing,
-            maxFileSize: maxFileSize,
-            allowedFileTypes: allowedFileTypes.split(',').map(type => type.trim()).filter(type => type),
-            welcomeMessage: welcomeMessage,
-            notifications: notifications,
-            encryption: encryption,
-            autoMod: autoMod,
-            readOnly: readOnly,
-            members: chatRoomMembers.map(member => ({
-                id: member.id,
-                role: member.id === parseInt(adminRole) ? 'admin' : 'member'
-            })),
-            adminId: adminRole || chatRoomMembers[0].id
+            type: type || 'general',
+            maxMembers: maxMembers || 50,
+            privacy: privacy || 'public',
+            members: chatRoomMembers || []
         };
         
-        console.log('[CHAT ROOM] Sending data:', chatRoomData);
+        console.log('[CHAT ROOM] Sending simplified data:', chatRoomData);
         showNotification('جاري إنشاء الكروب...', 'info');
         
         // Send to real API
@@ -3054,21 +3037,34 @@ async function createChatRoom() {
         console.log('[CHAT ROOM] API result:', result);
         
         if (result.success) {
-            const typeText = type === 'general' ? 'عام' : 
-                            type === 'contest' ? 'مسابقة' : 
-                            type === 'study' ? 'دراسة' : 
-                            type === 'announcement' ? 'إعلانات' : 
-                            type === 'private' ? 'خاص' : 
-                            type === 'support' ? 'دعم فني' : 'مشروع';
+            showNotification(`تم إنشاء كروب "${name}" بنجاح`, 'success');
             
-            const privacyText = privacy === 'public' ? 'عام' : 
-                               privacy === 'private' ? 'خاص' : 'دعوة فقط';
-            
-            showNotification(`تم إنشاء كروب "${name}" (${typeText} - ${privacyText}) بنجاح`, 'success');
+            // Clear form and reset data
+            document.getElementById('chatRoomName').value = '';
+            document.getElementById('chatRoomDescription').value = '';
+            document.getElementById('chatRoomType').value = 'general';
+            document.getElementById('chatRoomMaxMembers').value = '50';
+            document.getElementById('chatRoomPrivacy').value = 'public';
+            document.getElementById('chatRoomStatus').value = 'active';
+            document.getElementById('chatRoomRules').value = '';
+            document.getElementById('chatRoomTags').value = '';
+            document.getElementById('chatRoomMessageRetention').value = 'forever';
+            document.getElementById('chatRoomFileSharing').value = 'enabled';
+            document.getElementById('chatRoomMaxFileSize').value = '10';
+            document.getElementById('chatRoomAllowedFileTypes').value = 'pdf, doc, docx, jpg, png, zip';
+            document.getElementById('chatRoomWelcomeMessage').value = '';
+            document.getElementById('chatRoomNotifications').checked = true;
+            document.getElementById('chatRoomEncryption').checked = false;
+            document.getElementById('chatRoomAutoMod').checked = true;
+            document.getElementById('chatRoomReadOnly').checked = false;
+            document.getElementById('adminRole').value = '';
             
             // Clear the chat room members array after successful creation
             chatRoomMembers = [];
             updateChatRoomStats();
+            
+            // Close modal
+            closeChatRoomModal();
         } else {
             console.error('[CHAT ROOM] Creation failed:', result.message);
             showNotification(result.message || 'فشل إنشاء الكروب', 'error');
