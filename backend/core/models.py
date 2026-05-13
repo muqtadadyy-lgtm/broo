@@ -338,5 +338,169 @@ class StudentJoinRequest(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover - debug representation only
         return f"JoinRequest {self.id} - {self.student.full_name} ({self.status})"
+
+
+class ChatRoom(models.Model):
+    """
+    نموذج كروبات الدردشة للمستخدمين.
+    يدعم إنشاء الكروبات التي يمكن للطلاب والموظفين الانضمام إليها.
+    """
+
+    name = models.CharField(max_length=200)
+    description = models.TextField()
+    type = models.CharField(
+        max_length=50,
+        choices=[
+            ("general", "عام"),
+            ("contest", "مسابقة"),
+            ("study", "دراسة"),
+            ("announcement", "إعلانات"),
+            ("private", "خاص"),
+            ("support", "دعم فني"),
+            ("project", "مشروع"),
+        ],
+        default="general"
+    )
+    privacy = models.CharField(
+        max_length=20,
+        choices=[
+            ("public", "عام"),
+            ("private", "خاص"),
+            ("invite-only", "دعوة فقط"),
+        ],
+        default="public"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("active", "نشط"),
+            ("inactive", "غير نشط"),
+            ("archived", "مؤرشف"),
+        ],
+        default="active"
+    )
+    max_members = models.IntegerField(default=50)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_chat_rooms")
+    admin = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="admin_chat_rooms")
+    rules = models.TextField(blank=True, null=True)
+    tags = models.TextField(blank=True, null=True)  # Store as comma-separated values
+    welcome_message = models.TextField(blank=True, null=True)
+    message_retention = models.CharField(max_length=20, default="forever")
+    file_sharing = models.CharField(max_length=20, default="enabled")
+    max_file_size = models.IntegerField(default=10485760)  # 10MB in bytes
+    allowed_file_types = models.TextField(blank=True, null=True)  # Comma-separated
+    notifications_enabled = models.BooleanField(default=True)
+    encryption_enabled = models.BooleanField(default=False)
+    auto_mod_enabled = models.BooleanField(default=True)
+    read_only = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+    last_activity = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "chat_rooms"
+        indexes = [
+            models.Index(fields=["created_by"]),
+            models.Index(fields=["admin"]),
+            models.Index(fields=["type"]),
+            models.Index(fields=["privacy"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["last_activity"]),
+        ]
+        ordering = ["-created_at"]
+
+    def save(self, *args, **kwargs):
+        self.updated_at = timezone.now()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:  # pragma: no cover - debug representation only
+        return f"ChatRoom {self.id} - {self.name} ({self.type})"
+
+
+class ChatRoomMember(models.Model):
+    """
+    نموذج أعضاء كروبات الدردشة.
+    يربط بين المستخدمين والكروبات.
+    """
+
+    chat_room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name="members")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="chat_room_memberships")
+    role = models.CharField(
+        max_length=20,
+        choices=[
+            ("admin", "مدير"),
+            ("moderator", "مشرف"),
+            ("member", "عضو"),
+        ],
+        default="member"
+    )
+    joined_at = models.DateTimeField(default=timezone.now)
+    last_active = models.DateTimeField(default=timezone.now)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "chat_room_members"
+        indexes = [
+            models.Index(fields=["chat_room"]),
+            models.Index(fields=["user"]),
+            models.Index(fields=["role"]),
+            models.Index(fields=["joined_at"]),
+        ]
+        unique_together = [["chat_room", "user"]]
+        ordering = ["-joined_at"]
+
+    def save(self, *args, **kwargs):
+        self.last_active = timezone.now()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:  # pragma: no cover - debug representation only
+        return f"ChatRoomMember {self.user.full_name} in {self.chat_room.name}"
+
+
+class ChatMessage(models.Model):
+    """
+    نموذج رسائل الدردشة في الكروبات.
+    """
+
+    chat_room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name="messages")
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="chat_sent_messages")
+    content = models.TextField()
+    message_type = models.CharField(
+        max_length=20,
+        choices=[
+            ("text", "نص"),
+            ("image", "صورة"),
+            ("file", "ملف"),
+            ("system", "نظام"),
+        ],
+        default="text"
+    )
+    file_url = models.URLField(blank=True, null=True)
+    file_name = models.CharField(max_length=255, blank=True, null=True)
+    file_size = models.IntegerField(null=True, blank=True)
+    reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name="replies")
+    is_edited = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "chat_messages"
+        indexes = [
+            models.Index(fields=["chat_room"]),
+            models.Index(fields=["sender"]),
+            models.Index(fields=["message_type"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["reply_to"]),
+        ]
+        ordering = ["created_at"]
+
+    def save(self, *args, **kwargs):
+        self.updated_at = timezone.now()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:  # pragma: no cover - debug representation only
+        return f"Message {self.id} in {self.chat_room.name} by {self.sender.full_name}"
     
     

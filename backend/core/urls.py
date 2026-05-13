@@ -46,4 +46,10 @@ urlpatterns = [
     path("student-requests", views.get_student_join_requests, name="get_student_join_requests"),
     path("student-requests/<int:request_id>", views.process_join_request, name="process_join_request"),
     path("student-requests/approve-all", views.approve_all_requests, name="approve_all_requests"),
+    # Chat room management
+    path("chat-rooms", views.create_chat_room, name="create_chat_room"),
+    path("chat-rooms/list", views.get_chat_rooms, name="get_chat_rooms"),
+    path("chat-rooms/<int:room_id>/join", views.join_chat_room, name="join_chat_room"),
+    path("chat-rooms/<int:room_id>/messages", views.send_chat_message, name="send_chat_message"),
+    path("chat-rooms/<int:room_id>/messages/list", views.get_chat_messages, name="get_chat_messages"),
 ]

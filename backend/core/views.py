@@ -19,6 +19,9 @@ from .models import (
     ActivityRegistration,
     Announcement,
     Application,
+    ChatMessage,
+    ChatRoom,
+    ChatRoomMember,
     EmployeeDirectMessage,
     EmployeeRequest,
     Message,
@@ -2212,6 +2215,383 @@ def approve_all_requests(request: HttpRequest) -> JsonResponse:
             "success": True,
             "message": "نظام الطلبات غير متاح حالياً",
             "approvedCount": 0
+        })
+
+
+# ==================== CHAT ROOM MANAGEMENT ====================
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def create_chat_room(request: HttpRequest) -> JsonResponse:
+    """
+    إنشاء كروب دردشة جديد.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        creator = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if creator.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    data = _parse_json(request)
+    required_fields = ["name", "description", "members"]
+    if not all(field in data for field in required_fields):
+        return _error("جميع الحقول المطلوبة يجب ملؤها", status=400)
+
+    if not data["members"] or len(data["members"]) == 0:
+        return _error("يجب إضافة عضو واحد على الأقل", status=400)
+
+    try:
+        # Create chat room
+        chat_room = ChatRoom.objects.create(
+            name=data["name"],
+            description=data["description"],
+            type=data.get("type", "general"),
+            privacy=data.get("privacy", "public"),
+            status=data.get("status", "active"),
+            max_members=data.get("maxMembers", 50),
+            created_by=creator,
+            admin=data.get("adminId"),
+            rules=data.get("rules", ""),
+            tags=",".join(data.get("tags", [])),
+            welcome_message=data.get("welcomeMessage", ""),
+            message_retention=data.get("messageRetention", "forever"),
+            file_sharing=data.get("fileSharing", "enabled"),
+            max_file_size=data.get("maxFileSize", 10485760),
+            allowed_file_types=",".join(data.get("allowedFileTypes", [])),
+            notifications_enabled=data.get("notifications", True),
+            encryption_enabled=data.get("encryption", False),
+            auto_mod_enabled=data.get("autoMod", True),
+            read_only=data.get("readOnly", False)
+        )
+
+        # Add members to the chat room
+        for member_data in data["members"]:
+            ChatRoomMember.objects.create(
+                chat_room=chat_room,
+                user_id=member_data["id"],
+                role=member_data.get("role", "member")
+            )
+
+        return JsonResponse({
+            "success": True,
+            "message": "تم إنشاء الكروب بنجاح",
+            "chatRoom": {
+                "id": chat_room.id,
+                "name": chat_room.name,
+                "description": chat_room.description,
+                "type": chat_room.type,
+                "privacy": chat_room.privacy,
+                "status": chat_room.status,
+                "maxMembers": chat_room.max_members,
+                "createdBy": creator.full_name,
+                "createdAt": chat_room.created_at.isoformat(),
+                "memberCount": len(data["members"])
+            }
+        }, status=201)
+
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error creating chat room: {exc}")
+        return _error(f"حدث خطأ أثناء إنشاء الكروب: {exc}", status=500)
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_chat_rooms(request: HttpRequest) -> JsonResponse:
+    """
+    جلب قائمة الكروبات المتاحة للمستخدم.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    try:
+        # Check if chat room tables exist
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_rooms';")
+            rooms_table_exists = cursor.fetchone()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_members';")
+            members_table_exists = cursor.fetchone()
+
+        if not rooms_table_exists or not members_table_exists:
+            return JsonResponse({
+                "success": True,
+                "chatRooms": [],
+                "total": 0
+            })
+
+        # Get chat rooms where user is a member
+        user_memberships = ChatRoomMember.objects.filter(user=user, is_active=True).select_related("chat_room")
+        
+        chat_rooms = []
+        for membership in user_memberships:
+            room = membership.chat_room
+            member_count = ChatRoomMember.objects.filter(chat_room=room, is_active=True).count()
+            message_count = ChatMessage.objects.filter(chat_room=room, is_deleted=False).count()
+            
+            chat_rooms.append({
+                "id": room.id,
+                "name": room.name,
+                "description": room.description,
+                "type": room.type,
+                "privacy": room.privacy,
+                "status": room.status,
+                "maxMembers": room.max_members,
+                "memberCount": member_count,
+                "messageCount": message_count,
+                "createdBy": room.created_by.full_name,
+                "userRole": membership.role,
+                "joinedAt": membership.joined_at.isoformat(),
+                "lastActivity": room.last_activity.isoformat(),
+                "createdAt": room.created_at.isoformat()
+            })
+
+        return JsonResponse({
+            "success": True,
+            "chatRooms": chat_rooms,
+            "total": len(chat_rooms)
+        })
+
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error getting chat rooms: {exc}")
+        return JsonResponse({
+            "success": True,
+            "chatRooms": [],
+            "total": 0
+        })
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def join_chat_room(request: HttpRequest, room_id: int) -> JsonResponse:
+    """
+    الانضمام إلى كروب دردشة.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    try:
+        # Check if tables exist
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_rooms';")
+            rooms_table_exists = cursor.fetchone()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_members';")
+            members_table_exists = cursor.fetchone()
+
+        if not rooms_table_exists or not members_table_exists:
+            return _error("نظام الكروبات غير متاح حالياً", status=503)
+
+        chat_room = ChatRoom.objects.get(pk=room_id)
+        
+        # Check if user is already a member
+        existing_membership = ChatRoomMember.objects.filter(chat_room=chat_room, user=user).first()
+        if existing_membership:
+            if existing_membership.is_active:
+                return _error("أنت بالفعل عضو في هذا الكروب", status=400)
+            else:
+                # Reactivate membership
+                existing_membership.is_active = True
+                existing_membership.save()
+                return JsonResponse({
+                    "success": True,
+                    "message": "تم إعادة تفعيل عضويتك في الكروب"
+                })
+
+        # Check if room is at capacity
+        current_members = ChatRoomMember.objects.filter(chat_room=chat_room, is_active=True).count()
+        if current_members >= chat_room.max_members:
+            return _error("الكروب ممتلئ، لا يمكن الانضمام حالياً", status=400)
+
+        # Add user as member
+        ChatRoomMember.objects.create(
+            chat_room=chat_room,
+            user=user,
+            role="member"
+        )
+
+        return JsonResponse({
+            "success": True,
+            "message": "تم الانضمام إلى الكروب بنجاح"
+        })
+
+    except ChatRoom.DoesNotExist:
+        return _error("الكروب غير موجود", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error joining chat room: {exc}")
+        return _error(f"حدث خطأ أثناء الانضمام للكروب: {exc}", status=500)
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def send_chat_message(request: HttpRequest, room_id: int) -> JsonResponse:
+    """
+    إرسال رسالة في كروب الدردشة.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        sender = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    data = _parse_json(request)
+    if "content" not in data or not data["content"].strip():
+        return _error("محتوى الرسالة مطلوب", status=400)
+
+    try:
+        # Check if tables exist
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_rooms';")
+            rooms_table_exists = cursor.fetchone()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_members';")
+            members_table_exists = cursor.fetchone()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_messages';")
+            messages_table_exists = cursor.fetchone()
+
+        if not all([rooms_table_exists, members_table_exists, messages_table_exists]):
+            return _error("نظام الكروبات غير متاح حالياً", status=503)
+
+        chat_room = ChatRoom.objects.get(pk=room_id)
+        
+        # Check if user is a member
+        membership = ChatRoomMember.objects.filter(chat_room=chat_room, user=sender, is_active=True).first()
+        if not membership:
+            return _error("يجب أن تكون عضواً في الكروب لإرسال الرسائل", status=403)
+
+        # Check if room is read-only
+        if chat_room.read_only and sender.role != "employee":
+            return _error("الكروب للقراءة فقط حالياً", status=403)
+
+        # Create message
+        message = ChatMessage.objects.create(
+            chat_room=chat_room,
+            sender=sender,
+            content=data["content"].strip(),
+            message_type=data.get("messageType", "text"),
+            file_url=data.get("fileUrl"),
+            file_name=data.get("fileName"),
+            file_size=data.get("fileSize"),
+            reply_to_id=data.get("replyTo")
+        )
+
+        # Update room activity
+        chat_room.last_activity = timezone.now()
+        chat_room.save()
+
+        # Update member last active
+        membership.last_active = timezone.now()
+        membership.save()
+
+        return JsonResponse({
+            "success": True,
+            "message": "تم إرسال الرسالة بنجاح",
+            "chatMessage": {
+                "id": message.id,
+                "content": message.content,
+                "messageType": message.message_type,
+                "sender": {
+                    "id": sender.id,
+                    "fullName": sender.full_name,
+                    "username": sender.username,
+                    "role": sender.role
+                },
+                "createdAt": message.created_at.isoformat(),
+                "replyTo": message.reply_to_id
+            }
+        })
+
+    except ChatRoom.DoesNotExist:
+        return _error("الكروب غير موجود", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error sending message: {exc}")
+        return _error(f"حدث خطأ أثناء إرسال الرسالة: {exc}", status=500)
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_chat_messages(request: HttpRequest, room_id: int) -> JsonResponse:
+    """
+    جلب رسائل كروب الدردشة.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    try:
+        # Check if tables exist
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_rooms';")
+            rooms_table_exists = cursor.fetchone()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_members';")
+            members_table_exists = cursor.fetchone()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_messages';")
+            messages_table_exists = cursor.fetchone()
+
+        if not all([rooms_table_exists, members_table_exists, messages_table_exists]):
+            return JsonResponse({
+                "success": True,
+                "messages": [],
+                "total": 0
+            })
+
+        chat_room = ChatRoom.objects.get(pk=room_id)
+        
+        # Check if user is a member
+        membership = ChatRoomMember.objects.filter(chat_room=chat_room, user=user, is_active=True).first()
+        if not membership:
+            return _error("يجب أن تكون عضواً في الكروب لرؤية الرسائل", status=403)
+
+        # Get messages
+        messages = ChatMessage.objects.filter(
+            chat_room=chat_room, 
+            is_deleted=False
+        ).select_related("sender").order_by("created_at")
+
+        messages_data = []
+        for message in messages:
+            messages_data.append({
+                "id": message.id,
+                "content": message.content,
+                "messageType": message.message_type,
+                "fileUrl": message.file_url,
+                "fileName": message.file_name,
+                "fileSize": message.file_size,
+                "isEdited": message.is_edited,
+                "sender": {
+                    "id": message.sender.id,
+                    "fullName": message.sender.full_name,
+                    "username": message.sender.username,
+                    "role": message.sender.role
+                },
+                "replyTo": message.reply_to_id,
+                "createdAt": message.created_at.isoformat()
+            })
+
+        return JsonResponse({
+            "success": True,
+            "messages": messages_data,
+            "total": len(messages_data)
+        })
+
+    except ChatRoom.DoesNotExist:
+        return _error("الكروب غير موجود", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error getting messages: {exc}")
+        return JsonResponse({
+            "success": True,
+            "messages": [],
+            "total": 0
         })
 
 

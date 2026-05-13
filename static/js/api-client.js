@@ -274,6 +274,64 @@ async function apiApproveAllRequests() {
     }
 }
 
+async function apiCreateChatRoom(chatRoomData) {
+    try {
+        const response = await apiRequest('/chat-rooms', {
+            method: 'POST',
+            body: JSON.stringify(chatRoomData)
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+}
+
+async function apiGetChatRooms() {
+    try {
+        const response = await apiRequest('/chat-rooms/list', {
+            method: 'GET'
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message, chatRooms: [] };
+    }
+}
+
+async function apiJoinChatRoom(roomId) {
+    try {
+        const response = await apiRequest(`/chat-rooms/${roomId}/join`, {
+            method: 'POST',
+            body: JSON.stringify({})
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+}
+
+async function apiSendChatMessage(roomId, messageData) {
+    try {
+        const response = await apiRequest(`/chat-rooms/${roomId}/messages`, {
+            method: 'POST',
+            body: JSON.stringify(messageData)
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+}
+
+async function apiGetChatMessages(roomId) {
+    try {
+        const response = await apiRequest(`/chat-rooms/${roomId}/messages/list`, {
+            method: 'GET'
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message, messages: [] };
+    }
+}
+
 // ==================== SUPERVISOR MESSAGES ====================
 
 async function apiGetSupervisorMessages(employeeId = null) {

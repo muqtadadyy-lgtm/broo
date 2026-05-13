@@ -2989,7 +2989,9 @@ async function createChatRoom() {
     }
     
     try {
-        // Create enhanced chat room data
+        console.log('[CHAT ROOM] Creating chat room...');
+        
+        // Create chat room data for API
         const chatRoomData = {
             name: name,
             description: description,
@@ -3009,41 +3011,41 @@ async function createChatRoom() {
             autoMod: autoMod,
             readOnly: readOnly,
             members: chatRoomMembers.map(member => ({
-                ...member,
-                role: member.id === parseInt(adminRole) ? 'admin' : 'member',
-                joinedAt: new Date().toISOString()
+                id: member.id,
+                role: member.id === parseInt(adminRole) ? 'admin' : 'member'
             })),
-            adminId: adminRole || chatRoomMembers[0].id,
-            createdBy: currentUser.fullName,
-            createdAt: new Date().toISOString(),
-            lastActivity: new Date().toISOString(),
-            messageCount: 0,
-            fileCount: 0,
-            stats: {
-                currentMembers: chatRoomMembers.length,
-                todayMessages: Math.floor(Math.random() * 50),
-                sharedFiles: Math.floor(Math.random() * 20),
-                activityRate: 'عالي'
-            }
+            adminId: adminRole || chatRoomMembers[0].id
         };
         
-        // Here you would normally send to API
-        showNotification('جاري إنشاء الكروب المتقدم...', 'info');
+        console.log('[CHAT ROOM] Sending data:', chatRoomData);
+        showNotification('جاري إنشاء الكروب...', 'info');
         
-        // Simulate creation with enhanced features
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Send to real API
+        const result = await apiCreateChatRoom(chatRoomData);
         
-        const typeText = type === 'general' ? 'عام' : 
-                        type === 'contest' ? 'مسابقة' : 
-                        type === 'study' ? 'دراسة' : 
-                        type === 'announcement' ? 'إعلانات' : 
-                        type === 'private' ? 'خاص' : 
-                        type === 'support' ? 'دعم فني' : 'مشروع';
+        console.log('[CHAT ROOM] API result:', result);
         
-        const privacyText = privacy === 'public' ? 'عام' : 
-                           privacy === 'private' ? 'خاص' : 'دعوة فقط';
-        
-        showNotification(`تم إنشاء كروب "${name}" (${typeText} - ${privacyText}) بنجاح`, 'success');
+        if (result.success) {
+            const typeText = type === 'general' ? 'عام' : 
+                            type === 'contest' ? 'مسابقة' : 
+                            type === 'study' ? 'دراسة' : 
+                            type === 'announcement' ? 'إعلانات' : 
+                            type === 'private' ? 'خاص' : 
+                            type === 'support' ? 'دعم فني' : 'مشروع';
+            
+            const privacyText = privacy === 'public' ? 'عام' : 
+                               privacy === 'private' ? 'خاص' : 'دعوة فقط';
+            
+            showNotification(`تم إنشاء كروب "${name}" (${typeText} - ${privacyText}) بنجاح`, 'success');
+            
+            // Clear the chat room members array after successful creation
+            chatRoomMembers = [];
+            updateChatRoomStats();
+        } else {
+            console.error('[CHAT ROOM] Creation failed:', result.message);
+            showNotification(result.message || 'فشل إنشاء الكروب', 'error');
+            return;
+        }
         
         // Clear form
         document.getElementById('chatRoomName').value = '';
