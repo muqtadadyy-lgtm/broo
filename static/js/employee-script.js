@@ -3079,15 +3079,22 @@ async function loadJoinRequests() {
 }
 
 function displayJoinRequests() {
-    const requestsList = document.getElementById('joinRequestsList');
+    // Show join requests section only for managers
+    const joinRequestsSection = document.getElementById('joinRequestsSection');
+    if (joinRequestsSection) {
+        joinRequestsSection.style.display = currentUser.role === 'employee' ? 'block' : 'none';
+    }
+    
+    const requestsList = document.getElementById('chatJoinRequestsList');
     
     if (!requestsList) {
-        console.error('[JOIN REQUESTS] Requests list element not found');
+        console.error('[JOIN REQUESTS] Chat requests list element not found');
         return;
     }
     
     if (joinRequests.length === 0) {
         requestsList.innerHTML = '<p class="no-requests">لا توجد طلبات انضمام معلقة</p>';
+        updateChatJoinRequestsCount();
         return;
     }
     
@@ -3113,10 +3120,19 @@ function displayJoinRequests() {
             </div>
         </div>
     `).join('');
+    
+    updateChatJoinRequestsCount();
 }
 
 function updateJoinRequestsCount() {
     const countElement = document.getElementById('pendingJoinRequests');
+    if (countElement) {
+        countElement.textContent = joinRequests.length;
+    }
+}
+
+function updateChatJoinRequestsCount() {
+    const countElement = document.getElementById('chatPendingRequests');
     if (countElement) {
         countElement.textContent = joinRequests.length;
     }
