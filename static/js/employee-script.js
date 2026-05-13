@@ -3962,7 +3962,7 @@ async function createChatRoom() {
             name: name,
             description: description,
             type: type || 'general',
-            maxMembers: maxMembers || 50,
+            maxMembers: parseInt(maxMembers) || 50,
             privacy: privacy || 'public',
             members: chatRoomMembers || []
         };

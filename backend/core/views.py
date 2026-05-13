@@ -2229,6 +2229,18 @@ def create_chat_room(request: HttpRequest) -> JsonResponse:
     """
     print("[CHAT_ROOM] Starting chat room creation")
     
+    # Check if chat room tables exist
+    from django.db import connection
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_rooms';")
+        rooms_table_exists = cursor.fetchone()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_members';")
+        members_table_exists = cursor.fetchone()
+
+    if not rooms_table_exists or not members_table_exists:
+        print("[CHAT_ROOM] Chat room tables do not exist")
+        return _error("نظام الكروبات غير متاح حالياً", status=503)
+    
     user_id = get_jwt_identity(request)
     try:
         creator = User.objects.get(pk=user_id)
