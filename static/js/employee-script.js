@@ -2959,36 +2959,62 @@ function updateMemberList() {
 }
 
 async function createChatRoom() {
-    const name = document.getElementById('chatRoomName').value.trim();
-    const description = document.getElementById('chatRoomDescription').value.trim();
-    const type = document.getElementById('chatRoomType').value;
-    const maxMembers = document.getElementById('chatRoomMaxMembers').value;
-    const privacy = document.getElementById('chatRoomPrivacy').value;
-    const status = document.getElementById('chatRoomStatus').value;
-    const rules = document.getElementById('chatRoomRules').value.trim();
-    const tags = document.getElementById('chatRoomTags').value.trim();
-    const messageRetention = document.getElementById('chatRoomMessageRetention').value;
-    const fileSharing = document.getElementById('chatRoomFileSharing').value;
-    const maxFileSize = document.getElementById('chatRoomMaxFileSize').value;
-    const allowedFileTypes = document.getElementById('chatRoomAllowedFileTypes').value;
-    const welcomeMessage = document.getElementById('chatRoomWelcomeMessage').value.trim();
-    const notifications = document.getElementById('chatRoomNotifications').checked;
-    const encryption = document.getElementById('chatRoomEncryption').checked;
-    const autoMod = document.getElementById('chatRoomAutoMod').checked;
-    const readOnly = document.getElementById('chatRoomReadOnly').checked;
-    const adminRole = document.getElementById('adminRole').value;
-    
-    if (!name || !description) {
-        showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
-        return;
-    }
-    
-    if (chatRoomMembers.length === 0) {
-        showNotification('الرجاء إضافة عضو واحد على الأقل', 'error');
-        return;
-    }
+    console.log('[CHAT ROOM] createChatRoom function called');
     
     try {
+        // Check if elements exist
+        const nameElement = document.getElementById('chatRoomName');
+        const descElement = document.getElementById('chatRoomDescription');
+        
+        if (!nameElement || !descElement) {
+            console.error('[CHAT ROOM] Required elements not found');
+            showNotification('عناصر النموذج غير موجودة', 'error');
+            return;
+        }
+        
+        const name = nameElement.value.trim();
+        const description = descElement.value.trim();
+        const type = document.getElementById('chatRoomType')?.value || 'general';
+        const maxMembers = document.getElementById('chatRoomMaxMembers')?.value || '50';
+        const privacy = document.getElementById('chatRoomPrivacy')?.value || 'public';
+        const status = document.getElementById('chatRoomStatus')?.value || 'active';
+        const rules = document.getElementById('chatRoomRules')?.value?.trim() || '';
+        const tags = document.getElementById('chatRoomTags')?.value?.trim() || '';
+        const messageRetention = document.getElementById('chatRoomMessageRetention')?.value || 'forever';
+        const fileSharing = document.getElementById('chatRoomFileSharing')?.value || 'enabled';
+        const maxFileSize = document.getElementById('chatRoomMaxFileSize')?.value || '10';
+        const allowedFileTypes = document.getElementById('chatRoomAllowedFileTypes')?.value || 'pdf, doc, docx, jpg, png, zip';
+        const welcomeMessage = document.getElementById('chatRoomWelcomeMessage')?.value?.trim() || '';
+        const notifications = document.getElementById('chatRoomNotifications')?.checked || false;
+        const encryption = document.getElementById('chatRoomEncryption')?.checked || false;
+        const autoMod = document.getElementById('chatRoomAutoMod')?.checked || false;
+        const readOnly = document.getElementById('chatRoomReadOnly')?.checked || false;
+        const adminRole = document.getElementById('adminRole')?.value || '';
+        
+        console.log('[CHAT ROOM] Form data collected:', {
+            name, description, type, maxMembers, privacy, status,
+            chatRoomMembersLength: chatRoomMembers?.length || 0
+        });
+        
+        if (!name || !description) {
+            showNotification('الرجاء ملء جميع الحقول المطلوبة', 'error');
+            return;
+        }
+        
+        // If no members added, automatically add the creator as a member
+        if (!chatRoomMembers || chatRoomMembers.length === 0) {
+            console.log('[CHAT ROOM] No members found, adding creator as member');
+            chatRoomMembers = [{
+                id: currentUser.id,
+                name: currentUser.fullName,
+                username: currentUser.username,
+                email: currentUser.email,
+                role: currentUser.role === 'employee' ? 'admin' : 'member'
+            }];
+            console.log('[CHAT ROOM] Added creator as member:', chatRoomMembers);
+        }
+        
+        console.log('[CHAT ROOM] All validations passed, proceeding with creation...');
         console.log('[CHAT ROOM] Creating chat room...');
         
         // Create chat room data for API
