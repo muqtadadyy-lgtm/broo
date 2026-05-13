@@ -2883,12 +2883,23 @@ async function loadChatRooms() {
         
         if (result.success) {
             chatRooms = result.chatRooms || [];
+            console.log('[CHAT ROOMS] Loaded rooms:', chatRooms.length, 'for user:', currentUser.role);
             displayChatRooms();
         } else {
             console.error('[CHAT ROOMS] Failed to load chat rooms:', result.message);
+            // Fallback: show empty state
+            const roomsList = document.getElementById('chatRoomsList');
+            if (roomsList) {
+                roomsList.innerHTML = '<p class="no-rooms">لا توجد كروبات متاحة</p>';
+            }
         }
     } catch (error) {
         console.error('[CHAT ROOMS] Error loading chat rooms:', error);
+        // Fallback: show empty state
+        const roomsList = document.getElementById('chatRoomsList');
+        if (roomsList) {
+            roomsList.innerHTML = '<p class="no-rooms">خطأ في تحميل الكروبات</p>';
+        }
     }
 }
 
