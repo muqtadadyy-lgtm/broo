@@ -2817,53 +2817,63 @@ def get_chat_messages(request: HttpRequest, room_id: int) -> JsonResponse:
         })
 
 @csrf_exempt
+@jwt_required
 @require_http_methods(["DELETE"])
 def remove_member_from_chat_room(request: HttpRequest, room_id: int, user_id: int) -> JsonResponse:
-    """Remove a member from a chat room"""
+    """إزالة عضو من كروب الدردشة"""
+    admin_id = get_jwt_identity(request)
     try:
-        if not request.user.is_authenticated:
-            return _error("يجب تسجيل الدخول", status=401)
+        admin = User.objects.get(pk=admin_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
 
-        # Check if user is employee/manager
-        if request.user.role != 'employee':
-            return _error("غير مصرح لك بإزالة الأعضاء", status=403)
+    if admin.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
 
+    try:
+        # Check if tables exist
+        from django.db import connection
         with connection.cursor() as cursor:
-            # Check if room exists and user is a member
-            cursor.execute("""
-                SELECT cr, crm 
-                FROM core_chatroom cr
-                LEFT JOIN core_chatroommember crm ON cr.id = crm.room_id AND crm.user_id = %s
-                WHERE cr.id = %s
-            """, [user_id, room_id])
-            
-            result = cursor.fetchone()
-            if not result:
-                return _error("الكروب غير موجود", status=404)
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_rooms';")
+            rooms_table_exists = cursor.fetchone()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_members';")
+            members_table_exists = cursor.fetchone()
 
-            room_data, member_data = result
+        if not rooms_table_exists or not members_table_exists:
+            return _error("نظام الكروبات غير متاح حالياً", status=503)
 
-            if not member_data:
-                return _error("المستخدم ليس عضواً في هذا الكروب", status=404)
+        chat_room = ChatRoom.objects.get(pk=room_id)
+        
+        # Check if admin is the room admin
+        if chat_room.admin_id != admin_id:
+            return _error("يجب أن تكون مدير الكروب لإزالة الأعضاء", status=403)
+        
+        # Check if target user is a member
+        membership = ChatRoomMember.objects.filter(chat_room=chat_room, user_id=user_id, is_active=True).first()
+        if not membership:
+            return _error("المستخدم ليس عضواً في هذا الكروب", status=404)
+        
+        # Deactivate membership instead of deleting
+        membership.is_active = False
+        membership.save()
+        
+        # Send system message about removal
+        ChatMessage.objects.create(
+            chat_room=chat_room,
+            sender=admin,
+            content=f"تم إزالة {membership.user.full_name} من الكروب بواسطة المدير",
+            message_type="system"
+        )
+        
+        return JsonResponse({
+            "success": True,
+            "message": "تم إزالة العضو من الكروب بنجاح"
+        })
 
-            # Remove the member
-            cursor.execute("""
-                DELETE FROM core_chatroommember 
-                WHERE room_id = %s AND user_id = %s
-            """, [room_id, user_id])
-
-            # Log the removal (optional)
-            cursor.execute("""
-                INSERT INTO core_chatroommember (room_id, user_id, role, joined_at, is_active, left_at)
-                VALUES (%s, %s, 'removed', %s, false, %s)
-            """, [room_id, user_id, timezone.now(), timezone.now()])
-
-            return JsonResponse({
-                "success": True,
-                "message": "تم إزالة العضو من الكروب بنجاح"
-            })
-
+    except ChatRoom.DoesNotExist:
+        return _error("الكروب غير موجود", status=404)
     except Exception as exc:
-        return _error(f"حدث خطأ: {exc}", status=500)
+        print(f"[CHAT_ROOM] Error removing member: {exc}")
+        return _error(f"حدث خطأ أثناء إزالة العضو: {exc}", status=500)
 
 

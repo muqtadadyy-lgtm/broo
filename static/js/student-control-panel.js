@@ -217,34 +217,43 @@ function closeStudentChatRooms() {
     document.getElementById('studentChatRoomsModal').style.display = 'none';
 }
 
-function loadStudentChatRooms() {
-    // Get only admin-created chat rooms from the main system
-    // Filter out test/demo rooms and show only official rooms
-    studentChatRooms = [];
-    
-    // Check if there are any admin-created rooms in the main chat system
-    if (typeof createdChatRooms !== 'undefined' && createdChatRooms.length > 0) {
-        // Only show rooms that were created by admin
-        studentChatRooms = createdChatRooms.filter(room => 
-            room.createdBy === 'admin' || 
-            room.type === 'official' ||
-            room.official === true
-        ).map(room => ({
-            id: room.id,
-            name: room.name,
-            type: room.type || 'general',
-            members: room.members ? room.members.length : 0,
-            lastActivity: room.lastActivity || new Date().toISOString(),
-            unreadCount: room.unreadCount || 0,
-            description: room.description || ''
-        }));
-    }
-    
-    // If no admin rooms exist, show empty state
-    if (studentChatRooms.length === 0) {
+async function loadStudentChatRooms() {
+    // Load chat rooms from the API
+    try {
+        const result = await apiGetChatRooms();
+        
+        if (result.success && result.chatRooms) {
+            // Filter to show only public/official rooms for students
+            studentChatRooms = result.chatRooms
+                .filter(room => 
+                    room.privacy === 'public' || 
+                    room.type === 'general' ||
+                    room.type === 'official'
+                )
+                .map(room => ({
+                    id: room.id,
+                    name: room.name,
+                    type: room.type || 'general',
+                    members: room.memberCount || 0,
+                    lastActivity: room.lastActivity || new Date().toISOString(),
+                    unreadCount: 0,
+                    description: room.description || '',
+                    isMember: room.isMember || false
+                }));
+        } else {
+            studentChatRooms = [];
+        }
+        
+        // If no rooms exist, show empty state
+        if (studentChatRooms.length === 0) {
+            showEmptyChatRoomsState();
+        } else {
+            displayStudentChatRooms();
+        }
+    } catch (error) {
+        console.error('[STUDENT CHAT] Error loading chat rooms:', error);
+        studentChatRooms = [];
         showEmptyChatRoomsState();
-    } else {
-        displayStudentChatRooms();
     }
 }
 
@@ -286,12 +295,32 @@ function displayStudentChatRooms() {
     `).join('');
 }
 
-function joinChatRoom(roomId) {
+async function joinChatRoom(roomId) {
     const room = studentChatRooms.find(r => r.id === roomId);
     if (room) {
-        studentCurrentRoom = room;
-        openStudentChatInterface();
-        closeStudentChatRooms();
+        // If already a member, just open the chat
+        if (room.isMember) {
+            studentCurrentRoom = room;
+            openStudentChatInterface();
+            closeStudentChatRooms();
+        } else {
+            // Send join request
+            try {
+                showNotification('جاري إرسال طلب الانضمام...', 'info');
+                const result = await apiJoinChatRoom(roomId);
+                
+                if (result.success) {
+                    showNotification('تم إرسال طلب الانضمام بنجاح', 'success');
+                    // Reload chat rooms to update status
+                    await loadStudentChatRooms();
+                } else {
+                    showNotification(result.message || 'فشل إرسال طلب الانضمام', 'error');
+                }
+            } catch (error) {
+                console.error('[STUDENT CHAT] Error joining chat room:', error);
+                showNotification('حدث خطأ أثناء الانضمام للكروب', 'error');
+            }
+        }
     }
 }
 

@@ -54,6 +54,5 @@ urlpatterns = [
     path("chat-rooms/<int:room_id>/messages/list", views.get_chat_messages, name="get_chat_messages"),
     path("chat-rooms/join-requests", views.get_chat_room_join_requests, name="get_chat_room_join_requests"),
     path('chat-rooms/join-requests/<int:request_id>', views.process_chat_room_join_request, name='process_chat_room_join_request'),
-    # Temporarily commented out - will be re-enabled after server restart with updated code
-    # path('chat-rooms/<int:room_id>/members/<int:user_id>', views.remove_member_from_chat_room, name='remove_member_from_chat_room'),
+    path('chat-rooms/<int:room_id>/members/<int:user_id>', views.remove_member_from_chat_room, name='remove_member_from_chat_room'),
 ]
