@@ -235,10 +235,10 @@ def register(request: HttpRequest) -> JsonResponse:
         if not any(char in data["fullName"] for char in arabic_chars):
             return _error("يجب أن يكون الاسم الكامل باللغة العربية للطلاب", status=400)
         
-        # Check for university email pattern
+        # Email validation - accept any valid email format
         email = data["email"].lower()
-        if not ('.edu' in email or 'university' in email):
-            return _error("يجب استخدام بريد جامعي (.edu أو university)", status=400)
+        if '@' not in email or '.' not in email:
+            return _error("البريد الإلكتروني غير صالح", status=400)
         
         # Exclude common test patterns
         test_patterns = ['test', 'demo', 'example', 'fake', 'sample', 'temp']
@@ -1918,8 +1918,8 @@ def get_all_users(request: HttpRequest) -> JsonResponse:
             'Test User', 'Demo User', 'Test Student', 'Demo Employee',
             'أحمد محمد', 'فاطمة علي', 'محمد خالد', 'سارة أحمد', 'عمر خالد'
         ]),
-        # Only include users with valid university emails
-        Q(email__icontains='.edu') | Q(email__icontains='university'),
+        # Only include users with valid email format (any email accepted)
+        Q(email__contains='@') & Q(email__contains='.'),
         # Only include users created in the last 6 months (active students)
         created_at__gte=timezone.now() - timedelta(days=180),
         created_at__lte=timezone.now()
@@ -1980,8 +1980,8 @@ def _is_real_user(user: User) -> bool:
     if not any(char in user.full_name for char in arabic_chars):
         return False
     
-    # Must have valid university email pattern
-    if not ('.edu' in user.email.lower() or 'university' in user.email.lower()):
+    # Must have valid email format (any email accepted)
+    if '@' not in user.email or '.' not in user.email:
         return False
     
     # Exclude common test emails
