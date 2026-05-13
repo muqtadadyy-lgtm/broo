@@ -1646,21 +1646,31 @@ def upload_image(request: HttpRequest) -> JsonResponse:
 
     try:
         # Create uploads directory if it doesn't exist
-        uploads_dir = Path(settings.BASE_DIR).parent / "static" / "uploads" / "images"
+        # Use absolute path to ensure correct directory resolution
+        base_dir = Path(__file__).resolve().parent.parent.parent  # Go up from core/backend to project root
+        uploads_dir = base_dir / "static" / "uploads" / "images"
         uploads_dir.mkdir(parents=True, exist_ok=True)
+        
+        print(f"[UPLOAD] Upload directory: {uploads_dir}")
+        print(f"[UPLOAD] Upload directory exists: {uploads_dir.exists()}")
         
         # Generate unique filename
         file_extension = Path(uploaded_file.name).suffix
         unique_filename = f"image_{user_id}_{int(timezone.now().timestamp())}{file_extension}"
         file_path = uploads_dir / unique_filename
         
+        print(f"[UPLOAD] File path: {file_path}")
+        
         # Save the file
         with open(file_path, 'wb') as f:
             for chunk in uploaded_file.chunks():
                 f.write(chunk)
         
+        print(f"[UPLOAD] File saved successfully: {file_path.exists()}")
+        
         # Return file URL
         file_url = f"/static/uploads/images/{unique_filename}"
+        print(f"[UPLOAD] File URL: {file_url}")
         
         return JsonResponse({
             "success": True,
@@ -1670,6 +1680,9 @@ def upload_image(request: HttpRequest) -> JsonResponse:
         }, status=201)
         
     except Exception as exc:
+        print(f"[UPLOAD] Error during upload: {exc}")
+        import traceback
+        traceback.print_exc()
         return _error(f"حدث خطأ أثناء رفع الصورة: {exc}", status=500)
 
 

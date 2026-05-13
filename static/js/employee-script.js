@@ -968,9 +968,9 @@ function handleImageSelect(event) {
             return;
         }
         
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            showNotification('حجم الصورة يجب أن يكون أقل من 5 ميجابايت', 'error');
+        // Validate file size (max 10MB to match backend)
+        if (file.size > 10 * 1024 * 1024) {
+            showNotification('حجم الصورة يجب أن يكون أقل من 10 ميجابايت', 'error');
             event.target.value = '';
             return;
         }
@@ -1015,12 +1015,17 @@ async function publishImageAnnouncement() {
     }
     
     try {
+        console.log('[IMAGE UPLOAD] Starting upload...');
+        console.log('[IMAGE UPLOAD] Selected file:', selectedImageFile);
         showNotification('جاري رفع الصورة...', 'info');
         
         // Upload image to server
         const uploadResult = await apiUploadImage(selectedImageFile);
         
+        console.log('[IMAGE UPLOAD] Upload result:', uploadResult);
+        
         if (!uploadResult.success) {
+            console.error('[IMAGE UPLOAD] Upload failed:', uploadResult.message);
             showNotification(uploadResult.message || 'فشل رفع الصورة', 'error');
             return;
         }
