@@ -3227,13 +3227,28 @@ function openGroupsManagementModal() {
         console.log('[GROUPS MGMT] Modal found, current display:', modal.style.display);
         console.log('[GROUPS MGMT] Modal classes:', modal.className);
         
+        // Close any other open modals first
+        document.querySelectorAll('.modal.active, .modal[style*="display: flex"]').forEach(otherModal => {
+            if (otherModal.id !== 'groupsManagementModal') {
+                otherModal.style.display = 'none';
+                otherModal.classList.remove('active');
+            }
+        });
+        
         // Force display with multiple methods
         modal.style.display = 'flex';
         modal.style.visibility = 'visible';
         modal.style.opacity = '1';
         modal.style.zIndex = '9999';
+        modal.classList.add('active');
         
         console.log('[GROUPS MGMT] Modal displayed, new display:', modal.style.display);
+        
+        // Show loading state
+        const content = document.getElementById('groupsContent');
+        if (content) {
+            content.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل البيانات...</p></div>';
+        }
         
         // Load data after modal is displayed
         setTimeout(() => {
@@ -3262,13 +3277,25 @@ async function loadGroupsData() {
     try {
         // Load chat rooms
         const roomsResult = await apiGetChatRooms();
+        console.log('[GROUPS MGMT] Chat rooms API result:', roomsResult);
+        
         if (roomsResult.success) {
             groupsData = roomsResult.chatRooms || [];
             console.log('[GROUPS MGMT] Loaded groups:', groupsData.length);
+        } else {
+            console.log('[GROUPS MGMT] API returned error, using empty data');
+            groupsData = [];
+            // Show error message but continue with empty data
+            showNotification('لم يتم تحميل بيانات الكروبات: ' + (roomsResult.message || 'خطأ غير معروف'), 'warning');
         }
 
         // Load join requests
-        await loadJoinRequests();
+        try {
+            await loadJoinRequests();
+        } catch (joinError) {
+            console.log('[GROUPS MGMT] Error loading join requests, continuing...');
+            joinRequests = [];
+        }
 
         // Update statistics
         updateGroupsStatistics();
@@ -3278,6 +3305,23 @@ async function loadGroupsData() {
 
     } catch (error) {
         console.error('[GROUPS MGMT] Error loading groups data:', error);
+        groupsData = [];
+        joinRequests = [];
+        
+        // Show error in content area
+        const content = document.getElementById('groupsContent');
+        if (content) {
+            content.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>حدث خطأ في تحميل البيانات</p>
+                    <button class="primary-btn" onclick="loadGroupsData()">
+                        <i class="fas fa-sync-alt"></i> إعادة المحاولة
+                    </button>
+                </div>
+            `;
+        }
+        
         showNotification('خطأ في تحميل بيانات الكروبات', 'error');
     }
 }
@@ -3613,6 +3657,45 @@ function viewGroupDetails(groupId) {
     setTimeout(() => {
         selectChatRoom(groupId);
     }, 500);
+}
+
+function manageGroupMembers(groupId) {
+    // Open members management for the group
+    console.log('[GROUPS MGMT] Managing members for group:', groupId);
+    showNotification('إدارة الأعضاء قيد التطوير', 'info');
+}
+
+function refreshGroupsData() {
+    console.log('[GROUPS MGMT] Refreshing groups data...');
+    loadGroupsData();
+}
+
+function exportGroupsData() {
+    console.log('[GROUPS MGMT] Exporting groups data...');
+    
+    if (groupsData.length === 0) {
+        showNotification('لا توجد بيانات للتصدير', 'warning');
+        return;
+    }
+    
+    let csv = 'اسم الكروب,الوصف,نوع الكروب,الخصوصية,الحالة,عدد الأعضاء,عدد الرسائل,المنشئ,تاريخ الإنشاء\n';
+    
+    groupsData.forEach(group => {
+        csv += `"${group.name}","${group.description || ''}","${getTypeText(group.type)}","${getPrivacyText(group.privacy)}","${getStatusText(group.status)}","${group.memberCount || 0}","${group.messageCount || 0}","${group.createdBy || ''}","${formatDate(group.createdAt)}"\n`;
+    });
+
+    // Download CSV
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `groups_data_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showNotification('تم تصدير بيانات الكروبات بنجاح', 'success');
 }
 
 function manageGroupMembers(groupId) {
