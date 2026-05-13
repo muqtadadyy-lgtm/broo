@@ -53,5 +53,6 @@ urlpatterns = [
     path("chat-rooms/<int:room_id>/messages", views.send_chat_message, name="send_chat_message"),
     path("chat-rooms/<int:room_id>/messages/list", views.get_chat_messages, name="get_chat_messages"),
     path("chat-rooms/join-requests", views.get_chat_room_join_requests, name="get_chat_room_join_requests"),
-    path("chat-rooms/join-requests/<int:request_id>", views.process_chat_room_join_request, name="process_chat_room_join_request"),
+    path('chat-rooms/join-requests/<int:request_id>', views.process_chat_room_join_request, name='process_chat_room_join_request'),
+    path('chat-rooms/<int:room_id>/members/<int:user_id>', views.remove_member_from_chat_room, name='remove_member_from_chat_room'),
 ]

@@ -332,6 +332,17 @@ async function apiGetChatMessages(roomId) {
     }
 }
 
+async function apiRemoveMemberFromChatRoom(roomId, userId) {
+    try {
+        const response = await apiRequest(`/chat-rooms/${roomId}/members/${userId}`, {
+            method: 'DELETE'
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+}
+
 // ==================== SUPERVISOR MESSAGES ====================
 
 async function apiGetSupervisorMessages(employeeId = null) {

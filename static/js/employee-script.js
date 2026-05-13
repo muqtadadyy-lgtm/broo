@@ -3441,6 +3441,10 @@ function displayAllMembers(container) {
     }
 
     container.innerHTML = `
+        <div class="members-management-header">
+            <h3>إدارة أعضاء الكروبات</h3>
+            <p>يمكنك إزالة الأعضاء من الكروبات من هنا</p>
+        </div>
         <div class="members-table">
             <table>
                 <thead>
@@ -3470,8 +3474,8 @@ function displayAllMembers(container) {
                             <td><span class="role-badge">${getRoleText(member.role)}</span></td>
                             <td>${formatDate(member.joinedAt)}</td>
                             <td>
-                                <button class="danger-btn" onclick="removeMemberFromGroup(${member.groupId}, '${member.userId}')">
-                                    <i class="fas fa-user-minus"></i> إزالة
+                                <button class="delete-member-btn" onclick="removeMemberFromGroup(${member.groupId}, '${member.userId}')" title="حذف من إدارة كروب الدردشة">
+                                    <i class="fas fa-trash-alt"></i> حذف من إدارة كروب الدردشة
                                 </button>
                             </td>
                         </tr>
@@ -3619,11 +3623,28 @@ function manageGroupMembers(groupId) {
     }, 500);
 }
 
-function removeMemberFromGroup(groupId, userId) {
+async function removeMemberFromGroup(groupId, userId) {
     if (confirm('هل أنت متأكد من إزالة هذا العضو من الكروب؟')) {
-        // Implementation for removing member
-        showNotification('تم إزالة العضو بنجاح', 'success');
-        refreshGroupsData();
+        try {
+            console.log('[GROUPS MGMT] Removing member from group:', groupId, userId);
+            
+            const result = await apiRemoveMemberFromChatRoom(groupId, userId);
+            
+            if (result.success) {
+                showNotification('تم إزالة العضو من الكروب بنجاح', 'success');
+                refreshGroupsData();
+                
+                // Also refresh chat rooms data
+                if (typeof loadChatRooms === 'function') {
+                    await loadChatRooms();
+                }
+            } else {
+                showNotification(result.message || 'فشل في إزالة العضو', 'error');
+            }
+        } catch (error) {
+            console.error('[GROUPS MGMT] Error removing member:', error);
+            showNotification('حدث خطأ في إزالة العضو', 'error');
+        }
     }
 }
 
