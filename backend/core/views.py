@@ -2816,4 +2816,54 @@ def get_chat_messages(request: HttpRequest, room_id: int) -> JsonResponse:
             "total": 0
         })
 
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def remove_member_from_chat_room(request: HttpRequest, room_id: int, user_id: int) -> JsonResponse:
+    """Remove a member from a chat room"""
+    try:
+        if not request.user.is_authenticated:
+            return _error("يجب تسجيل الدخول", status=401)
+
+        # Check if user is employee/manager
+        if request.user.role != 'employee':
+            return _error("غير مصرح لك بإزالة الأعضاء", status=403)
+
+        with connection.cursor() as cursor:
+            # Check if room exists and user is a member
+            cursor.execute("""
+                SELECT cr, crm 
+                FROM core_chatroom cr
+                LEFT JOIN core_chatroommember crm ON cr.id = crm.room_id AND crm.user_id = %s
+                WHERE cr.id = %s
+            """, [user_id, room_id])
+            
+            result = cursor.fetchone()
+            if not result:
+                return _error("الكروب غير موجود", status=404)
+
+            room_data, member_data = result
+
+            if not member_data:
+                return _error("المستخدم ليس عضواً في هذا الكروب", status=404)
+
+            # Remove the member
+            cursor.execute("""
+                DELETE FROM core_chatroommember 
+                WHERE room_id = %s AND user_id = %s
+            """, [room_id, user_id])
+
+            # Log the removal (optional)
+            cursor.execute("""
+                INSERT INTO core_chatroommember (room_id, user_id, role, joined_at, is_active, left_at)
+                VALUES (%s, %s, 'removed', %s, false, %s)
+            """, [room_id, user_id, timezone.now(), timezone.now()])
+
+            return JsonResponse({
+                "success": True,
+                "message": "تم إزالة العضو من الكروب بنجاح"
+            })
+
+    except Exception as exc:
+        return _error(f"حدث خطأ: {exc}", status=500)
+
 
