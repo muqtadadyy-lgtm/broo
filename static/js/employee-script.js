@@ -2989,7 +2989,9 @@ async function createChatRoom() {
         const encryption = document.getElementById('chatRoomEncryption')?.checked || false;
         const autoMod = document.getElementById('chatRoomAutoMod')?.checked || false;
         const readOnly = document.getElementById('chatRoomReadOnly')?.checked || false;
-        const adminRole = document.getElementById('adminRole')?.value || '';
+        const adminRoleElement = document.getElementById('adminRole');
+        const adminRole = adminRoleElement ? adminRoleElement.value : '';
+        console.log('[CHAT ROOM] Admin role element:', adminRoleElement, 'value:', adminRole);
         
         console.log('[CHAT ROOM] Form data collected:', {
             name, description, type, maxMembers, privacy, status,
