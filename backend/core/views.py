@@ -2244,6 +2244,17 @@ def create_chat_room(request: HttpRequest) -> JsonResponse:
     if not data["members"] or len(data["members"]) == 0:
         return _error("يجب إضافة عضو واحد على الأقل", status=400)
 
+    # Validate member data
+    for i, member in enumerate(data["members"]):
+        if not isinstance(member, dict) or "id" not in member:
+            return _error(f"بيانات العضو {i+1} غير صالحة", status=400)
+        
+        # Check if user exists
+        try:
+            User.objects.get(pk=member["id"])
+        except User.DoesNotExist:
+            return _error(f"المستخدم {member['id']} غير موجود", status=400)
+
     try:
         # Handle admin assignment
         admin_user = None
@@ -2281,12 +2292,19 @@ def create_chat_room(request: HttpRequest) -> JsonResponse:
         )
 
         # Add members to the chat room
-        for member_data in data["members"]:
-            ChatRoomMember.objects.create(
-                chat_room=chat_room,
-                user_id=member_data["id"],
-                role=member_data.get("role", "member")
-            )
+        print(f"[CHAT_ROOM] Adding {len(data['members'])} members to chat room")
+        for i, member_data in enumerate(data["members"]):
+            try:
+                print(f"[CHAT_ROOM] Adding member {i+1}: {member_data}")
+                ChatRoomMember.objects.create(
+                    chat_room=chat_room,
+                    user_id=member_data["id"],
+                    role=member_data.get("role", "member")
+                )
+                print(f"[CHAT_ROOM] Member {i+1} added successfully")
+            except Exception as member_exc:
+                print(f"[CHAT_ROOM] Error adding member {i+1}: {member_exc}")
+                raise Exception(f"فشل إضافة العضو {member_data.get('id', 'unknown')}: {member_exc}")
 
         return JsonResponse({
             "success": True,
@@ -2307,6 +2325,8 @@ def create_chat_room(request: HttpRequest) -> JsonResponse:
 
     except Exception as exc:
         print(f"[CHAT_ROOM] Error creating chat room: {exc}")
+        import traceback
+        traceback.print_exc()
         return _error(f"حدث خطأ أثناء إنشاء الكروب: {exc}", status=500)
 
 @jwt_required
