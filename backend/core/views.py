@@ -2325,7 +2325,8 @@ def create_chat_room(request: HttpRequest) -> JsonResponse:
                 "maxMembers": chat_room.max_members,
                 "createdBy": creator.full_name,
                 "createdAt": chat_room.created_at.isoformat(),
-                "memberCount": ChatRoomMember.objects.filter(chat_room=chat_room, is_active=True).count()
+                "memberCount": ChatRoomMember.objects.filter(chat_room=chat_room, is_active=True).count(),
+                "isMember": True  # User is a member since this is their room
             }
         }, status=201)
 
@@ -2363,14 +2364,21 @@ def get_chat_rooms(request: HttpRequest) -> JsonResponse:
                 "total": 0
             })
 
-        # Get chat rooms where user is a member
-        user_memberships = ChatRoomMember.objects.filter(user=user, is_active=True).select_related("chat_room")
+        # Get all chat rooms and mark which ones user is a member of
+        all_rooms = ChatRoom.objects.all()
+        user_membership_ids = set(ChatRoomMember.objects.filter(user=user, is_active=True).values_list('chat_room_id', flat=True))
         
         chat_rooms = []
-        for membership in user_memberships:
-            room = membership.chat_room
+        for room in all_rooms:
             member_count = ChatRoomMember.objects.filter(chat_room=room, is_active=True).count()
             message_count = ChatMessage.objects.filter(chat_room=room, is_deleted=False).count()
+            is_member = room.id in user_membership_ids
+            
+            # Get user role if member
+            user_role = None
+            if is_member:
+                membership = ChatRoomMember.objects.filter(chat_room=room, user=user, is_active=True).first()
+                user_role = membership.role if membership else None
             
             chat_rooms.append({
                 "id": room.id,
@@ -2383,8 +2391,8 @@ def get_chat_rooms(request: HttpRequest) -> JsonResponse:
                 "memberCount": member_count,
                 "messageCount": message_count,
                 "createdBy": room.created_by.full_name,
-                "userRole": membership.role,
-                "joinedAt": membership.joined_at.isoformat(),
+                "isMember": is_member,
+                "userRole": user_role,
                 "lastActivity": room.last_activity.isoformat(),
                 "createdAt": room.created_at.isoformat()
             })

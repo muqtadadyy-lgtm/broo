@@ -1945,8 +1945,9 @@ let currentChatRoom = null;
 
 function openChatInterfaceModal() {
     document.getElementById('chatInterfaceModal').style.display = 'flex';
-    initializeChatRoom();
     toggleFabMenu();
+    // Load chat rooms when interface opens
+    loadChatRooms();
 }
 
 function closeChatInterfaceModal() {
@@ -2859,6 +2860,184 @@ function openChatRoomModal() {
 
 function closeChatRoomModal() {
     document.getElementById('chatRoomModal').style.display = 'none';
+}
+
+// Chat rooms functionality
+let selectedRoomId = null;
+let chatRooms = [];
+
+async function loadChatRooms() {
+    console.log('[CHAT ROOMS] Loading chat rooms...');
+    try {
+        const result = await apiGetChatRooms();
+        console.log('[CHAT ROOMS] API result:', result);
+        
+        if (result.success) {
+            chatRooms = result.chatRooms || [];
+            displayChatRooms();
+        } else {
+            console.error('[CHAT ROOMS] Failed to load chat rooms:', result.message);
+        }
+    } catch (error) {
+        console.error('[CHAT ROOMS] Error loading chat rooms:', error);
+    }
+}
+
+function displayChatRooms() {
+    const roomsList = document.getElementById('chatRoomsList');
+    
+    if (!roomsList) {
+        console.error('[CHAT ROOMS] Rooms list element not found');
+        return;
+    }
+    
+    if (chatRooms.length === 0) {
+        roomsList.innerHTML = '<p class="no-rooms">لا توجد كروبات متاحة</p>';
+        return;
+    }
+    
+    roomsList.innerHTML = chatRooms.map(room => `
+        <div class="room-card ${selectedRoomId === room.id ? 'selected' : ''}" onclick="selectRoom(${room.id})">
+            <div class="room-info">
+                <h5>${room.name}</h5>
+                <p class="room-description">${room.description}</p>
+                <div class="room-meta">
+                    <span class="room-type">${getRoomTypeText(room.type)}</span>
+                    <span class="room-members">${room.memberCount || 0} عضو</span>
+                </div>
+            </div>
+            <div class="room-status">
+                ${room.isMember ? 
+                    '<span class="member-badge">عضو</span>' : 
+                    '<span class="join-badge">انضم</span>'
+                }
+            </div>
+        </div>
+    `).join('');
+}
+
+function getRoomTypeText(type) {
+    const types = {
+        'general': 'عام',
+        'study': 'دراسة',
+        'project': 'مشروع',
+        'contest': 'مسابقة',
+        'announcement': 'إعلانات',
+        'support': 'دعم فني',
+        'private': 'خاص'
+    };
+    return types[type] || 'عام';
+}
+
+function selectRoom(roomId) {
+    selectedRoomId = roomId;
+    const room = chatRooms.find(r => r.id === roomId);
+    
+    if (room) {
+        // Update current room info
+        document.getElementById('currentRoomName').textContent = room.name;
+        document.getElementById('currentRoomMembersCount').textContent = room.memberCount || 0;
+        document.getElementById('onlineMembersCount').textContent = Math.floor((room.memberCount || 0) * 0.3); // Estimate online
+        
+        // Show/hide join button
+        const joinBtn = document.getElementById('joinRoomBtn');
+        if (joinBtn) {
+            joinBtn.style.display = room.isMember ? 'none' : 'block';
+        }
+        
+        // Refresh display
+        displayChatRooms();
+        
+        // Load room messages if member
+        if (room.isMember) {
+            loadRoomMessages(roomId);
+        } else {
+            // Show join prompt
+            const messagesDiv = document.getElementById('chatMessages');
+            if (messagesDiv) {
+                messagesDiv.innerHTML = `
+                    <div class="join-prompt">
+                        <i class="fas fa-user-plus"></i>
+                        <h4>انضم إلى "${room.name}"</h4>
+                        <p>${room.description}</p>
+                        <p>اضغط على "طلب الانضمام" للانضمام إلى هذا الكروب</p>
+                    </div>
+                `;
+            }
+        }
+    }
+}
+
+async function requestToJoinRoom() {
+    if (!selectedRoomId) {
+        showNotification('الرجاء اختيار كروب أولاً', 'error');
+        return;
+    }
+    
+    try {
+        console.log('[CHAT ROOMS] Requesting to join room:', selectedRoomId);
+        const result = await apiJoinChatRoom(selectedRoomId);
+        
+        if (result.success) {
+            showNotification('تم إرسال طلب الانضمام بنجاح', 'success');
+            // Refresh rooms list
+            await loadChatRooms();
+            // Select the room again to update UI
+            selectRoom(selectedRoomId);
+        } else {
+            showNotification(result.message || 'فشل إرسال طلب الانضمام', 'error');
+        }
+    } catch (error) {
+        console.error('[CHAT ROOMS] Error requesting to join room:', error);
+        showNotification('حدث خطأ في إرسال طلب الانضمام', 'error');
+    }
+}
+
+async function loadRoomMessages(roomId) {
+    try {
+        const result = await apiGetChatMessages(roomId);
+        
+        if (result.success) {
+            displayMessages(result.messages || []);
+        } else {
+            console.error('[CHAT ROOMS] Failed to load messages:', result.message);
+        }
+    } catch (error) {
+        console.error('[CHAT ROOMS] Error loading messages:', error);
+    }
+}
+
+function displayMessages(messages) {
+    const messagesDiv = document.getElementById('chatMessages');
+    if (!messagesDiv) return;
+    
+    if (messages.length === 0) {
+        messagesDiv.innerHTML = `
+            <div class="welcome-message">
+                <i class="fas fa-info-circle"></i>
+                <span>لا توجد رسائل بعد. كن أول من يرسل رسالة!</span>
+            </div>
+        `;
+        return;
+    }
+    
+    messagesDiv.innerHTML = messages.map(msg => `
+        <div class="message ${msg.sender.id === currentUser.id ? 'sent' : 'received'}">
+            <div class="message-header">
+                <strong>${msg.sender.fullName}</strong>
+                <span class="message-time">${formatMessageTime(msg.createdAt)}</span>
+            </div>
+            <div class="message-content">${msg.content}</div>
+        </div>
+    `).join('');
+    
+    // Scroll to bottom
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function formatMessageTime(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
 }
 
 let chatRoomMembers = [];
