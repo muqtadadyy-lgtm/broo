@@ -2305,7 +2305,7 @@ function displayUsers() {
                 <button class="action-btn suspend-btn" onclick="toggleUserStatus(${user.id})" title="${user.status === 'active' ? 'تعليق' : 'تفعيل'}">
                     <i class="fas ${user.status === 'active' ? 'fa-ban' : 'fa-check'}"></i>
                 </button>
-                <button class="action-btn delete-btn" onclick="deleteUser(${user.id})" title="حذف">
+                <button class="action-btn delete-btn" onclick="deleteUser(${user.id})" title="حذف المستخدم" style="display: flex !important; opacity: 1 !important; visibility: visible !important;">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -3152,7 +3152,7 @@ async function loadJoinRequests() {
         const response = await fetch('/api/chat-rooms/join-requests', {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Authorization': `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('token')}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -3255,7 +3255,7 @@ async function processJoinRequest(requestId, action) {
         const response = await fetch(`/api/chat-rooms/join-requests/${requestId}`, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Authorization': `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('token')}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ action: action })

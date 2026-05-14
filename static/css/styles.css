@@ -1358,6 +1358,9 @@ body {font-family:'Cairo',sans-serif;background:var(--bg-gradient, var(--bg-colo
 .delete-btn {
     background: var(--danger-color);
     color: white;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: flex !important;
 }
 
 .delete-btn:hover {
