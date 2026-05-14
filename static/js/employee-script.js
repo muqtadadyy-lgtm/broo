@@ -3292,75 +3292,13 @@ let groupsData = [];
 let currentGroupsTab = 'all';
 
 function openGroupsManagementModal() {
-    console.log('[GROUPS MGMT] Opening groups management modal');
-    console.log('[GROUPS MGMT] Available modals:', document.querySelectorAll('.modal').length);
-    console.log('[GROUPS MGMT] Looking for modal with ID: groupsManagementModal');
-    
-    try {
-        const modal = document.getElementById('groupsManagementModal');
-        console.log('[GROUPS MGMT] Modal element:', modal);
-        
-        if (!modal) {
-            console.error('[GROUPS MGMT] Modal not found!');
-            console.log('[GROUPS MGMT] All modals in document:', document.querySelectorAll('.modal'));
-            document.querySelectorAll('.modal').forEach(m => console.log('Found modal:', m.id, m.className));
-            showNotification('خطأ: واجهة إدارة الكروبات غير موجودة', 'error');
-            return;
-        }
-        
-        console.log('[GROUPS MGMT] Modal found, current display:', modal.style.display);
-        console.log('[GROUPS MGMT] Modal classes:', modal.className);
-        console.log('[GROUPS MGMT] Modal computed style:', window.getComputedStyle(modal).display);
-        
-        // Close any other open modals first
-        document.querySelectorAll('.modal.active, .modal[style*="display: flex"]').forEach(otherModal => {
-            console.log('[GROUPS MGMT] Closing other modal:', otherModal.id);
-            if (otherModal.id !== 'groupsManagementModal') {
-                otherModal.style.display = 'none';
-                otherModal.classList.remove('active');
-            }
-        });
-        
-        // Reset modal state
-        modal.style.removeProperty('display');
-        modal.style.removeProperty('visibility');
-        modal.style.removeProperty('opacity');
-        modal.style.removeProperty('z-index');
-        modal.classList.remove('active');
-        
-        // Force display with multiple methods
-        modal.style.display = 'flex !important';
-        modal.style.visibility = 'visible !important';
-        modal.style.opacity = '1 !important';
-        modal.style.zIndex = '9999 !important';
+    const modal = document.getElementById('groupsManagementModal');
+    if (modal) {
+        modal.style.display = 'flex';
         modal.classList.add('active');
-        
-        // Also set inline styles as fallback
-        modal.setAttribute('style', 'display: flex !important; visibility: visible !important; opacity: 1 !important; z-index: 9999 !important;');
-        
-        console.log('[GROUPS MGMT] Modal displayed, new display:', modal.style.display);
-        console.log('[GROUPS MGMT] Modal computed style after display:', window.getComputedStyle(modal).display);
-        
-        // Show loading state
-        const content = document.getElementById('groupsContent');
-        if (content) {
-            content.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل البيانات...</p></div>';
-        } else {
-            console.error('[GROUPS MGMT] Content element not found!');
-        }
-        
-        // Load data after modal is displayed
-        setTimeout(() => {
-            console.log('[GROUPS MGMT] Starting to load groups data...');
-            loadGroupsData();
-        }, 100);
-        
-        // Show success notification
-        showNotification('تم فتح واجهة إدارة الكروبات', 'success');
-        
-    } catch (error) {
-        console.error('[GROUPS MGMT] Error opening modal:', error);
-        showNotification('خطأ في فتح واجهة إدارة الكروبات: ' + error.message, 'error');
+        loadGroupsData();
+    } else {
+        showNotification('خطأ: واجهة إدارة الكروبات غير موجودة', 'error');
     }
 }
 
@@ -3510,7 +3448,7 @@ function displayAllGroups(container) {
     container.innerHTML = `
         <div class="groups-grid">
             ${groupsData.map(group => `
-                <div class="group-card">
+                <div class="group-card" onclick="openChatRoomById(${group.id})">
                     <div class="group-header">
                         <h4>${group.name}</h4>
                         <span class="group-status ${group.status}">${getStatusText(group.status)}</span>
@@ -3537,17 +3475,34 @@ function displayAllGroups(container) {
                         </div>
                     </div>
                     <div class="group-actions">
-                        <button class="primary-btn" onclick="viewGroupDetails(${group.id})">
-                            <i class="fas fa-eye"></i> عرض التفاصيل
+                        <button class="primary-btn" onclick="event.stopPropagation(); openChatRoomById(${group.id})">
+                            <i class="fas fa-comments"></i> فتح الكروب
                         </button>
-                        <button class="secondary-btn" onclick="manageGroupMembers(${group.id})">
-                            <i class="fas fa-users-cog"></i> إدارة الأعضاء
+                        <button class="secondary-btn" onclick="event.stopPropagation(); manageGroupModerators(${group.id})">
+                            <i class="fas fa-user-shield"></i> تعيين مشرفين
                         </button>
                     </div>
                 </div>
             `).join('')}
         </div>
     `;
+}
+
+function openChatRoomById(roomId) {
+    const room = groupsData.find(r => r.id === roomId);
+    if (room) {
+        closeGroupsManagementModal();
+        openChatInterfaceModal();
+        selectRoom(roomId);
+    }
+}
+
+function manageGroupModerators(roomId) {
+    const room = groupsData.find(r => r.id === roomId);
+    if (room) {
+        showNotification('جاري فتح واجهة تعيين المشرفين للكروب: ' + room.name, 'info');
+        // TODO: Implement moderator assignment interface
+    }
 }
 
 function displayActiveGroups(container) {
