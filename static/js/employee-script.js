@@ -1292,10 +1292,6 @@ async function createContest() {
     }
 }
 
-function openChatRoomModal() {
-    showNotification('غرف الدردشة قيد التطوير', 'info');
-    toggleFabMenu();
-}
 
 // Student Requests Management Functions
 let studentRequests = [];
@@ -2865,6 +2861,93 @@ async function sendNotification() {
 function openChatRoomModal() {
     document.getElementById('chatRoomModal').style.display = 'flex';
     toggleFabMenu();
+    // Load chat rooms when modal opens
+    loadChatRooms();
+    // Display existing chat rooms in the management modal
+    displayExistingChatRooms();
+}
+
+function displayExistingChatRooms() {
+    const roomsList = document.getElementById('existingChatRoomsList');
+    
+    if (!roomsList) {
+        console.error('[CHAT ROOMS] Existing rooms list element not found');
+        return;
+    }
+    
+    if (chatRooms.length === 0) {
+        roomsList.innerHTML = `
+            <div class="no-rooms">
+                <i class="fas fa-comments"></i>
+                <p>لا توجد كروبات منشأة بعد</p>
+                <small>قم بإنشاء كروب جديد للبدء</small>
+            </div>
+        `;
+        return;
+    }
+    
+    roomsList.innerHTML = chatRooms.map(room => `
+        <div class="room-item">
+            <div class="room-info">
+                <h4>${room.name}</h4>
+                <p class="room-description">${room.description}</p>
+                <div class="room-meta">
+                    <span class="room-type">${getRoomTypeText(room.type)}</span>
+                    <span class="room-members">${room.memberCount || 0} عضو</span>
+                    <span class="room-status">${room.status === 'active' ? 'نشط' : 'غير نشط'}</span>
+                </div>
+            </div>
+            <div class="room-actions">
+                <button class="action-btn view-btn" onclick="viewChatRoom(${room.id})" title="عرض">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="action-btn edit-btn" onclick="editChatRoom(${room.id})" title="تعديل">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="action-btn delete-btn" onclick="deleteChatRoom(${room.id})" title="حذف">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function viewChatRoom(roomId) {
+    const room = chatRooms.find(r => r.id === roomId);
+    if (room) {
+        // Open chat interface with this room
+        closeChatRoomModal();
+        openChatInterfaceModal();
+        selectRoom(roomId);
+    }
+}
+
+function editChatRoom(roomId) {
+    const room = chatRooms.find(r => r.id === roomId);
+    if (room) {
+        // Fill form with room data for editing
+        document.getElementById('chatRoomName').value = room.name;
+        document.getElementById('chatRoomDescription').value = room.description;
+        document.getElementById('chatRoomType').value = room.type;
+        document.getElementById('chatRoomMaxMembers').value = room.maxMembers;
+        document.getElementById('chatRoomPrivacy').value = room.privacy;
+        document.getElementById('chatRoomStatus').value = room.status;
+        showNotification('جاري تحميل بيانات الكروب للتعديل', 'info');
+    }
+}
+
+async function deleteChatRoom(roomId) {
+    if (!confirm('هل أنت متأكد من حذف هذا الكروب؟')) {
+        return;
+    }
+    
+    try {
+        // Note: Delete endpoint not implemented yet, showing notification
+        showNotification('ميزة حذف الكروبات قيد التطوير', 'info');
+    } catch (error) {
+        console.error('[CHAT ROOMS] Error deleting chat room:', error);
+        showNotification('حدث خطأ أثناء حذف الكروب', 'error');
+    }
 }
 
 function closeChatRoomModal() {

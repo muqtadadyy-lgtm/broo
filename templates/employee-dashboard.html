@@ -498,7 +498,21 @@
             </div>
             <div class="chat-room-form">
                 <div class="form-section">
-                    <h3>معلومات الكروب</h3>
+                    <h3>الكروبات المنشأة</h3>
+                    <div class="existing-chat-rooms">
+                        <div class="rooms-list" id="existingChatRoomsList">
+                            <!-- Existing chat rooms will be displayed here -->
+                            <div class="no-rooms">
+                                <i class="fas fa-comments"></i>
+                                <p>لا توجد كروبات منشأة بعد</p>
+                                <small>قم بإنشاء كروب جديد للبدء</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>إنشاء كروب جديد</h3>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="chatRoomName">اسم الكروب:</label>
@@ -1181,7 +1195,7 @@
                             <span class="stat-number" id="suspendedUsers">0</span>
                             <span class="stat-label">معلقون</span>
                         </div>
-                    </div>
+                    </div>e
                 </div>
                 
                 <div class="users-table-container">
