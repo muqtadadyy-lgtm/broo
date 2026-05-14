@@ -2018,13 +2018,31 @@ function updateRoomInfo() {
     document.getElementById('onlineMembersCount').textContent = onlineMembers.filter(m => m.status === 'online').length;
 }
 
-function sendMessage() {
+async function sendMessage() {
     const messageInput = document.getElementById('messageInput');
+    if (!messageInput) return;
     const message = messageInput.value.trim();
-    
     if (!message) return;
-    
-    // Add message to chat
+
+    const room = selectedRoomId ? chatRooms.find(r => r.id === selectedRoomId) : null;
+    if (selectedRoomId && room && room.isMember) {
+        try {
+            const result = await apiSendChatMessage(selectedRoomId, { content: message });
+            if (result.success) {
+                messageInput.value = '';
+                stopTyping();
+                await loadRoomMessages(selectedRoomId);
+                return;
+            }
+            showNotification(result.message || 'فشل إرسال الرسالة', 'error');
+            return;
+        } catch (err) {
+            console.error('[CHAT]', err);
+            showNotification(err.message || 'فشل إرسال الرسالة', 'error');
+            return;
+        }
+    }
+
     const newMessage = {
         id: Date.now(),
         sender: currentUser,
@@ -2032,17 +2050,10 @@ function sendMessage() {
         timestamp: new Date().toISOString(),
         type: 'user'
     };
-    
     chatMessages.push(newMessage);
     displayMessage(newMessage);
-    
-    // Clear input
     messageInput.value = '';
-    
-    // Simulate sending to other members
     simulateMessageDelivery(newMessage);
-    
-    // Update typing status
     stopTyping();
 }
 
@@ -2325,16 +2336,8 @@ function getRoleText(role) {
     return roleMap[role] || role;
 }
 
-function getStatusText(status) {
-    const statusMap = {
-        'active': 'نشط',
-        'inactive': 'غير نشط',
-        'suspended': 'معلق'
-    };
-    return statusMap[status] || status;
-}
-
 function formatDate(dateString) {
+    if (!dateString) return 'غير محدد';
     const date = new Date(dateString);
     return date.toLocaleDateString('ar-SA', {
         year: 'numeric',
@@ -2859,11 +2862,12 @@ async function sendNotification() {
 
 // Chat Room Management Functions
 function openChatRoomModal() {
-    document.getElementById('chatRoomModal').style.display = 'flex';
+    const modal = document.getElementById('chatRoomModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    modal.classList.add('active');
     toggleFabMenu();
-    // Load chat rooms when modal opens
     loadChatRooms();
-    // Display existing chat rooms in the management modal
     displayExistingChatRooms();
 }
 
@@ -2951,7 +2955,10 @@ async function deleteChatRoom(roomId) {
 }
 
 function closeChatRoomModal() {
-    document.getElementById('chatRoomModal').style.display = 'none';
+    const modal = document.getElementById('chatRoomModal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.classList.remove('active');
 }
 
 // Chat rooms functionality
@@ -2968,6 +2975,7 @@ async function loadChatRooms() {
             chatRooms = result.chatRooms || [];
             console.log('[CHAT ROOMS] Loaded rooms:', chatRooms.length, 'for user:', currentUser.role);
             displayChatRooms();
+            displayExistingChatRooms();
         } else {
             console.error('[CHAT ROOMS] Failed to load chat rooms:', result.message);
             // Fallback: show empty state
@@ -3125,12 +3133,12 @@ function displayMessages(messages) {
     }
     
     messagesDiv.innerHTML = messages.map(msg => `
-        <div class="message ${msg.sender.id === currentUser.id ? 'sent' : 'received'}">
+        <div class="message ${Number(msg.sender.id) === Number(currentUser.id) ? 'sent' : 'received'}">
             <div class="message-header">
                 <strong>${msg.sender.fullName}</strong>
                 <span class="message-time">${formatMessageTime(msg.createdAt)}</span>
             </div>
-            <div class="message-content">${msg.content}</div>
+            <div class="message-content">${escapeHtml(msg.content)}</div>
         </div>
     `).join('');
     
@@ -3141,6 +3149,13 @@ function displayMessages(messages) {
 function formatMessageTime(timestamp) {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+}
+
+function escapeHtml(text) {
+    if (text == null || text === '') return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
 }
 
 // Join Requests Management
@@ -3414,12 +3429,21 @@ function updateGroupsStatistics() {
 
 function showGroupsTab(tab) {
     currentGroupsTab = tab;
-    
-    // Update active tab
+
+    const tabBtnIds = {
+        all: 'allGroupsTab',
+        active: 'activeGroupsTab',
+        members: 'membersTab',
+        requests: 'requestsTab'
+    };
+    const activeBtnId = tabBtnIds[tab];
     document.querySelectorAll('.groups-tabs .tab-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    document.getElementById(tab + 'GroupsTab').classList.add('active');
+    const activeBtn = activeBtnId ? document.getElementById(activeBtnId) : null;
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
 
     const content = document.getElementById('groupsContent');
     
@@ -3488,13 +3512,13 @@ function displayAllGroups(container) {
     `;
 }
 
-function openChatRoomById(roomId) {
+async function openChatRoomById(roomId) {
     const room = groupsData.find(r => r.id === roomId);
-    if (room) {
-        closeGroupsManagementModal();
-        openChatInterfaceModal();
-        selectRoom(roomId);
-    }
+    if (!room) return;
+    closeGroupsManagementModal();
+    await loadChatRooms();
+    openChatInterfaceModal();
+    selectRoom(roomId);
 }
 
 function manageGroupModerators(roomId) {
@@ -3663,35 +3687,46 @@ function displayJoinRequests(container) {
     `;
 }
 
-function refreshGroupsData() {
-    loadGroupsData();
-    showNotification('تم تحديث البيانات بنجاح', 'success');
+async function refreshGroupsData() {
+    await loadGroupsData();
+    showNotification('تم تحديث البيانات', 'success');
 }
 
 function exportGroupsData() {
-    // Create CSV data
+    if (!groupsData.length) {
+        showNotification('لا توجد بيانات للتصدير', 'warning');
+        return;
+    }
     let csv = 'اسم الكروب,الوصف,نوع الكروب,الخصوصية,الحالة,عدد الأعضاء,عدد الرسائل,المنشئ,تاريخ الإنشاء\n';
-    
+
     groupsData.forEach(group => {
         csv += `"${group.name}","${group.description || ''}","${getTypeText(group.type)}","${getPrivacyText(group.privacy)}","${getStatusText(group.status)}","${group.memberCount || 0}","${group.messageCount || 0}","${group.createdBy || ''}","${formatDate(group.createdAt)}"\n`;
     });
 
-    // Download CSV
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `groups_data_${new Date().toISOString().split('T')[0]}.csv`;
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `groups_data_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
     link.click();
-    
-    showNotification('تم تصدير البيانات بنجاح', 'success');
+    document.body.removeChild(link);
+
+    showNotification('تم تصدير بيانات الكروبات بنجاح', 'success');
 }
 
 // Helper functions
 function getStatusText(status) {
     const statusMap = {
         'active': 'نشط',
+        'inactive': 'غير نشط',
         'archived': 'مؤرشف',
-        'readonly': 'للقراءة فقط'
+        'readonly': 'للقراءة فقط',
+        'suspended': 'معلق',
+        'pending': 'قيد الانتظار',
+        'approved': 'موافق',
+        'rejected': 'مرفوض'
     };
     return statusMap[status] || status;
 }
@@ -3727,12 +3762,6 @@ function getRoleText(role) {
     return roleMap[role] || role;
 }
 
-function formatDate(dateString) {
-    if (!dateString) return 'غير محدد';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ar-SA');
-}
-
 function viewGroupDetails(groupId) {
     // Open chat interface and select the group
     openChatInterfaceModal();
@@ -3742,50 +3771,14 @@ function viewGroupDetails(groupId) {
 }
 
 function manageGroupMembers(groupId) {
-    // Open members management for the group
-    console.log('[GROUPS MGMT] Managing members for group:', groupId);
-    showNotification('إدارة الأعضاء قيد التطوير', 'info');
-}
-
-function refreshGroupsData() {
-    console.log('[GROUPS MGMT] Refreshing groups data...');
-    loadGroupsData();
-}
-
-function exportGroupsData() {
-    console.log('[GROUPS MGMT] Exporting groups data...');
-    
-    if (groupsData.length === 0) {
-        showNotification('لا توجد بيانات للتصدير', 'warning');
-        return;
-    }
-    
-    let csv = 'اسم الكروب,الوصف,نوع الكروب,الخصوصية,الحالة,عدد الأعضاء,عدد الرسائل,المنشئ,تاريخ الإنشاء\n';
-    
-    groupsData.forEach(group => {
-        csv += `"${group.name}","${group.description || ''}","${getTypeText(group.type)}","${getPrivacyText(group.privacy)}","${getStatusText(group.status)}","${group.memberCount || 0}","${group.messageCount || 0}","${group.createdBy || ''}","${formatDate(group.createdAt)}"\n`;
-    });
-
-    // Download CSV
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `groups_data_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    showNotification('تم تصدير بيانات الكروبات بنجاح', 'success');
-}
-
-function manageGroupMembers(groupId) {
-    // Open chat interface and show members
     openChatInterfaceModal();
     setTimeout(() => {
-        selectChatRoom(groupId);
-    }, 500);
+        if (typeof selectChatRoom === 'function') {
+            selectChatRoom(groupId);
+        } else {
+            selectRoom(groupId);
+        }
+    }, 400);
 }
 
 async function removeMemberFromGroup(groupId, userId) {
@@ -3812,19 +3805,6 @@ async function removeMemberFromGroup(groupId, userId) {
         }
     }
 }
-
-// Test function for debugging - can be called from browser console
-function testGroupsModal() {
-    console.log('[TEST] Testing groups modal functionality...');
-    console.log('[TEST] Modal element:', document.getElementById('groupsManagementModal'));
-    console.log('[TEST] Function exists:', typeof openGroupsManagementModal);
-    
-    // Try to open the modal
-    openGroupsManagementModal();
-}
-
-// Make test function available globally
-window.testGroupsModal = testGroupsModal;
 
 // Mock data for available members (in real app, this would come from API)
 function loadAvailableMembers() {
@@ -3895,29 +3875,6 @@ function removeMemberFromChatRoom(memberId) {
     chatRoomMembers = chatRoomMembers.filter(m => m.id !== memberId);
     updateMemberList();
     showNotification('تم حذف العضو من الكروب', 'info');
-}
-
-function updateMemberList() {
-    const memberList = document.getElementById('chatRoomMembers');
-    if (chatRoomMembers.length === 0) {
-        memberList.innerHTML = '<p class="no-members">لم يتم إضافة أعضاء بعد</p>';
-    } else {
-        memberList.innerHTML = chatRoomMembers.map(member => `
-            <div class="member-item added">
-                <div class="member-info">
-                    <i class="fas fa-user"></i>
-                    <div class="member-details">
-                        <div class="member-name">${member.name}</div>
-                        <div class="member-email">${member.email}</div>
-                        <div class="member-role">${member.role === 'student' ? 'طالب' : 'موظف'}</div>
-                    </div>
-                </div>
-                <button class="remove-member-btn" onclick="removeMemberFromChatRoom(${member.id})">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `).join('');
-    }
 }
 
 async function createChatRoom() {
@@ -4042,42 +3999,24 @@ async function createChatRoom() {
             // Clear the chat room members array after successful creation
             chatRoomMembers = [];
             updateChatRoomStats();
-            
-            // Close modal
+            updateMemberList();
+            if (typeof updateRoleAssignments === 'function') {
+                updateRoleAssignments();
+            }
+
+            await loadChatRooms();
+            displayExistingChatRooms();
+            const totalEl = document.getElementById('totalGroupsCount');
+            if (totalEl && Array.isArray(chatRooms)) {
+                totalEl.textContent = String(chatRooms.length);
+            }
+
             closeChatRoomModal();
         } else {
             console.error('[CHAT ROOM] Creation failed:', result.message);
             showNotification(result.message || 'فشل إنشاء الكروب', 'error');
             return;
         }
-        
-        // Clear form
-        document.getElementById('chatRoomName').value = '';
-        document.getElementById('chatRoomDescription').value = '';
-        document.getElementById('chatRoomType').value = 'general';
-        document.getElementById('chatRoomMaxMembers').value = '50';
-        document.getElementById('chatRoomPrivacy').value = 'public';
-        document.getElementById('chatRoomStatus').value = 'active';
-        document.getElementById('chatRoomRules').value = '';
-        document.getElementById('chatRoomTags').value = '';
-        document.getElementById('chatRoomMessageRetention').value = 'forever';
-        document.getElementById('chatRoomFileSharing').value = 'enabled';
-        document.getElementById('chatRoomMaxFileSize').value = '10';
-        document.getElementById('chatRoomAllowedFileTypes').value = 'pdf, doc, docx, jpg, png, zip';
-        document.getElementById('chatRoomWelcomeMessage').value = '';
-        document.getElementById('chatRoomNotifications').checked = true;
-        document.getElementById('chatRoomEncryption').checked = false;
-        document.getElementById('chatRoomAutoMod').checked = true;
-        document.getElementById('chatRoomReadOnly').checked = false;
-        document.getElementById('adminRole').value = '';
-        
-        chatRoomMembers = [];
-        updateMemberList();
-        updateRoleAssignments();
-        
-        // Close modal
-        closeChatRoomModal();
-        
     } catch (error) {
         console.error('Error creating chat room:', error);
         showNotification('حدث خطأ في إنشاء الكروب', 'error');
@@ -4087,8 +4026,8 @@ async function createChatRoom() {
 function updateRoleAssignments() {
     const adminSelect = document.getElementById('adminRole');
     const moderatorSelection = document.querySelector('.moderator-selection');
-    
-    // Update admin options
+    if (!adminSelect) return;
+
     adminSelect.innerHTML = '<option value="">اختر مدير الكروب</option>';
     chatRoomMembers.forEach(member => {
         const option = document.createElement('option');
@@ -4096,8 +4035,9 @@ function updateRoleAssignments() {
         option.textContent = member.name;
         adminSelect.appendChild(option);
     });
-    
-    // Update moderator selection
+
+    if (!moderatorSelection) return;
+
     moderatorSelection.innerHTML = '';
     if (chatRoomMembers.length > 0) {
         moderatorSelection.innerHTML = `
@@ -4115,6 +4055,7 @@ function updateRoleAssignments() {
 
 function updateMemberList() {
     const memberList = document.getElementById('chatRoomMembers');
+    if (!memberList) return;
     if (chatRoomMembers.length === 0) {
         memberList.innerHTML = '<p class="no-members">لم يتم إضافة أعضاء بعد</p>';
     } else {

@@ -773,7 +773,10 @@ def update_application_status(request: HttpRequest, application_id: int) -> Json
             application=app,
             sender=user,
             receiver=app.user,
-            text=f"طلبك للنشاط '{app.activity.title}' تم {new_status}.",
+            text=(
+                f"طلبك للنشاط '{app.activity_type}' "
+                f"(رقم {app.activity_number}) تم {new_status}."
+            ),
             is_system_notification=True
         )
     except Exception as exc:
@@ -2289,8 +2292,19 @@ def create_chat_room(request: HttpRequest) -> JsonResponse:
         
         print(f"[CHAT_ROOM] Chat room created with ID: {chat_room.id}")
 
-        # Don't add creator as member automatically - group should be empty initially
-        print("[CHAT_ROOM] Group created empty - no members added automatically")
+        # Add creator as a member/admin so they can use the room immediately
+        try:
+            creator_membership, created = ChatRoomMember.objects.get_or_create(
+                chat_room=chat_room,
+                user=creator,
+                defaults={"role": "admin"}
+            )
+            if created:
+                print(f"[CHAT_ROOM] Creator added as admin member: {creator.full_name}")
+            else:
+                print(f"[CHAT_ROOM] Creator membership already exists: {creator.full_name}")
+        except Exception as membership_exc:
+            print(f"[CHAT_ROOM] Failed to add creator as member: {membership_exc}")
 
         # Add other members if provided
         members = data.get("members", [])

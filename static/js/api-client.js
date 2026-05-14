@@ -20,7 +20,7 @@ const API_BASE_URL = getBackendURL();
 
 // Helper function to get auth token
 function getAuthToken() {
-    return localStorage.getItem('authToken');
+    return localStorage.getItem('authToken') || localStorage.getItem('token');
 }
 
 // Helper function to make authenticated requests
@@ -123,6 +123,7 @@ async function apiLogin(credentials) {
         if (response.success && response.token) {
             // Store token and user info
             localStorage.setItem('authToken', response.token);
+            localStorage.setItem('token', response.token);
             localStorage.setItem('currentUser', JSON.stringify(response.user));
             
             // تثبيت هوية المستخدم لاستخدامها في نظام المراسلة
@@ -143,6 +144,7 @@ async function apiLogin(credentials) {
 
 function apiLogout() {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('token');
     localStorage.removeItem('currentUser');
     localStorage.removeItem('currentUserId');
     localStorage.removeItem('currentUserName');
