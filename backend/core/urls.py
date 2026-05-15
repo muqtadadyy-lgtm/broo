@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from . import chat_room_enhancements
 
 urlpatterns = [
     path("auth/register", views.register, name="register"),
@@ -55,4 +56,19 @@ urlpatterns = [
     path("chat-rooms/join-requests", views.get_chat_room_join_requests, name="get_chat_room_join_requests"),
     path('chat-rooms/join-requests/<int:request_id>', views.process_chat_room_join_request, name='process_chat_room_join_request'),
     path('chat-rooms/<int:room_id>/members/<int:user_id>', views.remove_member_from_chat_room, name='remove_member_from_chat_room'),
+    
+    # ==================== Enhanced Chat Room Management ====================
+    # Settings and configuration
+    path('chat-rooms/<int:room_id>/settings', chat_room_enhancements.update_chat_room_settings, name='update_chat_room_settings'),
+    path('chat-rooms/<int:room_id>/stats', chat_room_enhancements.get_chat_room_stats, name='get_chat_room_stats'),
+    path('chat-rooms/<int:room_id>/archive', chat_room_enhancements.archive_chat_room, name='archive_chat_room'),
+    path('chat-rooms/<int:room_id>/delete', chat_room_enhancements.delete_chat_room, name='delete_chat_room'),
+    
+    # Member management
+    path('chat-rooms/<int:room_id>/members', chat_room_enhancements.get_chat_room_members, name='get_chat_room_members'),
+    path('chat-rooms/<int:room_id>/members/manage', chat_room_enhancements.manage_chat_room_member, name='manage_chat_room_member'),
+    
+    # Message search and management
+    path('chat-rooms/<int:room_id>/search', chat_room_enhancements.search_chat_messages, name='search_chat_messages'),
+    path('chat-rooms/<int:room_id>/messages/<int:message_id>/delete', chat_room_enhancements.delete_chat_message, name='delete_chat_message'),
 ]
