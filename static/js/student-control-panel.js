@@ -356,38 +356,10 @@ function initializeStudentChat() {
     }
     
     // Load mock online members
-    studentOnlineMembers = [
-        {
-            id: 1,
-            name: 'أحمد محمد',
-            status: 'online',
-            avatar: '/static/images/user1.jpg'
-        },
-        {
-            id: 2,
-            name: 'فاطمة علي',
-            status: 'online',
-            avatar: '/static/images/user2.jpg'
-        }
-    ];
+    studentOnlineMembers = [];
     
     // Load mock messages
-    studentMessages = [
-        {
-            id: 1,
-            sender: 'أحمد محمد',
-            content: 'مرحباً بالجميع',
-            timestamp: new Date().toISOString(),
-            isOwn: false
-        },
-        {
-            id: 2,
-            sender: 'أنت',
-            content: 'مرحباً يا أحمد',
-            timestamp: new Date().toISOString(),
-            isOwn: true
-        }
-    ];
+    studentMessages = [];
     
     updateStudentRoomInfo();
     displayStudentOnlineMembers();
@@ -450,19 +422,6 @@ function sendStudentMessage() {
         studentMessages.push(newMessage);
         displayStudentMessages();
         input.value = '';
-        
-        // Simulate response
-        setTimeout(() => {
-            const responseMessage = {
-                id: studentMessages.length + 1,
-                sender: 'أحمد محمد',
-                content: 'شكراً لرسالتك!',
-                timestamp: new Date().toISOString(),
-                isOwn: false
-            };
-            studentMessages.push(responseMessage);
-            displayStudentMessages();
-        }, 2000);
     }
 }
 

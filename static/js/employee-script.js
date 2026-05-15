@@ -1309,47 +1309,8 @@ function closeStudentRequestsModal() {
 }
 
 function loadStudentRequests() {
-    // Mock data for student requests
-    studentRequests = [
-        {
-            id: 1,
-            studentName: 'أحمد محمد',
-            username: 'ahmed_student',
-            email: 'ahmed@university.edu',
-            targetRoom: 'general',
-            reason: 'أريد الانضمام لمناقشة المشاريع الدراسية',
-            status: 'pending',
-            requestedAt: new Date().toISOString(),
-            requestedBy: currentUser.fullName
-        },
-        {
-            id: 2,
-            studentName: 'فاطمة علي',
-            username: 'fatima_student',
-            email: 'fatima@university.edu',
-            targetRoom: 'study',
-            reason: 'أحتاج المساعدة في مواد الرياضيات',
-            status: 'approved',
-            approvedAt: new Date().toISOString(),
-            approvedBy: currentUser.fullName,
-            requestedAt: new Date(Date.now() - 86400000).toISOString(),
-            requestedBy: currentUser.fullName
-        },
-        {
-            id: 3,
-            studentName: 'محمد خالد',
-            username: 'mohammed_student',
-            email: 'mohammed@university.edu',
-            targetRoom: 'contest',
-            reason: 'أراد المشاركة في مسابقة البرمجة',
-            status: 'rejected',
-            rejectedAt: new Date(Date.now() - 172800000).toISOString(),
-            rejectedBy: currentUser.fullName,
-            rejectionReason: 'الكروب ممتلئ حالياً',
-            requestedAt: new Date(Date.now() - 259200000).toISOString(),
-            requestedBy: currentUser.fullName
-        }
-    ];
+    // Load student requests from API
+    studentRequests = [];
     
     updateRequestCounts();
 }
@@ -2672,16 +2633,9 @@ function closeNotificationModal() {
 let targetUsers = [];
 let allAvailableUsers = [];
 
-// Mock data for available users (in real app, this would come from API)
+// Load available users from API
 function loadAvailableUsers() {
-    allAvailableUsers = [
-        { id: 1, name: 'أحمد محمد', email: 'ahmed@university.edu', role: 'student', status: 'active' },
-        { id: 2, name: 'فاطمة علي', email: 'fatima@university.edu', role: 'student', status: 'active' },
-        { id: 3, name: 'محمد خالد', email: 'mohammed@university.edu', role: 'student', status: 'active' },
-        { id: 4, name: 'نورا سعيد', email: 'nora@university.edu', role: 'student', status: 'active' },
-        { id: 5, name: 'عبدالله إبراهيم', email: 'abdullah@university.edu', role: 'student', status: 'active' },
-        { id: 6, name: 'موظف إداري', email: 'admin@university.edu', role: 'employee', status: 'active' }
-    ];
+    allAvailableUsers = [];
 }
 
 function searchUsers() {
@@ -3806,15 +3760,9 @@ async function removeMemberFromGroup(groupId, userId) {
     }
 }
 
-// Mock data for available members (in real app, this would come from API)
+// Load available members from API
 function loadAvailableMembers() {
-    allAvailableMembers = [
-        { id: 1, name: 'أحمد محمد', email: 'ahmed@university.edu', role: 'student', status: 'active' },
-        { id: 2, name: 'فاطمة علي', email: 'fatima@university.edu', role: 'student', status: 'active' },
-        { id: 3, name: 'محمد خالد', email: 'mohammed@university.edu', role: 'student', status: 'active' },
-        { id: 4, name: 'نورا سعيد', email: 'nora@university.edu', role: 'student', status: 'active' },
-        { id: 5, name: 'عبدالله إبراهيم', email: 'abdullah@university.edu', role: 'student', status: 'active' }
-    ];
+    allAvailableMembers = [];
 }
 
 function searchMembers() {
