@@ -276,8 +276,21 @@ function showEmptyChatRoomsState() {
 function displayStudentChatRooms() {
     const container = document.getElementById('studentChatRoomsList');
     
+    if (studentChatRooms.length === 0) {
+        container.innerHTML = `
+            <div class="empty-chat-rooms">
+                <div class="empty-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h3>لا توجد كروبات دردشة رسمية</h3>
+                <p>لم يقم المدير بإنشاء أي كروبات دردشة بعد. سيتم عرض الكروبات الرسمية هنا عند إنشائها.</p>
+            </div>
+        `;
+        return;
+    }
+    
     container.innerHTML = studentChatRooms.map(room => `
-        <div class="chat-room-card" onclick="joinChatRoom(${room.id})">
+        <div class="chat-room-card ${room.isMember ? 'member' : ''}" onclick="joinChatRoom(${room.id})">
             <div class="room-icon">
                 <i class="fas fa-comments"></i>
             </div>
@@ -289,7 +302,7 @@ function displayStudentChatRooms() {
             </div>
             <div class="room-actions">
                 ${room.unreadCount > 0 ? `<span class="unread-badge">${room.unreadCount}</span>` : ''}
-                <button class="join-btn">انضمام</button>
+                <button class="join-btn ${room.isMember ? 'joined' : ''}">${room.isMember ? 'فتح' : 'انضمام'}</button>
             </div>
         </div>
     `).join('');
