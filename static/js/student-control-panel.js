@@ -290,7 +290,7 @@ function displayStudentChatRooms() {
     }
     
     container.innerHTML = studentChatRooms.map(room => `
-        <div class="chat-room-card ${room.isMember ? 'member' : ''}" onclick="joinChatRoom(${room.id})">
+        <button type="button" class="chat-room-card ${room.isMember ? 'member' : ''}" onclick="openStudentChatRoom(${room.id})">
             <div class="room-icon">
                 <i class="fas fa-comments"></i>
             </div>
@@ -302,10 +302,27 @@ function displayStudentChatRooms() {
             </div>
             <div class="room-actions">
                 ${room.unreadCount > 0 ? `<span class="unread-badge">${room.unreadCount}</span>` : ''}
-                <button class="join-btn ${room.isMember ? 'joined' : ''}">${room.isMember ? 'فتح' : 'انضمام'}</button>
+                <span class="join-btn ${room.isMember ? 'joined' : ''}">${room.isMember ? 'فتح' : 'انضمام'}</span>
             </div>
-        </div>
+        </button>
     `).join('');
+}
+
+function openStudentChatRoom(roomId) {
+    const room = studentChatRooms.find(r => r.id === roomId);
+    if (!room) {
+        showNotification('الكروب غير موجود', 'error');
+        return;
+    }
+
+    if (room.isMember) {
+        studentCurrentRoom = room;
+        openStudentChatInterface();
+        closeStudentChatRooms();
+        return;
+    }
+
+    joinChatRoom(roomId);
 }
 
 async function joinChatRoom(roomId) {

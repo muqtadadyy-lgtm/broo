@@ -2710,10 +2710,15 @@ def send_chat_message(request: HttpRequest, room_id: int) -> JsonResponse:
 
         chat_room = ChatRoom.objects.get(pk=room_id)
         
-        # Check if user is a member
-        membership = ChatRoomMember.objects.filter(chat_room=chat_room, user=sender, is_active=True).first()
-        if not membership:
-            return _error("يجب أن تكون عضواً في الكروب لإرسال الرسائل", status=403)
+        # For general chat rooms, allow all students and employees to send messages
+        if chat_room.type == "general" and sender.role in ["student", "employee"]:
+            # Allow sending without membership for general groups
+            pass
+        else:
+            # For other room types, check if user is a member
+            membership = ChatRoomMember.objects.filter(chat_room=chat_room, user=sender, is_active=True).first()
+            if not membership:
+                return _error("يجب أن تكون عضواً في الكروب لإرسال الرسائل", status=403)
 
         # Check if room is read-only
         if chat_room.read_only and sender.role != "employee":
@@ -2795,10 +2800,15 @@ def get_chat_messages(request: HttpRequest, room_id: int) -> JsonResponse:
 
         chat_room = ChatRoom.objects.get(pk=room_id)
         
-        # Check if user is a member
-        membership = ChatRoomMember.objects.filter(chat_room=chat_room, user=user, is_active=True).first()
-        if not membership:
-            return _error("يجب أن تكون عضواً في الكروب لرؤية الرسائل", status=403)
+        # For general chat rooms, allow all students and employees to view messages
+        if chat_room.type == "general" and user.role in ["student", "employee"]:
+            # Allow access without membership for general groups
+            pass
+        else:
+            # For other room types, check if user is a member
+            membership = ChatRoomMember.objects.filter(chat_room=chat_room, user=user, is_active=True).first()
+            if not membership:
+                return _error("يجب أن تكون عضواً في الكروب لرؤية الرسائل", status=403)
 
         # Get messages
         messages = ChatMessage.objects.filter(

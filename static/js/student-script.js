@@ -25,6 +25,11 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Load employee requests (إشعارات الموظفين للنشاطات)
     loadEmployeeRequests();
+    
+    // Initialize control panel (includes chat rooms)
+    if (typeof initializeStudentControlPanel === 'function') {
+        initializeStudentControlPanel();
+    }
 });
 
 // Theme Management

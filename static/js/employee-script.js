@@ -62,6 +62,7 @@ window.addEventListener('DOMContentLoaded', () => {
     let savedTheme = localStorage.getItem('selectedTheme') || 'blue-light';
     if (savedTheme === 'blue') { savedTheme = 'blue-light'; localStorage.setItem('selectedTheme', 'blue-light'); }
     document.body.className = `dashboard-body theme-${savedTheme}`;
+    updateThemeUI(savedTheme);
     
     // Load statistics
     updateStatistics();
@@ -78,11 +79,18 @@ window.addEventListener('DOMContentLoaded', () => {
 function changeTheme(theme) {
     document.body.className = `dashboard-body theme-${theme}`;
     localStorage.setItem('selectedTheme', theme);
+    updateThemeUI(theme);
     const lang = localStorage.getItem('selectedLanguage') || 'ar';
     const msg = (typeof translations !== 'undefined' && translations[lang] && translations[lang]['تم تغيير الثيم بنجاح'])
         ? translations[lang]['تم تغيير الثيم بنجاح']
         : 'تم تغيير الثيم بنجاح';
     showNotification(msg, 'success');
+}
+
+function updateThemeUI(theme) {
+    document.querySelectorAll('.theme-option, .modal-theme-quick button').forEach(el => {
+        el.classList.toggle('active', el.dataset.theme === theme || el.classList.contains(`dot-${theme}`));
+    });
 }
 
 // Logout
@@ -942,18 +950,21 @@ document.addEventListener('click', function(event) {
 });
 
 // FAB Modal Functions
-function openVideoReelModal() {
-    showNotification('نشر الفيديوهات القصيرة قيد التطوير', 'info');
-    toggleFabMenu();
-}
-
 function openImageAnnouncementModal() {
-    document.getElementById('imageAnnouncementModal').style.display = 'flex';
-    toggleFabMenu();
+    const modal = document.getElementById('imageAnnouncementModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        toggleFabMenu();
+    } else {
+        console.error('Image announcement modal not found');
+    }
 }
 
 function closeImageAnnouncementModal() {
-    document.getElementById('imageAnnouncementModal').style.display = 'none';
+    const modal = document.getElementById('imageAnnouncementModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 let selectedImageFile = null;
@@ -1067,8 +1078,20 @@ async function publishImageAnnouncement() {
 }
 
 function openContestModal() {
-    document.getElementById('contestModal').style.display = 'flex';
-    toggleFabMenu();
+    const modal = document.getElementById('contestModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        toggleFabMenu();
+    } else {
+        console.error('Contest modal not found');
+    }
+}
+
+function closeContestModal() {
+    const modal = document.getElementById('contestModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 // ==================== STUDENT JOIN REQUESTS ====================
@@ -1188,10 +1211,6 @@ async function approveAllRequests() {
     } catch (error) {
         showNotification('حدث خطأ أثناء الموافقة على الطلابات', 'error');
     }
-}
-
-function closeContestModal() {
-    document.getElementById('contestModal').style.display = 'none';
 }
 
 async function createContest() {
@@ -2846,24 +2865,26 @@ function displayExistingChatRooms() {
     
     roomsList.innerHTML = chatRooms.map(room => `
         <div class="room-item">
-            <div class="room-info">
-                <h4>${room.name}</h4>
-                <p class="room-description">${room.description}</p>
-                <div class="room-meta">
-                    <span class="room-type">${getRoomTypeText(room.type)}</span>
-                    <span class="room-members">${room.memberCount || 0} عضو</span>
-                    <span class="room-status">${room.status === 'active' ? 'نشط' : 'غير نشط'}</span>
+            <button type="button" class="room-button" onclick="viewChatRoom(${room.id})" title="عرض الكروب">
+                <div class="room-info">
+                    <h4>${room.name}</h4>
+                    <p class="room-description">${room.description}</p>
+                    <div class="room-meta">
+                        <span class="room-type">${getRoomTypeText(room.type)}</span>
+                        <span class="room-members">${room.memberCount || 0} عضو</span>
+                        <span class="room-status">${room.status === 'active' ? 'نشط' : 'غير نشط'}</span>
+                    </div>
                 </div>
-            </div>
+            </button>
             <div class="room-actions">
                 <button class="action-btn view-btn" onclick="viewChatRoom(${room.id})" title="عرض">
-                    <i class="fas fa-eye"></i>
+                    <i class="fas fa-eye"></i> <span>عرض</span>
                 </button>
                 <button class="action-btn edit-btn" onclick="editChatRoom(${room.id})" title="تعديل">
-                    <i class="fas fa-edit"></i>
+                    <i class="fas fa-edit"></i> <span>تعديل</span>
                 </button>
                 <button class="action-btn delete-btn" onclick="deleteChatRoom(${room.id})" title="حذف">
-                    <i class="fas fa-trash"></i>
+                    <i class="fas fa-trash"></i> <span>حذف</span>
                 </button>
             </div>
         </div>
