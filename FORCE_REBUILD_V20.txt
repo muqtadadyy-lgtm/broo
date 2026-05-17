@@ -1,0 +1,5 @@
+FORCE REBUILD V20.0 - Railway still using old code with AbstractBaseUser import
+This file forces Railway to rebuild the container with the updated code
+AbstractBaseUser import has been removed from core/models.py
+Railway should now use the updated code without AbstractBaseUser import
+This fixes the RuntimeError about Permission model not declaring app_label

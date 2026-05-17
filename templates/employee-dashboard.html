@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لوحة تحكم الموظف - نظام الأنشطة الطلابية</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="animations.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dashboard-body theme-blue-light">
+    <!-- Language Selector Dropdown -->
+    <div class="language-selector-dropdown">
+        <button class="language-toggle-btn" onclick="toggleLanguageMenu()" title="تغيير اللغة">
+            <i class="fas fa-globe"></i>
+            <span class="language-label" data-ar="اللغة" data-en="Language" data-fr="Langue" data-ku="زمان">اللغة</span>
+        </button>
+        <div class="language-menu" id="languageMenu">
+            <div class="language-menu-header" data-ar="اختر اللغة المفضلة" data-en="Choose Your Language" data-fr="Choisissez votre langue" data-ku="زمانی دڵخواز هەڵبژێرە">اختر اللغة المفضلة</div>
+            <div class="language-options">
+                <button class="language-option" onclick="changeLanguage('ar')" data-lang="ar">
+                    <span class="language-flag">🇸🇦</span>
+                    <span class="language-name" data-ar="العربية" data-en="Arabic" data-fr="Arabe">العربية</span>
+                </button>
+                <button class="language-option" onclick="changeLanguage('en')" data-lang="en">
+                    <span class="language-flag">🇺🇸</span>
+                    <span class="language-name" data-ar="الإنجليزية" data-en="English" data-fr="Anglais">الإنجليزية</span>
+                </button>
+                <button class="language-option" onclick="changeLanguage('fr')" data-lang="fr">
+                    <span class="language-flag">🇫🇷</span>
+                    <span class="language-name" data-ar="الفرنسية" data-en="French" data-fr="Français">الفرنسية</span>
+                </button>
+                <button class="language-option" onclick="changeLanguage('ku')" data-lang="ku">
+                    <span class="language-flag">🟨</span>
+                    <span class="language-name" data-ar="الكردية" data-en="Kurdish" data-fr="Kurde" data-ku="کوردی">الكردية</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Selector Dropdown -->
+    <div class="theme-selector-dropdown">
+        <button class="theme-toggle-btn" onclick="toggleThemeMenu()" title="تغيير الثيم">
+            <i class="fas fa-palette"></i>
+            <span class="theme-label" data-ar="الثيمات" data-en="Themes" data-fr="Thèmes" data-ku="تەیماکان">الثيمات</span>
+        </button>
+        <div class="theme-menu" id="themeMenu">
+            <div class="theme-menu-header" data-ar="اختر الثيم المفضل" data-en="Choose Your Theme" data-fr="Choisissez votre thème" data-ku="تێمای دڵخواز هەڵبژێرە">اختر الثيم المفضل</div>
+            <div class="theme-options">
+                <button class="theme-option" onclick="changeTheme('blue-light')" data-theme="blue-light">
+                    <span class="theme-color" style="background-color: #eff6ff; border: 2px solid #bfdbfe;"></span>
+                    <span class="theme-name" data-ar="أزرق فاتح" data-en="Light Blue" data-fr="Bleu clair" data-ku="شینی ڕوون">أزرق فاتح</span>
+                </button>
+                <button class="theme-option" onclick="changeTheme('sky-blue')" data-theme="sky-blue">
+                    <span class="theme-color" style="background-color: #0ea5e9; border: 2px solid #0e7490;"></span>
+                    <span class="theme-name" data-ar="أزرق سماوي" data-en="Sky Blue" data-fr="Bleu ciel" data-ku="شینی ئاسمانی">أزرق سماوي</span>
+                </button>
+                <button class="theme-option" onclick="changeTheme('purple')" data-theme="purple">
+                    <span class="theme-color" style="background-color: #8b5cf6; border: 2px solid #a78bfa;"></span>
+                    <span class="theme-name" data-ar="بنفسجي" data-en="Purple" data-fr="Violet" data-ku="مۆر">بنفسجي</span>
+                </button>
+                <button class="theme-option" onclick="changeTheme('blue')" data-theme="blue">
+                    <span class="theme-color" style="background-color: #3b82f6; border: 2px solid #2563eb;"></span>
+                    <span class="theme-name" data-ar="أزرق غامق" data-en="Dark Blue" data-fr="Bleu foncé" data-ku="شینی تیرە">أزرق غامق</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animated Background -->
+    <div class="animated-bg">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="logo-section">
+                <i class="fas fa-university"></i>
+                <h1 data-ar="نظام الأنشطة الطلابية - لوحة تحكم الموظف" data-en="Student Activities System - Employee Dashboard" data-fr="Système des Activités Étudiantes - Tableau de bord employé" data-ku="سیستەمی چالا خوێندکارێ - ڕوواری کارمەند">نظام الأنشطة الطلابية - لوحة تحكم الموظف</h1>
+            </div>
+            <div class="user-section">
+                <span class="welcome-text"><span data-ar="مرحباً،" data-en="Welcome," data-fr="Bienvenue," data-ku="بەخێربێیت،">مرحباً،</span> <strong id="employeeName"></strong></span>
+                <button class="submit-btn" id="createEmployeeBtn" style="display:none" onclick="openCreateEmployeeModal()" title="إنشاء موظف جديد" data-title-ar="إنشاء موظف جديد" data-title-ku="دروستکردنی کارمەندی نوێ">
+                    <i class="fas fa-user-plus"></i>
+                    <span data-ar="إنشاء موظف" data-en="Create Employee" data-fr="Créer Employé" data-ku="دروستکردنی کارمەند">إنشاء موظف</span>
+                </button>
+                <button class="ghost-btn" id="manageEmployeesBtn" style="display:none" onclick="openEmployeesModal()" title="إدارة الموظفين">
+                    <i class="fas fa-users-cog"></i>
+                    <span data-ar="إدارة الموظفين" data-en="Manage Staff">إدارة الموظفين</span>
+                </button>
+                <button class="message-btn" id="supervisorInboxBtn" style="display:none" onclick="openSupervisorChat()" title="مدير الموظفين">
+                    <i class="fas fa-comments"></i>
+                    <span data-ar="مدير الموظفين" data-en="Supervisor Chat">مدير الموظفين</span>
+                </button>
+                <button class="edit-profile-btn" onclick="openEditProfileModal()">
+                    <i class="fas fa-user-edit"></i> <span data-ar="تعديل الملف الشخصي" data-en="Edit Profile" data-fr="Modifier le profil" data-ku="دەستکاری پروفایل">تعديل الملف الشخصي</span>
+                </button>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span data-ar="تسجيل الخروج" data-en="Logout" data-fr="Déconnexion" data-ku="دەرچوون">تسجيل الخروج</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
+
+        <!-- Statistics Section -->
+        <div class="stats-section">
+            <div class="stat-card">
+                <div class="stat-icon pending">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="pendingCount">0</h3>
+                    <p data-ar="طلبات قيد الانتظار" data-en="Pending Requests" data-fr="Demandes en attente" data-ku="داواکانی لە چاوەڕوانی">طلبات قيد الانتظار</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon approved">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="approvedCount">0</h3>
+                    <p data-ar="طلبات مقبولة" data-en="Approved Requests" data-fr="Demandes approuvées" data-ku="داواکانی قبوڵکراو">طلبات مقبولة</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon rejected">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="rejectedCount">0</h3>
+                    <p data-ar="طلبات مرفوضة" data-en="Rejected Requests" data-fr="Demandes rejetées" data-ku="داواکانی ڕەتکراو">طلبات مرفوضة</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon total">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="totalCount">0</h3>
+                    <p data-ar="إجمالي الطلبات" data-en="Total Requests" data-fr="Nombre total de demandes" data-ku="کۆی داواکانی گشتی">إجمالي الطلبات</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon groups">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="totalGroupsCount">0</h3>
+                    <p data-ar="الكروبات" data-en="Groups" data-fr="Groupes" data-ku="کۆمەڵەکان">الكروبات</p>
+                </div>
+                <button class="manage-groups-btn" onclick="openGroupsManagementModal()">
+                    <i class="fas fa-cogs"></i>
+                    <span data-ar="إدارة الكروبات" data-en="Manage Groups" data-fr="Gérer les groupes" data-ku="بەڕێوەبردنی کۆمەڵەکان">إدارة الكروبات</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <h2 class="section-title">
+                <i class="fas fa-filter"></i>
+                <span data-ar="تصفية الطلبات" data-en="Filter Requests" data-fr="Filtrer les demandes" data-ku="فلتەرکردنی داواکانی">تصفية الطلبات</span>
+            </h2>
+            <div class="filter-controls">
+                <select id="activityFilter" onchange="filterApplications()">
+                    <option value="" data-ar="جميع الأنشطة" data-en="All Activities" data-fr="Toutes les activités" data-ku="هەموو چالاکییەکان">جميع الأنشطة</option>
+                    <option value="الأنشطة الطلابية">الأنشطة الطلابية</option>
+                    <option value="القسم الرياضي">القسم الرياضي</option>
+                    <option value="قسم المشاريع الهندسية">قسم المشاريع الهندسية</option>
+                    <option value="المشاريع والابتكارات الطبية">المشاريع والابتكارات الطبية</option>
+                    <option value="الأنشطة الثقافية الطبية">الأنشطة الثقافية الطبية</option>
+                    <option value="الأنشطة الفنية">الأنشطة الفنية</option>
+                    <option value="الأنشطة الثقافية">الأنشطة الثقافية</option>
+                    <option value="الأنشطة التطوعية">الأنشطة التطوعية</option>
+                </select>
+
+                <select id="statusFilter" onchange="filterApplications()">
+                    <option value="" data-ar="جميع الحالات" data-en="All Statuses" data-fr="Tous les statuts" data-ku="هەموو بارودۆخان">جميع الحالات</option>
+                    <option value="قيد الانتظار">قيد الانتظار</option>
+                    <option value="مقبول">مقبول</option>
+                    <option value="مرفوض">مرفوض</option>
+                </select>
+
+                <input type="text" id="searchInput" placeholder="البحث باسم الطالب..." data-placeholder-ar="البحث باسم الطالب..." data-placeholder-en="Search by student name..." data-placeholder-fr="Rechercher par nom d'étudiant..." data-placeholder-ku="گەڕان بە ناوی خوێندکار..." onkeyup="filterApplications()">
+            </div>
+        </div>
+
+        <!-- Applications List -->
+        <div class="applications-management-section">
+            <h2 class="section-title">
+                <i class="fas fa-tasks"></i>
+                <span data-ar="إدارة طلبات الطلاب" data-en="Manage Student Requests" data-fr="Gérer les demandes des étudiants" data-ku="بەڕێوەبردنی داواکانی خوێندکاران">إدارة طلبات الطلاب</span>
+            </h2>
+            <div id="applicationsList" class="applications-table"></div>
+        </div>
+
+        <div class="applications-management-section">
+            <h2 class="section-title">
+                <i class="fas fa-bullhorn"></i>
+                <span data-ar="إدارة الإعلانات" data-en="Manage Announcements" data-fr="Gérer les annonces" data-ku="بەڕێوەبردنی ئاگانامەکان">إدارة الإعلانات</span>
+            </h2>
+            <div class="details-content">
+                <button class="submit-btn" onclick="openAnnouncementAdminModal()">
+                    <i class="fas fa-bullhorn"></i>
+                    <span data-ar="نشر الإعلان" data-en="Publish Announcement" data-fr="Publier l'annonce" data-ku="بڵاوکردنی ئاگانامە">نشر الإعلان</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Application Details Modal -->
+    <div class="modal" id="detailsModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 data-ar="تفاصيل الطلب" data-en="Request Details" data-fr="Détails de la demande" data-ku="زانیارییەکانى داوا">تفاصيل الطلب</h2>
+                <button class="close-btn" onclick="closeDetailsModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-actions">
+                <button class="message-btn" onclick="openMessageWithStudent()" title="مراسلة الطالب" data-title-ar="مراسلة الطالب" data-title-ku="پەیام ناردن بۆ خوێندکار">
+                    <i class="fas fa-comments"></i>
+                    <span data-ar="مراسلة" data-en="Message" data-fr="Message" data-ku="پەیام">مراسلة</span>
+                </button>
+                <button class="approve-btn" onclick="approveApplication()">
+                    <i class="fas fa-check"></i>
+                    <span data-ar="قبول الطلب" data-en="Approve" data-fr="Approuver" data-ku="قبوڵکردن">قبول الطلب</span>
+                </button>
+                <button class="reject-btn" onclick="rejectApplication()">
+                    <i class="fas fa-times"></i>
+                    <span data-ar="رفض الطلب" data-en="Reject" data-fr="Rejeter" data-ku="ڕەتکردنەوە">رفض الطلب</span>
+                </button>
+                <button class="danger-btn" id="deleteApplicationBtn" style="display:none" onclick="deleteApplicationAction()">
+                    <i class="fas fa-trash"></i>
+                    <span data-ar="حذف الطلب" data-en="Delete" data-fr="Supprimer" data-ku="سڕینەوە">حذف الطلب</span>
+                </button>
+                <button class="cancel-btn" onclick="closeDetailsModal()">
+                    <span data-ar="إغلاق" data-en="Close" data-fr="Fermer" data-ku="داخستن">إغلاق</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Edit Profile Modal -->
+    <div class="modal" id="editProfileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-ar="تعديل الملف الشخصي" data-ku="دەستکاری پروفایل">تعديل الملف الشخصي</h2>
+                <button class="close-btn" onclick="closeEditProfileModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form onsubmit="handleProfileUpdate(event)" id="editProfileForm">
+                <div class="input-group">
+                    <label for="editFullName" data-ar="الاسم الكامل" data-ku="ناوی تەواو">الاسم الكامل</label>
+                    <input type="text" id="editFullName" required>
+                </div>
+                <div class="input-group">
+                    <label for="editUsername" data-ar="اسم المستخدم" data-ku="ناوی بەکارهێنەر">اسم المستخدم</label>
+                    <input type="text" id="editUsername" required disabled>
+                </div>
+                <div class="input-group">
+                    <label for="editEmail" data-ar="البريد الإلكتروني" data-ku="ئیمەیڵ">البريد الإلكتروني</label>
+                    <input type="email" id="editEmail" required>
+                </div>
+                <div class="input-group">
+                    <label for="editNewPassword" data-ar="كلمة المرور الجديدة (اختياري)" data-ku="وشەی نهێنی نوێ (ئەرەزوو)">كلمة المرور الجديدة (اختياري)</label>
+                    <input type="password" id="editNewPassword" placeholder="اتركه فارغًا للحفاظ على القديمة" data-placeholder-ar="اتركه فارغًا للحفاظ على القديمة" data-placeholder-ku="بە بەتاڵی بەلەوە هێڵە بۆ پاراستنی کۆنکە">
+                </div>
+                <div class="input-group">
+                    <label for="editConfirmNewPassword" data-ar="تأكيد كلمة المرور الجديدة" data-ku="دڵنیابون لە وشەی نهێنی نوێ">تأكيد كلمة المرور الجديدة</label>
+                    <input type="password" id="editConfirmNewPassword" placeholder="تأكيد كلمة المرور الجديدة" data-placeholder-ar="تأكيد كلمة المرور الجديدة" data-placeholder-ku="دڵنیابون لە وشەی نهێنی نوێ">
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-save"></i> <span data-ar="حفظ التغييرات" data-ku="هەڵگرتنی گۆڕانکارییەکان">حفظ التغييرات</span>
+                    </button>
+                    <button type="button" class="cancel-btn" onclick="closeEditProfileModal()">
+                        <span data-ar="إلغاء" data-ku="هەڵوەشاندنەوە">إلغاء</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Employee Modal -->
+    <div class="modal" id="createEmployeeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-ar="إنشاء حساب موظف" data-en="Create Employee Account" data-fr="Créer un compte employé" data-ku="دروستکردنی هەژماری کارمەند">إنشاء حساب موظف</h2>
+                <button class="close-btn" onclick="closeCreateEmployeeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form onsubmit="handleCreateEmployee(event)" id="createEmployeeForm">
+                <div class="input-group"><label data-ar="الاسم الكامل" data-ku="ناوی تەواو">الاسم الكامل</label><input type="text" id="newEmpFullName" required></div>
+                <div class="input-group"><label data-ar="اسم المستخدم" data-ku="ناوی بەکارهێنەر">اسم المستخدم</label><input type="text" id="newEmpUsername" required></div>
+                <div class="input-group"><label data-ar="البريد الإلكتروني" data-ku="ئیمەیڵ">البريد الإلكتروني</label><input type="email" id="newEmpEmail" required></div>
+                <div class="input-group"><label data-ar="كلمة المرور" data-ku="وشەی نهێنی">كلمة المرور</label><input type="password" id="newEmpPassword" required></div>
+                <div class="modal-actions">
+                    <button type="submit" class="approve-btn"><i class="fas fa-check"></i><span data-ar="إنشاء" data-ku="دروستکردن">إنشاء</span></button>
+                    <button type="button" class="cancel-btn" onclick="closeCreateEmployeeModal()"><span data-ar="إلغاء" data-ku="هەڵوەشاندنەوە">إلغاء</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Supervisor Chat Modal -->
+    <div class="modal" id="supervisorChatModal">
+        <div class="messaging-content">
+            <div class="modal-header">
+                <div class="header-info">
+                    <h2 id="supervisorChatTitle">مدير الموظفين</h2>
+                    <p class="other-user" id="supervisorChatSubtitle"></p>
+                </div>
+                <button class="close-btn" onclick="closeSupervisorChat()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="messages-container" id="supervisorMessagesList"></div>
+            <div class="message-input-area">
+                <textarea id="supervisorMessageInput" class="message-input" rows="2" placeholder="اكتب رسالتك..."></textarea>
+                <div class="input-actions">
+                    <button class="send-btn" onclick="sendSupervisorMessage()">
+                        <i class="fas fa-paper-plane"></i> إرسال
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Messaging Modal -->
+    <div class="modal" id="studentMessageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="header-info">
+                    <h2><i class="fas fa-envelope"></i> مراسلة الطالب</h2>
+                    <p class="other-user" id="messageStudentName"></p>
+                </div>
+                <button class="close-btn" onclick="closeMessageModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="message-form">
+                <div class="form-group">
+                    <label for="messageContent">الرسالة:</label>
+                    <textarea id="messageContent" rows="4" placeholder="اكتب رسالتك للطالب هنا..." required></textarea>
+                </div>
+                <input type="hidden" id="messageStudentId">
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeMessageModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="sendStudentMessage()">
+                        <i class="fas fa-paper-plane"></i> إرسال الرسالة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employees Management Modal -->
+    <div class="modal" id="employeesManagementModal">
+        <div class="modal-content xl">
+            <div class="modal-header">
+                <h2><i class="fas fa-users-cog"></i> إدارة الموظفين</h2>
+                <button class="close-btn" onclick="closeEmployeesModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="management-toolbar" style="justify-content: space-between;">
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <button class="ghost-btn" onclick="loadEmployees()">
+                        <i class="fas fa-sync-alt"></i>
+                        <span data-ar="تحديث القائمة" data-en="Refresh List">تحديث القائمة</span>
+                    </button>
+                </div>
+                <small style="color: var(--text-secondary);">الموظف الرئيسي فقط يمكنه الحذف والمراسلة</small>
+            </div>
+            <div id="employeesList" class="employees-grid"></div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <!-- Floating Action Button for Admin/Staff -->
+    <div class="fab-container" id="fabContainer">
+        <button class="fab-main" onclick="toggleFabMenu()" title="القائمة الرئيسية">
+            <i class="fas fa-plus"></i>
+        </button>
+        <div class="fab-menu" id="fabMenu">
+            <button class="fab-item" onclick="openUserManagementModal()" title="إدارة المستخدمين">
+                <i class="fas fa-users-cog"></i>
+                <span>إدارة المستخدمين</span>
+            </button>
+            <button class="fab-item" onclick="openChatRoomModal()" title="إدارة كروب الدردشة">
+                <i class="fas fa-comments"></i>
+                <span>إدارة كروب الدردشة</span>
+            </button>
+            <button class="fab-item" onclick="openStudentRequestsModal()" title="إدارة طلبات الطلاب">
+                <i class="fas fa-user-graduate"></i>
+                <span>إدارة طلبات الطلاب</span>
+            </button>
+            <button class="fab-item" onclick="openNotificationModal()" title="إرسال إشعارات">
+                <i class="fas fa-bell"></i>
+                <span>إرسال إشعارات</span>
+            </button>
+            <button class="fab-item" onclick="openImageAnnouncementModal()" title="نشر صور">
+                <i class="fas fa-image"></i>
+                <span>نشر صور</span>
+            </button>
+            <button class="fab-item" onclick="openVideoReelModal()" title="نشر فيديو">
+                <i class="fas fa-video"></i>
+                <span>نشر فيديو</span>
+            </button>
+            <button class="fab-item" onclick="openContestModal()" title="إنشاء مسابقة">
+                <i class="fas fa-trophy"></i>
+                <span>إنشاء مسابقة</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Video Reels Modal -->
+    <div class="modal" id="videoReelModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-video"></i> نشر فيديو قصير</h2>
+                <button class="close-btn" onclick="closeVideoReelModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="video-form">
+                <div class="form-group">
+                    <label for="videoTitle">عنوان الفيديو:</label>
+                    <input type="text" id="videoTitle" placeholder="أدخل عنوان الفيديو..." required>
+                </div>
+                <div class="form-group">
+                    <label for="videoDescription">وصف الفيديو:</label>
+                    <textarea id="videoDescription" rows="4" placeholder="أدخل وصف الفيديو..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="videoFile">اختر الفيديو:</label>
+                    <input type="file" id="videoFile" accept="video/*" required onchange="handleVideoFileSelect(event)">
+                    <div class="file-info" id="videoFileInfo">لم يتم اختيار ملف بعد</div>
+                </div>
+                <div class="form-group">
+                    <label for="videoThumbnail">صورة مصغرة (اختياري):</label>
+                    <input type="file" id="videoThumbnail" accept="image/*" onchange="handleThumbnailSelect(event)">
+                    <div class="file-info" id="thumbnailFileInfo">لم يتم اختيار صورة بعد</div>
+                </div>
+                <div class="form-group">
+                    <label for="videoCategory">الفئة:</label>
+                    <select id="videoCategory">
+                        <option value="general">عام</option>
+                        <option value="educational">تعليمي</option>
+                        <option value="entertainment">ترفيهي</option>
+                        <option value="sports">رياضي</option>
+                        <option value="news">أخبار</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="videoTags">الوسوم (فصل بينها بفاصلة):</label>
+                    <input type="text" id="videoTags" placeholder="مثال: تعليمي, جامعة, طلاب">
+                </div>
+                <div class="video-preview" id="videoPreview" style="display: none;">
+                    <h3>معاينة الفيديو:</h3>
+                    <video id="previewVideo" controls style="width: 100%; max-height: 300px;"></video>
+                    <img id="previewThumbnail" style="width: 100px; height: 100px; object-fit: cover; margin-top: 10px;">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeVideoReelModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="submitVideoReel()">
+                        <i class="fas fa-upload"></i> نشر الفيديو
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Chat Room Management Modal -->
+    <div class="modal" id="chatRoomModal">
+        <div class="modal-content fullscreen-management-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-comments"></i> إدارة كروب الدردشة</h2>
+                <div class="modal-theme-quick" role="group" aria-label="تغيير الثيم">
+                    <span class="modal-theme-quick-label">الثيم</span>
+                    <button type="button" class="dot-blue-light" onclick="changeTheme('blue-light')" title="أزرق فاتح"></button>
+                    <button type="button" class="dot-sky-blue" onclick="changeTheme('sky-blue')" title="أزرق سماوي"></button>
+                    <button type="button" class="dot-purple" onclick="changeTheme('purple')" title="بنفسجي"></button>
+                    <button type="button" class="dot-blue" onclick="changeTheme('blue')" title="أزرق غامق"></button>
+                </div>
+                <button class="close-btn" onclick="closeChatRoomModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="chat-room-form">
+                <div class="form-section">
+                    <h3>الكروبات المنشأة</h3>
+                    <div class="existing-chat-rooms">
+                        <div class="rooms-list" id="existingChatRoomsList">
+                            <!-- Existing chat rooms will be displayed here -->
+                            <div class="no-rooms">
+                                <i class="fas fa-comments"></i>
+                                <p>لا توجد كروبات منشأة بعد</p>
+                                <small>قم بإنشاء كروب جديد للبدء</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>إنشاء كروب جديد</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="chatRoomName">اسم الكروب:</label>
+                            <input type="text" id="chatRoomName" placeholder="أدخل اسم الكروب..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="chatRoomDescription">وصف الكروب:</label>
+                            <textarea id="chatRoomDescription" rows="3" placeholder="أدخل وصف الكروب..." required></textarea>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="chatRoomType">نوع الكروب:</label>
+                            <select id="chatRoomType">
+                                <option value="general">عام</option>
+                                <option value="contest">مسابقة</option>
+                                <option value="study">دراسة</option>
+                                <option value="announcement">إعلانات</option>
+                                <option value="private">خاص</option>
+                                <option value="support">دعم فني</option>
+                                <option value="project">مشروع</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="chatRoomMaxMembers">الحد الأقصى للأعضاء:</label>
+                            <input type="number" id="chatRoomMaxMembers" min="2" max="1000" value="50">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>إعدادات الكروب</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="chatRoomPrivacy">الخصوصية:</label>
+                            <select id="chatRoomPrivacy">
+                                <option value="public">عام</option>
+                                <option value="private">خاص</option>
+                                <option value="invite-only">دعوة فقط</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="chatRoomStatus">الحالة:</label>
+                            <select id="chatRoomStatus">
+                                <option value="active">نشط</option>
+                                <option value="archived">مؤرشف</option>
+                                <option value="readonly">للقراءة فقط</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="chatRoomRules">قواعد الكروب:</label>
+                        <textarea id="chatRoomRules" rows="3" placeholder="أدخل قواعد الكروب..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="chatRoomTags">الوسوم:</label>
+                        <input type="text" id="chatRoomTags" placeholder="أدخل وسوم (فصل بينها بفاصلة)">
+                    </div>
+                    <div class="form-group">
+                        <label for="adminRole">مدير الكروب:</label>
+                        <select id="adminRole">
+                            <option value="">اختر مدير الكروب</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>طلبات الانضمام للطلاب</h3>
+                    <div class="student-requests">
+                        <div class="requests-info">
+                            <p><i class="fas fa-info-circle"></i> يمكن للطلاب إنشاء حسابات وطلب الانضمام للأنشطة. سيتم مراجعة الطلبات والموافقة عليها تلقائياً.</p>
+                        </div>
+                        
+                        <div class="requests-list-section">
+                            <h4>طلبات الانضمام الحالية:</h4>
+                            <div class="requests-list" id="studentJoinRequests">
+                                <!-- Student requests will be displayed here -->
+                                <div class="no-requests">
+                                    <i class="fas fa-inbox"></i>
+                                    <p>لا توجد طلبات انضمام حالية</p>
+                                    <small>سيظهر هنا الطلاب الذين طلبوا الانضمام للأنشطة</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="requests-actions">
+                            <button type="button" class="approve-all-btn" onclick="approveAllRequests()">
+                                <i class="fas fa-check-double"></i> موافقة على كل الطلبات
+                            </button>
+                            <button type="button" class="refresh-requests-btn" onclick="refreshStudentRequests()">
+                                <i class="fas fa-sync"></i> تحديث الطلبات
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>إعدادات متقدمة</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="chatRoomMessageRetention">الاحتفاظ بالرسائل:</label>
+                            <select id="chatRoomMessageRetention">
+                                <option value="forever">للأبد</option>
+                                <option value="30days">30 يوم</option>
+                                <option value="90days">90 يوم</option>
+                                <option value="1year">سنة واحدة</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="chatRoomFileSharing">مشاركة الملفات:</label>
+                            <select id="chatRoomFileSharing">
+                                <option value="enabled">مفعلة</option>
+                                <option value="disabled">معطلة</option>
+                                <option value="admin-only">للمدير فقط</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="chatRoomMaxFileSize">الحد الأقصى لحجم الملف (MB):</label>
+                            <input type="number" id="chatRoomMaxFileSize" min="1" max="100" value="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="chatRoomAllowedFileTypes">أنواع الملفات المسموحة:</label>
+                            <input type="text" id="chatRoomAllowedFileTypes" placeholder="pdf, doc, jpg, png" value="pdf, doc, docx, jpg, png, zip">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="chatRoomWelcomeMessage">رسالة الترحيب:</label>
+                        <textarea id="chatRoomWelcomeMessage" rows="2" placeholder="رسالة الترحيب للأعضاء الجدد..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="chatRoomNotifications" checked>
+                            <span>تفعيل الإشعارات</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="chatRoomEncryption">
+                            <span>تشفير الرسائل</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="chatRoomAutoMod" checked>
+                            <span>مراقبة تلقائية</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="chatRoomReadOnly">
+                            <span>للقراءة فقط (مؤقت)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>قوالب الكروب الجاهزة</h3>
+                    <div class="template-grid">
+                        <div class="template-card" onclick="applyTemplate('study')">
+                            <i class="fas fa-book"></i>
+                            <h4>كروب دراسة</h4>
+                            <p>للمناقشة المواد الدراسية والواجبات</p>
+                        </div>
+                        <div class="template-card" onclick="applyTemplate('project')">
+                            <i class="fas fa-project-diagram"></i>
+                            <h4>كروب مشروع</h4>
+                            <p>لتنسيق المشاريع الجماعية</p>
+                        </div>
+                        <div class="template-card" onclick="applyTemplate('announcement')">
+                            <i class="fas fa-bullhorn"></i>
+                            <h4>كروب إعلانات</h4>
+                            <p>للإعلانات الرسمية والتواصل</p>
+                        </div>
+                        <div class="template-card" onclick="applyTemplate('support')">
+                            <i class="fas fa-life-ring"></i>
+                            <h4>كروب دعم فني</h4>
+                            <p>للمساعدة الفنية والدعم</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>إحصائيات وتقارير</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <i class="fas fa-users"></i>
+                            <div class="stat-info">
+                                <h4>الأعضاء الحاليين</h4>
+                                <span id="currentMembersCount">0</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-comments"></i>
+                            <div class="stat-info">
+                                <h4>الرسائل اليوم</h4>
+                                <span id="todayMessagesCount">0</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-file"></i>
+                            <div class="stat-info">
+                                <h4>الملفات المشتركة</h4>
+                                <span id="sharedFilesCount">0</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-chart-line"></i>
+                            <div class="stat-info">
+                                <h4>معدل النشاط</h4>
+                                <span id="activityRate">عالي</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>أدوات المراقبة المتقدمة</h3>
+                    <div class="moderation-tools">
+                        <div class="tool-group">
+                            <h4>مرشحات الكلمات</h4>
+                            <div class="form-group">
+                                <label for="wordFilter">كلمات محظورة:</label>
+                                <input type="text" id="wordFilter" placeholder="أدخل كلمات محظورة (فصل بينها بفاصلة)">
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="autoDeleteBadWords" checked>
+                                    <span>حذف تلقائي للكلمات السيئة</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="tool-group">
+                            <h4>التحكم في الرسائل</h4>
+                            <div class="form-group">
+                                <label for="messageDelay">تأخير الرسائل (ثانية):</label>
+                                <input type="number" id="messageDelay" min="0" max="60" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="maxMessageLength">الحد الأقصى للرسالة:</label>
+                                <input type="number" id="maxMessageLength" min="50" max="1000" value="500">
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="allowLinks">
+                                    <span>السماح بالروابط</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="allowImages">
+                                    <span>السماح بالصور</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="tool-group">
+                            <h4>التحكم في الأعضاء</h4>
+                            <div class="form-group">
+                                <label for="memberApproval">موافقة العضوية:</label>
+                                <select id="memberApproval">
+                                    <option value="automatic">تلقائي</option>
+                                    <option value="manual">يدوي</option>
+                                    <option value="admin-only">المدير فقط</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="allowInvites">
+                                    <span>السماح بالدعوات</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="kickInactive">
+                                    <span>طرد الأعضاء غير النشطين (7 أيام)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>النسخ الاحتياطي والتصدير</h3>
+                    <div class="backup-tools">
+                        <div class="tool-group">
+                            <h4>النسخ الاحتياطي التلقائي</h4>
+                            <div class="form-group">
+                                <label for="backupFrequency">تكرار النسخ:</label>
+                                <select id="backupFrequency">
+                                    <option value="daily">يومي</option>
+                                    <option value="weekly">أسبوعي</option>
+                                    <option value="monthly">شهري</option>
+                                    <option value="manual">يدوي</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="backupRetention">الاحتفاظ بالنسخ:</label>
+                                <select id="backupRetention">
+                                    <option value="7days">7 أيام</option>
+                                    <option value="30days">30 يوم</option>
+                                    <option value="90days">90 يوم</option>
+                                    <option value="1year">سنة</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="includeFilesInBackup" checked>
+                                    <span>تضمين الملفات في النسخ الاحتياطي</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="tool-group">
+                            <h4>التصدير</h4>
+                            <div class="form-actions">
+                                <button type="button" class="export-btn" onclick="exportChatData('json')">
+                                    <i class="fas fa-download"></i> تصدير JSON
+                                </button>
+                                <button type="button" class="export-btn" onclick="exportChatData('csv')">
+                                    <i class="fas fa-file-csv"></i> تصدير CSV
+                                </button>
+                                <button type="button" class="export-btn" onclick="exportChatData('pdf')">
+                                    <i class="fas fa-file-pdf"></i> تصدير PDF
+                                </button>
+                                <button type="button" class="backup-btn" onclick="createBackup()">
+                                    <i class="fas fa-save"></i> نسخ احتياطي الآن
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>الجدولة والأتمتة</h3>
+                    <div class="scheduling-tools">
+                        <div class="tool-group">
+                            <h4>الجدولة</h4>
+                            <div class="form-group">
+                                <label for="scheduledMessages">الرسائل المجدولة:</label>
+                                <textarea id="scheduledMessages" rows="3" placeholder="أدخل الرسائل المجدولة..."></textarea>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="scheduleTime">وقت الإرسال:</label>
+                                    <input type="datetime-local" id="scheduleTime">
+                                </div>
+                                <div class="form-group">
+                                    <label for="scheduleRepeat">التكرار:</label>
+                                    <select id="scheduleRepeat">
+                                        <option value="once">مرة واحدة</option>
+                                        <option value="daily">يومي</option>
+                                        <option value="weekly">أسبوعي</option>
+                                        <option value="monthly">شهري</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="tool-group">
+                            <h4>الأتمتة</h4>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="autoWelcome">
+                                    <span>رسالة ترحيب تلقائية</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="autoGoodbye">
+                                    <span>رسالة وداع تلقائية</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="autoModeration">
+                                    <span>مراقبة تلقائية 24/7</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="autoCleanup">
+                                    <span>تنظيف تلقائي للرسائل القديمة</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeChatRoomModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="createChatRoom()">
+                        <i class="fas fa-plus"></i> إنشاء الكروب
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification System Modal -->
+    <div class="modal" id="notificationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-bell"></i> إرسال تنبيه</h2>
+                <button class="close-btn" onclick="closeNotificationModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="notification-form">
+                <div class="form-section">
+                    <h3>معلومات التنبيه</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="notificationTitle">عنوان التنبيه:</label>
+                            <input type="text" id="notificationTitle" placeholder="أدخل عنوان التنبيه..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="notificationType">نوع التنبيه:</label>
+                            <select id="notificationType">
+                                <option value="general">عام</option>
+                                <option value="urgent">عاجل</option>
+                                <option value="academic">أكاديمي</option>
+                                <option value="administrative">إداري</option>
+                                <option value="event">فعالية</option>
+                                <option value="deadline">موعد نهائي</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="notificationPriority">الأولوية:</label>
+                            <select id="notificationPriority">
+                                <option value="low">منخفضة</option>
+                                <option value="medium" selected>متوسطة</option>
+                                <option value="high">عالية</option>
+                                <option value="critical">حرجة</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="notificationTarget">الجهة المستهدفة:</label>
+                            <select id="notificationTarget" onchange="handleNotificationTargetChange()">
+                                <option value="all">جميع المستخدمين</option>
+                                <option value="students">الطلاب فقط</option>
+                                <option value="employees">الموظفين فقط</option>
+                                <option value="specific">مستخدمين محددين</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>نص الرسالة</h3>
+                    <div class="form-group">
+                        <label for="notificationMessage">محتوى التنبيه:</label>
+                        <textarea id="notificationMessage" rows="6" placeholder="أدخل نص التنبيه..." required oninput="handleMessageInput()"></textarea>
+                        <div class="char-count" id="notificationCharCount">0 / 500</div>
+                    </div>
+                </div>
+                
+                <div class="form-section" id="targetUsersSection" style="display: none;">
+                    <h3>اختيار المستخدمين المستهدفين</h3>
+                    <div class="member-management">
+                        <div class="member-input-section">
+                            <div class="form-group">
+                                <label for="userSearch">البحث عن مستخدم:</label>
+                                <input type="text" id="userSearch" placeholder="ابحث بالاسم أو البريد الإلكتروني..." onkeyup="searchUsers()">
+                            </div>
+                            <div class="search-results" id="userSearchResults" style="display: none;">
+                                <!-- Search results will be displayed here -->
+                            </div>
+                        </div>
+                        
+                        <div class="member-list-section">
+                            <h4>المستخدمون المضافون:</h4>
+                            <div class="member-list" id="targetUsersList">
+                                <!-- Target users will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeNotificationModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="sendNotification()">
+                        <i class="fas fa-paper-plane"></i> إرسال التنبيه
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Publishing Modal -->
+    <div class="modal" id="imageAnnouncementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-image"></i> نشر صورة أو إعلان</h2>
+                <button class="close-btn" onclick="closeImageAnnouncementModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="image-form">
+                <div class="form-section">
+                    <h3>معلومات الإعلان</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="imageTitle">عنوان الإعلان:</label>
+                            <input type="text" id="imageTitle" placeholder="أدخل عنوان الإعلان..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="imageType">نوع الإعلان:</label>
+                            <select id="imageType">
+                                <option value="general">عام</option>
+                                <option value="urgent">عاجل</option>
+                                <option value="contest">مسابقة</option>
+                                <option value="event">فعالية</option>
+                                <option value="academic">أكاديمي</option>
+                                <option value="administrative">إداري</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="imageDescription">وصف الإعلان:</label>
+                        <textarea id="imageDescription" rows="4" placeholder="أدخل وصف الإعلان..." required></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>صورة الإعلان</h3>
+                    <div class="form-group">
+                        <label for="imageFile">اختر الصورة:</label>
+                        <input type="file" id="imageFile" accept="image/*" required onchange="handleImageSelect(event)">
+                        <div class="file-info" id="imageFileInfo">لم يتم اختيار صورة بعد</div>
+                    </div>
+                    <div class="image-preview" id="imagePreview" style="display: none;">
+                        <h4>معاينة الصورة:</h4>
+                        <img id="previewImage" style="width: 100%; max-height: 300px; object-fit: contain; border: 1px solid #e9ecef; border-radius: 8px;">
+                        <div class="image-actions">
+                            <button type="button" class="secondary-btn" onclick="removeImage()">
+                                <i class="fas fa-trash"></i> حذف الصورة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>إعدادات النشر</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="imagePriority">الأولوية:</label>
+                            <select id="imagePriority">
+                                <option value="low">منخفضة</option>
+                                <option value="medium" selected>متوسطة</option>
+                                <option value="high">عالية</option>
+                                <option value="critical">حرجة</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="imageVisibility">الظهور:</label>
+                            <select id="imageVisibility">
+                                <option value="all">للجميع</option>
+                                <option value="students">للطلاب فقط</option>
+                                <option value="employees">للموظفين فقط</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="imageTags">الوسوم (فصل بينها بفاصلة):</label>
+                        <input type="text" id="imageTags" placeholder="مثال: إعلان, جامعة, فعالية">
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeImageAnnouncementModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="publishImageAnnouncement()">
+                        <i class="fas fa-upload"></i> نشر الصورة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Management Modal -->
+    <div class="modal" id="userManagementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-users-cog"></i> إدارة المستخدمين</h2>
+                <button class="close-btn" onclick="closeUserManagementModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="user-management-content">
+                <div class="user-management-header">
+                    <div class="search-filter-section">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="userSearchInput" placeholder="البحث عن مستخدم..." onkeyup="searchUsers()">
+                        </div>
+                        <div class="filter-section">
+                            <select id="roleFilter" onchange="filterUsers()">
+                                <option value="all">كل الأدوار</option>
+                                <option value="admin">مدير</option>
+                                <option value="moderator">مشرف</option>
+                                <option value="student">طالب</option>
+                                <option value="employee">موظف</option>
+                            </select>
+                            <select id="statusFilter" onchange="filterUsers()">
+                                <option value="all">كل الحالات</option>
+                                <option value="active">نشط</option>
+                                <option value="inactive">غير نشط</option>
+                                <option value="suspended">معلق</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="primary-btn" onclick="openCreateUserModal()">
+                            <i class="fas fa-user-plus"></i> إضافة مستخدم جديد
+                        </button>
+                        <div class="stats-card">
+                            <h3><i class="fas fa-users-cog"></i> إدارة الكروبات</h3>
+                            <div class="stats-content">
+                                <div class="stat-item">
+                                    <span class="stat-label">إجمالي الكروبات:</span>
+                                    <span class="stat-value" id="totalChatRooms">0</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">كروبات نشطة:</span>
+                                    <span class="stat-value" id="activeChatRooms">0</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">إجمالي الأعضاء:</span>
+                                    <span class="stat-value" id="totalChatMembers">0</span>
+                                </div>
+                                <button class="primary-btn" onclick="openGroupsManagementModal()">
+                                    <i class="fas fa-cogs"></i> إدارة الكروبات
+                                </button>
+                            </div>
+                        </div>
+                        <div class="users-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-users"></i>
+                                <div class="stat-info">
+                                    <span class="stat-number" id="totalUsers">0</span>
+                                    <span class="stat-label">إجمالي المستخدمين</span>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-user-check"></i>
+                                <div class="stat-info">
+                                    <span class="stat-number" id="activeUsers">0</span>
+                                    <span class="stat-label">نشطون</span>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-user-clock"></i>
+                                <div class="stat-info">
+                                    <span class="stat-number" id="inactiveUsers">0</span>
+                                    <span class="stat-label">غير نشطين</span>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-user-slash"></i>
+                                <div class="stat-info">
+                                    <span class="stat-number" id="suspendedUsers">0</span>
+                                    <span class="stat-label">معلقون</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-user-slash"></i>
+                        <div class="stat-info">
+                            <span class="stat-number" id="suspendedUsers">0</span>
+                            <span class="stat-label">معلقون</span>
+                        </div>
+                    </div>e
+                </div>
+                
+                <div class="users-table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>المستخدم</th>
+                                <th>اسم المستخدم</th>
+                                <th>البريد الإلكتروني</th>
+                                <th>الدور</th>
+                                <th>الحالة</th>
+                                <th>تاريخ الإنشاء</th>
+                                <th>آخر تسجيل دخول</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination" id="usersPagination">
+                    <!-- Pagination will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create User Modal -->
+    <div class="modal" id="createUserModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-plus"></i> إنشاء مستخدم جديد</h2>
+                <button class="close-btn" onclick="closeCreateUserModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="create-user-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newUserName">الاسم الكامل *</label>
+                        <input type="text" id="newUserName" placeholder="أدخل الاسم الكامل">
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserUsername">اسم المستخدم *</label>
+                        <input type="text" id="newUserUsername" placeholder="أدخل اسم المستخدم">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newUserEmail">البريد الإلكتروني *</label>
+                        <input type="email" id="newUserEmail" placeholder="أدخل البريد الإلكتروني">
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserRole">الدور *</label>
+                        <select id="newUserRole">
+                            <option value="student">طالب</option>
+                            <option value="employee">موظف</option>
+                            <option value="moderator">مشرف</option>
+                            <option value="admin">مدير</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newUserPassword">كلمة المرور *</label>
+                        <input type="password" id="newUserPassword" placeholder="أدخل كلمة المرور">
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserConfirmPassword">تأكيد كلمة المرور *</label>
+                        <input type="password" id="newUserConfirmPassword" placeholder="أعد إدخال كلمة المرور">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="newUserPhone">رقم الهاتف</label>
+                    <input type="tel" id="newUserPhone" placeholder="أدخل رقم الهاتف">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeCreateUserModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="primary-btn" onclick="createNewUserAccount()">
+                        <i class="fas fa-save"></i> إنشاء المستخدم
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Chat Interface Modal -->
+    <div class="modal" id="chatInterfaceModal">
+        <div class="modal-content chat-modal-full">
+            <div class="modal-header">
+                <h2><i class="fas fa-comments"></i> واجهة الدردشة الفورية</h2>
+                <button class="close-btn" onclick="closeChatInterfaceModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="chat-interface">
+                <div class="chat-sidebar">
+                    <div class="chat-room-info">
+                        <h3>كروب الدردشة</h3>
+                        <div class="room-details">
+                            <p><strong>الاسم:</strong> <span id="currentRoomName">كروب العام</span></p>
+                            <p><strong>الأعضاء:</strong> <span id="currentRoomMembersCount">0</span></p>
+                            <p><strong>المتصلين:</strong> <span id="onlineMembersCount">0</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-rooms-list">
+                        <h4>الكروبات المتاحة</h4>
+                        <div class="rooms-list" id="chatRoomsList">
+                            <!-- Chat rooms will be displayed here -->
+                        </div>
+                        <button class="join-room-btn" onclick="requestToJoinRoom()" id="joinRoomBtn" style="display: none;">
+                            <i class="fas fa-user-plus"></i> طلب الانضمام
+                        </button>
+                        </div>
+                        
+                        <div class="members-list">
+                            <h4>الأعضاء</h4>
+                            <div class="member-status-list" id="memberStatusList">
+                                <!-- Members will be displayed here -->
+                    </div>
+                </div>
+                
+                <div class="chat-main">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="welcome-message">
+                            <i class="fas fa-info-circle"></i>
+                            <span>مرحباً بك في كروب الدردشة! يمكنك البدء في المحادثة.</span>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-area">
+                        <div class="message-composer">
+                            <div class="input-toolbar">
+                                <button class="toolbar-btn" onclick="addEmoji()" title="إضافة رمز تعبيري">
+                                    <i class="fas fa-smile"></i>
+                                </button>
+                                <button class="toolbar-btn" onclick="attachFile()" title="إرفاق ملف">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
+                                <button class="toolbar-btn" onclick="formatText()" title="تنسيق النص">
+                                    <i class="fas fa-font"></i>
+                                </button>
+                            </div>
+                            <div class="message-input-container">
+                                <textarea id="messageInput" placeholder="اكتب رسالتك هنا..." onkeypress="handleMessageKeyPress(event)" oninput="handleMessageInput()"></textarea>
+                                <button class="send-btn" onclick="sendMessage()" id="sendButton">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                                <span id="typingText">أحد الأعضاء يكتب...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Requests Management Modal -->
+    <div class="modal" id="studentRequestsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-graduate"></i> إدارة طلبات الطلاب</h2>
+                <button class="close-btn" onclick="closeStudentRequestsModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="student-requests-form">
+                <div class="form-section">
+                    <h3>طلبات الانضمام لكروب الدردشة</h3>
+                    <div class="requests-tabs">
+                        <button class="tab-btn active" onclick="showRequestsTab('pending')" id="pendingTab">
+                            <i class="fas fa-clock"></i> طلبات معلقة
+                            <span class="tab-badge" id="pendingCount">0</span>
+                        </button>
+                        <button class="tab-btn" onclick="showRequestsTab('approved')" id="approvedTab">
+                            <i class="fas fa-check"></i> طلبات معتمدة
+                            <span class="tab-badge" id="approvedCount">0</span>
+                        </button>
+                        <button class="tab-btn" onclick="showRequestsTab('rejected')" id="rejectedTab">
+                            <i class="fas fa-times"></i> طلبات مرفوضة
+                            <span class="tab-badge" id="rejectedCount">0</span>
+                        </button>
+                    </div>
+                    
+                    <div class="requests-content" id="requestsContent">
+                        <!-- Requests will be displayed here -->
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>إضافة طالب مباشرة</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="studentUsername">اسم المستخدم للطالب:</label>
+                            <input type="text" id="studentUsername" placeholder="أدخل اسم مستخدم الطالب..." onkeyup="checkStudentUsername(event)">
+                            <div class="username-status" id="studentUsernameStatus"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="targetChatRoom">الكروب المستهدف:</label>
+                            <select id="targetChatRoom">
+                                <option value="">اختر الكروب...</option>
+                                <option value="general">كروب العام</option>
+                                <option value="study">كروب الدراسة</option>
+                                <option value="contest">كروب المسابقات</option>
+                                <option value="announcement">كروب الإعلانات</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="requestReason">سبب الإضافة:</label>
+                        <textarea id="requestReason" rows="3" placeholder="أدخل سبب إضافة الطالب إلى الكروب..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="secondary-btn" onclick="clearStudentRequest()">
+                            <i class="fas fa-eraser"></i> مسح
+                        </button>
+                        <button type="button" class="submit-btn" onclick="addStudentToChatRoom()">
+                            <i class="fas fa-user-plus"></i> إضافة الطالب
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Groups Management Modal -->
+    <div class="modal" id="groupsManagementModal">
+        <div class="modal-content groups-management-modal fullscreen-management-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-users-cog"></i> إدارة الكروبات</h2>
+                <div class="modal-theme-quick" role="group" aria-label="تغيير الثيم">
+                    <span class="modal-theme-quick-label">الثيم</span>
+                    <button type="button" class="dot-blue-light" onclick="changeTheme('blue-light')" title="أزرق فاتح"></button>
+                    <button type="button" class="dot-sky-blue" onclick="changeTheme('sky-blue')" title="أزرق سماوي"></button>
+                    <button type="button" class="dot-purple" onclick="changeTheme('purple')" title="بنفسجي"></button>
+                    <button type="button" class="dot-blue" onclick="changeTheme('blue')" title="أزرق غامق"></button>
+                </div>
+                <button class="close-btn" onclick="closeGroupsManagementModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="groups-management-content">
+                <div class="groups-overview">
+                    <div class="overview-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-users"></i>
+                            <div class="stat-info">
+                                <span class="stat-number" id="mgmtTotalGroups">0</span>
+                                <span class="stat-label">إجمالي الكروبات</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-user-check"></i>
+                            <div class="stat-info">
+                                <span class="stat-number" id="mgmtTotalMembers">0</span>
+                                <span class="stat-label">إجمالي الأعضاء</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-clock"></i>
+                            <div class="stat-info">
+                                <span class="stat-number" id="mgmtPendingRequests">0</span>
+                                <span class="stat-label">طلبات معلقة</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="actions-bar">
+                        <button class="primary-btn" onclick="openChatRoomModal()">
+                            <i class="fas fa-plus"></i> إنشاء كروب جديد
+                        </button>
+                        <button class="secondary-btn" onclick="refreshGroupsData()">
+                            <i class="fas fa-sync-alt"></i> تحديث البيانات
+                        </button>
+                        <button class="secondary-btn" onclick="exportGroupsData()">
+                            <i class="fas fa-download"></i> تصدير البيانات
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="groups-tabs">
+                    <button class="tab-btn active" onclick="showGroupsTab('all')" id="allGroupsTab">
+                        <i class="fas fa-users"></i> جميع الكروبات
+                        <span class="tab-badge" id="allGroupsCount">0</span>
+                    </button>
+                    <button class="tab-btn" onclick="showGroupsTab('active')" id="activeGroupsTab">
+                        <i class="fas fa-check-circle"></i> كروبات نشطة
+                        <span class="tab-badge" id="activeGroupsCount">0</span>
+                    </button>
+                    <button class="tab-btn" onclick="showGroupsTab('members')" id="membersTab">
+                        <i class="fas fa-user-friends"></i> الأعضاء
+                        <span class="tab-badge" id="totalMembersCount">0</span>
+                    </button>
+                    <button class="tab-btn" onclick="showGroupsTab('requests')" id="requestsTab">
+                        <i class="fas fa-user-plus"></i> طلبات الانضمام
+                        <span class="tab-badge" id="requestsCount">0</span>
+                    </button>
+                </div>
+                
+                <div class="groups-content" id="groupsContent">
+                    <!-- Groups content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contest Creation Modal -->
+    <div class="modal" id="contestModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-trophy"></i> إنشاء مسابقة</h2>
+                <button class="close-btn" onclick="closeContestModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="contest-form">
+                <div class="form-section">
+                    <h3>معلومات المسابقة</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="contestName">اسم المسابقة:</label>
+                            <input type="text" id="contestName" placeholder="أدخل اسم المسابقة..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contestType">نوع المسابقة:</label>
+                            <select id="contestType">
+                                <option value="academic">أكاديمية</option>
+                                <option value="sports">رياضية</option>
+                                <option value="art">فنية</option>
+                                <option value="technology">تقنية</option>
+                                <option value="general">عامة</option>
+                                <option value="creative">إبداعية</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="contestDescription">وصف المسابقة:</label>
+                        <textarea id="contestDescription" rows="4" placeholder="أدخل وصف المسابقة..." required></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="contestStartDate">تاريخ البدء:</label>
+                            <input type="datetime-local" id="contestStartDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contestEndDate">تاريخ الانتهاء:</label>
+                            <input type="datetime-local" id="contestEndDate" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>شروط المشاركة</h3>
+                    <div class="form-group">
+                        <label for="contestEligibility">الفئات المسموح بها:</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="eligibility" value="students" checked>
+                                <span>الطلاب</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="eligibility" value="employees">
+                                <span>الموظفون</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="eligibility" value="all">
+                                <span>الجميع</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="contestRequirements">متطلبات المشاركة:</label>
+                        <textarea id="contestRequirements" rows="3" placeholder="أدخل متطلبات المشاركة..." required></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="contestMaxParticipants">الحد الأقصى للمشاركين:</label>
+                            <input type="number" id="contestMaxParticipants" min="1" max="1000" value="50">
+                        </div>
+                        <div class="form-group">
+                            <label for="contestPrize">الجائزة:</label>
+                            <input type="text" id="contestPrize" placeholder="أدخل تفاصيل الجائزة...">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>إعدادات المسابقة</h3>
+                    <div class="form-group">
+                        <label for="contestRules">قواعد المسابقة:</label>
+                        <textarea id="contestRules" rows="4" placeholder="أدخل قواعد المسابقة..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="contestJudges">لجنة التحكيم:</label>
+                        <input type="text" id="contestJudges" placeholder="أدخل أسماء لجنة التحكيم (فصل بينها بفاصلة)">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="contestStatus">حالة المسابقة:</label>
+                            <select id="contestStatus">
+                                <option value="draft">مسودة</option>
+                                <option value="active">نشطة</option>
+                                <option value="upcoming">قادمة</option>
+                                <option value="completed">مكتملة</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="contestVisibility">الظهور:</label>
+                            <select id="contestVisibility">
+                                <option value="public">عامة</option>
+                                <option value="private">خاصة</option>
+                                <option value="restricted">مقيدة</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeContestModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="createContest()">
+                        <i class="fas fa-plus"></i> إنشاء المسابقة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Announcement Modal -->
+    <div class="modal" id="announcementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-bullhorn"></i> إعلانات</h2>
+                <button class="close-btn" onclick="closeAnnouncementModal()" title="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="announcement-form">
+                <div class="form-group">
+                    <label for="announcementTitle">عنوان الإعلان:</label>
+                    <input type="text" id="announcementTitle" placeholder="أدخل عنوان الإعلان..." required>
+                </div>
+                <div class="form-group">
+                    <label for="announcementContent">محتوى الإعلان:</label>
+                    <textarea id="announcementContent" rows="6" placeholder="أدخل محتوى الإعلان..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="announcementType">نوع الإعلان:</label>
+                    <select id="announcementType">
+                        <option value="general">عام</option>
+                        <option value="urgent">عاجل</option>
+                        <option value="contest">مسابقة</option>
+                        <option value="event">فعالية</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn" onclick="closeAnnouncementModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="submit-btn" onclick="submitAnnouncement()">
+                        <i class="fas fa-paper-plane"></i> نشر الإعلان
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="translations.js"></script>
+    <script src="messaging-system.js"></script>
+    <script src="script.js"></script>
+    <script src="api-client.js"></script>
+    <script src="employee-script.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+ULTIMATE FORCE REBUILD V22.0 - Railway must use correct repository
+This file forces Railway to rebuild with the CORRECT repository
+
+ISSUE: Railway is using https://github.com/muqtadaadyy-lgtm/broo.git
+SHOULD BE: Railway should use https://github.com/muqtadaadyy-lgtm/broo.git (bro subdirectory)
+
+Railway must pull from the CORRECT repository with:
+- collectstatic DISABLED (line 28 in Dockerfile)
+- emergency initialization DISABLED
+- contenttypes app ENABLED
+- AbstractBaseUser import DISABLED
+- All Super User creation DISABLED
+
+This is the ULTIMATE force rebuild marker - Railway must use correct repo!

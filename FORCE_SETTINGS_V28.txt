@@ -1,0 +1,23 @@
+FORCE SETTINGS V28.0 - Force Railway to use latest settings.py
+
+CRITICAL: Railway is using cached settings.py from before V27.0 changes
+PROBLEM: Django session middleware fix not working - Railway still using old code!
+
+EVIDENCE: Railway still getting same session middleware error:
+"The session-based temporary message storage requires session middleware to be installed, and come before the message middleware in the MIDDLEWARE list."
+
+LOCAL CODE IS CORRECT:
+- django.contrib.sessions is ENABLED in INSTALLED_APPS (line 46)
+- SessionMiddleware is ENABLED before MessageMiddleware in MIDDLEWARE (line 57)
+- All V27.0 changes are applied correctly locally
+
+RAILWAY PROBLEM: Railway is using cached settings.py from before V27.0
+- RAILWAY_OVERRIDE_V26 worked for container startup
+- But Railway is still using old settings.py file
+- Need to force Railway to use latest settings.py
+
+SOLUTION: Create new force rebuild marker to break Railway's settings.py cache
+- Railway must rebuild and use the latest settings.py with session middleware fix
+- This should finally resolve the Django session middleware error
+
+EXPECTED RESULT: Railway should now use latest settings.py and session middleware error should be resolved!

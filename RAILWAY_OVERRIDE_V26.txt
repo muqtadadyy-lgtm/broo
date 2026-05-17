@@ -1,0 +1,21 @@
+RAILWAY OVERRIDE V26.0 - Force Railway to use latest code via start_command
+CRITICAL: Railway platform bug - caching system completely broken
+
+PROBLEM: Railway is using cached Dockerfile from weeks ago and ignoring ALL changes:
+- ULTIMATE_CACHE_BUST_V25.txt completely ignored
+- Dockerfile restructure completely ignored
+- All force rebuild markers ignored
+- All CMD changes ignored
+
+SOLUTION: Override Railway's cached Dockerfile with explicit start_command
+- Use railway.toml start_command to bypass cached Dockerfile
+- Force Railway to run latest code directly
+- Add explicit logging to verify override works
+
+Railway MUST now show:
+=== RAILWAY OVERRIDE V26.0 ===
+=== FORCING LATEST CODE ===
+=== PWD: /app/backend ===
+=== CHANGED DIR ===
+
+This bypasses Railway's broken caching system entirely.

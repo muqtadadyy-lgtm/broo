@@ -1,0 +1,19 @@
+ULTIMATE CACHE BUST V25.0 - Railway is using cached Dockerfile from weeks ago!
+
+CRITICAL ISSUE: Railway is completely ignoring ALL changes:
+- collectstatic is still running (should be disabled)
+- emergency database initialization is still running (should be disabled)
+- contenttypes app missing error (should be enabled)
+- ALL force rebuild markers ignored
+- ALL Dockerfile CMD changes ignored
+
+Railway is using a cached Dockerfile from WEEKS ago!
+This is a critical Railway caching issue.
+
+SOLUTION: This is the ULTIMATE cache bust attempt:
+- Change Dockerfile structure completely
+- Add unique build arguments
+- Force Railway to rebuild from scratch
+- Break any possible caching mechanism
+
+Railway MUST rebuild from scratch and use the LATEST code!

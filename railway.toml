@@ -1,0 +1,42 @@
+[build]
+builder = "dockerfile"
+# Force redeploy to pick up latest Dockerfile PORT fixes
+
+[watch]
+# Trigger redeploy when these paths change
+paths = [
+    "backend/core/views.py",
+    "backend/core/models.py",
+    "backend/core/urls.py",
+    "backend/university_activities/settings.py",
+    "static/js/*.js",
+    "templates/*.html",
+    "Dockerfile",
+    "railway.toml"
+]
+
+[deploy]
+# Railway handles restarts automatically
+
+[variables]
+PYTHON_VERSION = "3.11.9"
+DEBUG = "False"
+DB_ENGINE = "sqlite"
+
+[[services]]
+name = "university-activities"
+type = "web"
+
+[services.health_check]
+path = "/health/"
+grace_period_seconds = 180
+restart_policy_type = "on_failure"
+restart_policy_max_retries = 3
+
+[services.build]
+memory = "512Mi"
+
+# PRODUCTION READY - Use gunicorn instead of runserver for Railway deployment
+# Replace development server with production WSGI server
+[services.start_command]
+command = "echo '=== PRODUCTION DEPLOYMENT V29.0 ===' && echo '=== USING GUNICORN FOR PRODUCTION ===' && echo '=== PWD: '$(pwd)' ===' && cd /app/backend && echo '=== CHANGED DIR ===' && python manage.py migrate && echo '=== MIGRATIONS COMPLETED ===' && gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"

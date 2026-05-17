@@ -1,0 +1,4 @@
+FORCE REBUILD V13.0 - Remove Super User creation from Dockerfile CMD
+This file forces Railway to rebuild the container with the updated Dockerfile
+Super User creation has been removed from Dockerfile CMD
+Railway should now use: echo '=== RAILWAY PORT: '$PORT' ===' && python manage.py migrate --noinput && gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT

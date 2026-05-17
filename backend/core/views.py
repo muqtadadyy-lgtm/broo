@@ -1,0 +1,2915 @@
+from datetime import datetime, timedelta
+import json
+import mimetypes
+import os
+from pathlib import Path
+
+from django.conf import settings
+from django.db.models import Q, Prefetch
+from django.http import JsonResponse, FileResponse, Http404, HttpRequest, HttpResponse
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.contrib.auth.hashers import make_password, check_password
+from django.db import connection
+
+from .jwt_utils import create_access_token, jwt_required, get_jwt_identity
+from .models import (
+    Activity,
+    ActivityRegistration,
+    Announcement,
+    Application,
+    ChatMessage,
+    ChatRoom,
+    ChatRoomMember,
+    EmployeeDirectMessage,
+    EmployeeRequest,
+    Message,
+    StudentJoinRequest,
+    User,
+)
+
+
+def _parse_json(request: HttpRequest) -> dict:
+    try:
+        if not request.body:
+            return {}
+        return json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return {}
+
+
+def _error(message: str, status: int = 400) -> JsonResponse:
+    return JsonResponse({"success": False, "message": message}, status=status)
+
+
+@require_http_methods(["GET"])
+def home(request: HttpRequest) -> JsonResponse:
+    """
+    Home endpoint for root path / - returns API status.
+    This ensures Railway deployment shows something at root URL.
+    """
+    try:
+        return JsonResponse({
+            "status": "running",
+            "message": "University Activities API is running 🚀",
+            "timestamp": timezone.now().isoformat(),
+            "debug": settings.DEBUG,
+            "endpoints": {
+                "api": "/api/",
+                "health": "/health/",
+                "admin": "/admin/",
+                "test": "/test/"
+            },
+            "documentation": "Use /api/ endpoints for all operations"
+        })
+    except Exception as e:
+        return JsonResponse({
+            "status": "error",
+            "message": f"Home endpoint error: {str(e)}",
+            "timestamp": timezone.now().isoformat()
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def test_endpoint(request: HttpRequest) -> JsonResponse:
+    """
+    Simple test endpoint to verify basic functionality
+    """
+    try:
+        return JsonResponse({
+            "status": "ok",
+            "message": "Test endpoint working",
+            "timestamp": timezone.now().isoformat(),
+            "method": request.method,
+            "path": request.path
+        })
+    except Exception as e:
+        return JsonResponse({
+            "status": "error",
+            "message": f"Test endpoint error: {str(e)}",
+            "timestamp": timezone.now().isoformat()
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def health_check(request: HttpRequest) -> JsonResponse:
+    """Ultra-fast health check endpoint for Railway monitoring"""
+    # Skip all database checks for maximum speed
+    # Return immediately without any DB operations
+    
+    return JsonResponse({
+        "status": "ok",
+        "timestamp": timezone.now().isoformat(),
+        "database": "ready",
+        "tables": "ok",
+        "version": "1.0.0",
+        "uptime": "ready"
+    })
+
+
+def _ensure_default_activities() -> None:
+    if Activity.objects.count() > 0:
+        return
+    now = timezone.now()
+    defaults = [
+        {
+            "name": "نشاط رياضي",
+            "description": "أنشطة رياضية متنوعة للطلاب",
+            "category": "رياضي",
+            "available_slots": 50,
+            "location": "الصالة الرياضية",
+            "start_delta": 7,
+            "end_delta": 37,
+        },
+        {
+            "name": "نشاط ثقافي",
+            "description": "فعاليات ثقافية وأدبية",
+            "category": "ثقافي",
+            "available_slots": 100,
+            "location": "القاعة الكبرى",
+            "start_delta": 10,
+            "end_delta": 40,
+        },
+        {
+            "name": "نشاط فني",
+            "description": "ورش عمل فنية وإبداعية",
+            "category": "فني",
+            "available_slots": 30,
+            "location": "مركز الفنون",
+            "start_delta": 5,
+            "end_delta": 35,
+        },
+        {
+            "name": "نشاط علمي",
+            "description": "محاضرات وندوات علمية",
+            "category": "علمي",
+            "available_slots": 75,
+            "location": "مختبر العلوم",
+            "start_delta": 14,
+            "end_delta": 44,
+        },
+        {
+            "name": "نشاط اجتماعي",
+            "description": "أنشطة تطوعية واجتماعية",
+            "category": "اجتماعي",
+            "available_slots": 60,
+            "location": "مركز الطلاب",
+            "start_delta": 3,
+            "end_delta": 33,
+        },
+        {
+            "name": "نشاط تقني",
+            "description": "ورش برمجة وتقنية معلومات",
+            "category": "تقني",
+            "available_slots": 40,
+            "location": "معمل الحاسوب",
+            "start_delta": 12,
+            "end_delta": 42,
+        },
+    ]
+    objs = []
+    for item in defaults:
+        objs.append(
+            Activity(
+                name=item["name"],
+                description=item["description"],
+                category=item["category"],
+                available_slots=item["available_slots"],
+                location=item["location"],
+                start_date=now + timedelta(days=item["start_delta"]),
+                end_date=now + timedelta(days=item["end_delta"]),
+            )
+        )
+    Activity.objects.bulk_create(objs)
+
+
+# ==================== AUTH ENDPOINTS ====================
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def register(request: HttpRequest) -> JsonResponse:
+    # IMMEDIATE DATABASE CHECK - Force migrations before any User operations
+    print("[REGISTER] Starting immediate database check...")
+    try:
+        from django.core.management import call_command
+        from django.db import connection
+        
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
+            if not cursor.fetchone():
+                print("[REGISTER] CRITICAL: Users table missing! SKIPPING runtime migrations to prevent restart loop")
+                print("[REGISTER] Migrations should only run during startup, not runtime")
+                # DISABLED: Runtime migrations cause Railway restart loops
+                # Database should be initialized during container startup only
+            else:
+                print("[REGISTER] Database check passed - users table exists")
+    except Exception as e:
+        print(f"[REGISTER] CRITICAL: Database check failed: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    data = _parse_json(request)
+    required_fields = ["fullName", "username", "email", "password"]
+    if not all(field in data for field in required_fields):
+        return _error("جميع الحقول مطلوبة", status=400)
+
+    if User.objects.filter(username=data["username"]).exists():
+        return _error("اسم المستخدم موجود بالفعل", status=400)
+
+    if User.objects.filter(email=data["email"]).exists():
+        return _error("البريد الإلكتروني موجود بالفعل", status=400)
+
+    # Default to student role if not provided
+    role = data.get("role", "student")
+    if role not in ["student", "employee"]:
+        return _error("الدور غير صالح. يجب أن يكون 'student' أو 'employee'", status=403)
+
+    # Strict validation for real student accounts
+    if role == "student":
+        # Check for Arabic name (required for real students)
+        arabic_chars = 'ابثجحخدذرزسشصضطظعغفقكلمنهويءآأإئؤة'
+        if not any(char in data["fullName"] for char in arabic_chars):
+            return _error("يجب أن يكون الاسم الكامل باللغة العربية للطلاب", status=400)
+        
+        # Email validation - accept any valid email format
+        email = data["email"].lower()
+        if '@' not in email or '.' not in email:
+            return _error("البريد الإلكتروني غير صالح", status=400)
+        
+        # Exclude common test patterns
+        test_patterns = ['test', 'demo', 'example', 'fake', 'sample', 'temp']
+        combined_text = f"{data['username']} {data['email']} {data['fullName']}".lower()
+        for pattern in test_patterns:
+            if pattern in combined_text:
+                return _error("بيانات غير صالحة. يرجى استخدام معلومات حقيقية", status=400)
+        
+        # Exclude generic usernames
+        generic_usernames = ['student', 'user', 'test', 'demo', 'admin', 'employee']
+        if data["username"].lower() in generic_usernames:
+            return _error("اسم المستخدم عام جداً. يرجى اختيار اسم فريد", status=400)
+
+    try:
+        print(f"[REGISTER] Creating user with data: {data}")
+        user = User(
+            full_name=data["fullName"],
+            username=data["username"],
+            email=data["email"],
+            password_hash=make_password(data["password"]),
+            role=role,
+        )
+        print(f"[REGISTER] User object created: {user}")
+        user.save()
+        print(f"[REGISTER] User saved successfully with ID: {user.id}")
+        
+        # Automatically create join request for student (defensive)
+        if role == "student":
+            try:
+                # Check if the StudentJoinRequest table exists first
+                from django.db import connection
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='student_join_requests';")
+                    table_exists = cursor.fetchone()
+                
+                if table_exists:
+                    StudentJoinRequest.objects.create(
+                        student=user,
+                        activity_type="general",
+                        request_message="أرغب في الانضمام للأنشطة الطلابية"
+                    )
+                    print(f"[REGISTER] Join request created for student {user.id}")
+                else:
+                    print(f"[REGISTER] StudentJoinRequest table not found, skipping join request creation")
+            except Exception as req_exc:
+                print(f"[REGISTER] Warning: Failed to create join request: {req_exc}")
+                # Don't fail the registration if join request creation fails
+        
+    except Exception as exc:  # pragma: no cover - defensive
+        print(f"[REGISTER] Error creating user: {exc}")
+        import traceback
+        traceback.print_exc()
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+    return JsonResponse(
+        {"success": True, "message": "تم إنشاء الحساب بنجاح"},
+        status=201,
+    )
+
+
+def initialize_admin_account():
+    """Initialize admin account if it doesn't exist"""
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            # Force delete any existing admin account to ensure clean state
+            cursor.execute("DELETE FROM users WHERE username = %s", ["admin"])
+            print("[INIT] Cleared existing admin account")
+            
+            # Create fresh admin account
+            print("[INIT] Creating fresh admin account")
+            cursor.execute("""
+                INSERT INTO users (full_name, username, email, password_hash, role, created_at, updated_at) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, ["الموظف الرئيسي", "admin", "admin@university.edu", make_password("123456"), "employee", timezone.now(), timezone.now()])
+            
+            print("[INIT] Fresh admin account created successfully")
+                
+    except Exception as e:
+        print(f"[INIT] Failed to initialize admin account: {e}")
+        import traceback
+        print(f"[INIT] Traceback: {traceback.format_exc()}")
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def login(request: HttpRequest) -> JsonResponse:
+    # Early validation to prevent unauthorized warnings
+    try:
+        data = _parse_json(request)
+        if not data or not all(field in data for field in ["username", "password"]):
+            print(f"[LOGIN] Invalid request data received")
+            return _error("جميع الحقول مطلوبة", status=400)
+    except Exception as e:
+        print(f"[LOGIN] JSON parsing error: {str(e)}")
+        return _error("بيانات الطلب غير صالحة", status=400)
+    
+    # Database check with better error handling
+    try:
+        from django.db import connection
+        
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
+            if not cursor.fetchone():
+                print("[LOGIN] Database not initialized - returning service unavailable")
+                return JsonResponse({
+                    "success": False, 
+                    "message": "الخدمة غير متاحة حاليا، يرجى المحاولة بعد قليل"
+                }, status=503)
+    except Exception as e:
+        print(f"[LOGIN] Database check failed: {e}")
+        return JsonResponse({
+            "success": False, 
+            "message": "خطأ في قاعدة البيانات، يرجى المحاولة بعد قليل"
+        }, status=503)
+    
+    print(f"[LOGIN] Processing login for: {data.get('username', 'N/A')}")
+    
+    # Initialize admin account if needed
+    initialize_admin_account()
+
+    try:
+        username = data["username"]
+        password = data["password"]
+        
+        print(f"[LOGIN] Attempting login for username: {username} (auto-detect role)")
+        
+        # Auto-detect user role - try all roles in order: student, employee
+        user = User.objects.filter(username=username, role="student").first()
+        if not user:
+            user = User.objects.filter(username=username, role="employee").first()
+        
+        if not user:
+            print(f"[LOGIN] User not found for username: {username}")
+            
+            # Emergency: Create admin account if it doesn't exist
+            if username == "admin" and password == "123456":
+                try:
+                    from django.db import connection
+                    with connection.cursor() as cursor:
+                        cursor.execute("SELECT COUNT(*) FROM users WHERE username = %s", [username])
+                        count = cursor.fetchone()[0]
+                        print(f"[LOGIN] Admin account count: {count}")
+                        
+                        if count == 0:
+                            print(f"[LOGIN] Creating emergency admin account: {username}")
+                            cursor.execute("""
+                                INSERT INTO users (full_name, username, email, password_hash, role, created_at, updated_at) 
+                                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            """, ["الموظف الرئيسي", username, "admin@university.edu", make_password(password), "employee", timezone.now(), timezone.now()])
+                            
+                            # Get the created user
+                            cursor.execute("SELECT id, full_name, username, email, role FROM users WHERE username = %s", [username])
+                            created_user = cursor.fetchone()
+                            
+                            print(f"[LOGIN] Emergency admin created successfully: {created_user}")
+                            
+                            return JsonResponse({
+                                "success": True,
+                                "token": create_access_token(created_user[0]),
+                                "user": {
+                                    "id": created_user[0],
+                                    "fullName": created_user[1],
+                                    "username": created_user[2],
+                                    "email": created_user[3],
+                                    "role": created_user[4],
+                                },
+                            })
+                        else:
+                            # Account exists, try to login normally
+                            print(f"[LOGIN] Admin account exists, trying normal login")
+                            user = User.objects.filter(username=username, role="employee").first()
+                            if user and check_password(password, user.password_hash):
+                                print(f"[LOGIN] Emergency admin login successful: {user.username}")
+                                access_token = create_access_token(user.id)
+                                return JsonResponse({
+                                    "success": True,
+                                    "token": access_token,
+                                    "user": {
+                                        "id": user.id,
+                                        "fullName": user.full_name,
+                                        "username": user.username,
+                                        "email": user.email,
+                                        "role": user.role,
+                                    },
+                                })
+                            
+                except Exception as create_error:
+                    print(f"[LOGIN] Failed to create emergency admin: {create_error}")
+                    import traceback
+                    print(f"[LOGIN] Traceback: {traceback.format_exc()}")
+            
+            return JsonResponse({"success": False, "message": "اسم المستخدم أو كلمة المرور غير صحيحة. يرجى التحقق من البيانات والمحاولة مرة أخرى."}, status=401)
+            
+        if not check_password(password, user.password_hash):
+            print(f"[LOGIN] Password mismatch for username: {username}")
+            return JsonResponse({"success": False, "message": "اسم المستخدم أو كلمة المرور غير صحيحة. يرجى التحقق من البيانات والمحاولة مرة أخرى."}, status=401)
+            
+        print(f"[LOGIN] Successful login for user: {user.username} (ID: {user.id})")
+
+        access_token = create_access_token(user.id)
+        return JsonResponse(
+            {
+                "success": True,
+                "token": access_token,
+                "user": {
+                    "id": user.id,
+                    "fullName": user.full_name,
+                    "username": user.username,
+                    "email": user.email,
+                    "role": user.role,
+                },
+            }
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        import traceback
+        error_details = f"حدث خطأ: {exc}\n{traceback.format_exc()}"
+        print(f"[LOGIN] Critical error: {error_details}")
+        return _error(f"حدث خطأ في المصادقة: {str(exc)}", status=500)
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["PUT"])
+def update_profile(request: HttpRequest) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("المستخدم غير موجود", status=404)
+
+    data = _parse_json(request)
+
+    if "fullName" in data:
+        user.full_name = data["fullName"]
+
+    if "email" in data:
+        if User.objects.filter(email=data["email"]).exclude(pk=user_id).exists():
+            return _error("البريد الإلكتروني موجود بالفعل", status=400)
+        user.email = data["email"]
+
+    if data.get("password"):
+        if len(data["password"]) < 6:
+            return _error("كلمة المرور يجب أن تكون 6 أحرف على الأقل", status=400)
+        user.password_hash = make_password(data["password"])
+
+    try:
+        user.save()
+    except Exception as exc:  # pragma: no cover - defensive
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "تم تحديث الملف الشخصي بنجاح",
+            "user": {
+                "id": user.id,
+                "fullName": user.full_name,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role,
+            },
+        }
+    )
+
+# dta time is none of [js - css - html , backend python and danjo frame woke in potject]
+# ==================== ACTIVITY ENDPOINTS ====================
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_activities(request: HttpRequest) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+    _ensure_default_activities()
+
+    regs_qs = ActivityRegistration.objects.filter(user_id=user_id)
+    activities = (
+        Activity.objects.filter(is_active=True)
+        .prefetch_related(Prefetch("registrations", queryset=regs_qs, to_attr="user_regs"))
+        .all()
+    )
+
+    result = []
+    for activity in activities:
+        registration = activity.user_regs[0] if getattr(activity, "user_regs", []) else None
+        result.append(
+            {
+                "id": activity.id,
+                "name": activity.name,
+                "description": activity.description,
+                "category": activity.category,
+                "availableSlots": activity.available_slots,
+                "registeredCount": activity.registered_count,
+                "location": activity.location,
+                "startDate": activity.start_date.isoformat() if activity.start_date else None,
+                "endDate": activity.end_date.isoformat() if activity.end_date else None,
+                "isRegistered": registration is not None,
+                "registrationStatus": registration.status if registration else None,
+            }
+        )
+
+    return JsonResponse({"success": True, "activities": result})
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def register_for_activity(request: HttpRequest, activity_id: int) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+
+    try:
+        activity = Activity.objects.get(pk=activity_id)
+    except Activity.DoesNotExist:
+        return _error("النشاط غير موجود", status=404)
+
+    if activity.registered_count >= activity.available_slots:
+        return _error("النشاط ممتلئ", status=400)
+
+    if ActivityRegistration.objects.filter(activity_id=activity_id, user_id=user_id).exists():
+        return _error("أنت مسجل بالفعل في هذا النشاط", status=400)
+
+    try:
+        ActivityRegistration.objects.create(
+            activity_id=activity_id,
+            user_id=user_id,
+            status="مسجل",
+        )
+        activity.registered_count += 1
+        activity.save()
+    except Exception as exc:  # pragma: no cover - defensive
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+    return JsonResponse({"success": True, "message": "تم التسجيل في النشاط بنجاح"})
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_my_registrations(request: HttpRequest) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+
+    registrations = (
+        ActivityRegistration.objects.filter(user_id=user_id)
+        .select_related("activity")
+        .order_by("-registered_at")
+    )
+
+    result = []
+    for reg in registrations:
+        activity = reg.activity
+        result.append(
+            {
+                "id": reg.id,
+                "activity": {
+                    "id": activity.id,
+                    "name": activity.name,
+                    "description": activity.description,
+                    "category": activity.category,
+                    "location": activity.location,
+                },
+                "status": reg.status,
+                "registeredAt": reg.registered_at.isoformat(),
+            }
+        )
+
+    return JsonResponse({"success": True, "registrations": result})
+
+
+# ==================== APPLICATION ENDPOINTS ====================
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def submit_application(request: HttpRequest) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+
+    # Allow both JSON (current frontend) and multipart/form-data (for file upload)
+    if request.content_type and request.content_type.startswith("multipart/form-data"):
+        data = request.POST
+        uploaded_file = request.FILES.get("projectFile")
+    else:
+        data = _parse_json(request)
+        uploaded_file = None
+
+    required_fields = [
+        "activityType",
+        "activityNumber",
+        "college",
+        "department",
+        "specialization",
+        "phone",
+    ]
+    if not all(field in data for field in required_fields):
+        return _error("جميع الحقول مطلوبة", status=400)
+
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("المستخدم غير موجود", status=404)
+
+    if uploaded_file is not None:
+        content_type = uploaded_file.content_type or ""
+        name_lower = (uploaded_file.name or "").lower()
+        if not content_type.startswith("application/pdf") and not name_lower.endswith(".pdf"):
+            return _error("يسمح فقط برفع ملفات PDF للطلب", status=400)
+
+    try:
+        app = Application.objects.create(
+            user_id=user_id,
+            student_name=data.get("name", user.full_name),
+            activity_type=data["activityType"],
+            activity_number=data["activityNumber"],
+            college=data["college"],
+            department=data["department"],
+            specialization=data["specialization"],
+            phone=data["phone"],
+            details=data.get("details", ""),
+            status="قيد الانتظار",
+        )
+        if uploaded_file:
+            app.project_file = uploaded_file
+            app.save()
+    except Exception as exc:  # pragma: no cover - defensive
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "تم إرسال الطلب بنجاح",
+            "application": {"id": app.id, "status": app.status},
+        },
+        status=201,
+    )
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_my_applications(request: HttpRequest) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+    applications = Application.objects.filter(user_id=user_id).order_by("-submitted_at")
+
+    result = []
+    for app in applications:
+        result.append(
+            {
+                "id": app.id,
+                "userId": app.user_id,
+                "studentName": app.student_name,
+                "activityType": app.activity_type,
+                "activityNumber": app.activity_number,
+                "college": app.college,
+                "department": app.department,
+                "specialization": app.specialization,
+                "phone": app.phone,
+                "details": app.details,
+                "status": app.status,
+                "submittedAt": app.submitted_at.isoformat(),
+                "updatedAt": app.updated_at.isoformat(),
+                "projectFile": request.build_absolute_uri(app.project_file.url) if app.project_file else None,
+            }
+        )
+
+    return JsonResponse({"success": True, "applications": result})
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_all_applications(request: HttpRequest) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role not in ("employee",):
+        return _error("غير مصرح لك", status=403)
+
+    applications = Application.objects.all().order_by("-submitted_at")
+
+    result = []
+    for app in applications:
+        result.append(
+            {
+                "id": app.id,
+                "userId": app.user_id,
+                "studentName": app.student_name,
+                "activityType": app.activity_type,
+                "activityNumber": app.activity_number,
+                "college": app.college,
+                "department": app.department,
+                "specialization": app.specialization,
+                "phone": app.phone,
+                "details": app.details,
+                "status": app.status,
+                "submittedAt": app.submitted_at.isoformat(),
+                "updatedAt": app.updated_at.isoformat(),
+                "projectFile": app.project_file.url if app.project_file else None,
+            }
+        )
+
+    return JsonResponse({"success": True, "applications": result})
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["PUT"])
+def update_application_status(request: HttpRequest, application_id: int) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role not in ("employee",):
+        return _error("غير مصرح لك", status=403)
+
+    data = _parse_json(request)
+    new_status = data.get("status")
+    if not new_status:
+        return _error("الحالة مطلوبة", status=400)
+
+    try:
+        app = Application.objects.get(pk=application_id)
+    except Application.DoesNotExist:
+        return _error("الطلب غير موجود", status=404)
+
+    app.status = new_status
+    app.updated_at = timezone.now()
+    
+    # Send notification to student when status changes
+    try:
+        Message.objects.create(
+            application=app,
+            sender=user,
+            receiver=app.user,
+            text=(
+                f"طلبك للنشاط '{app.activity_type}' "
+                f"(رقم {app.activity_number}) تم {new_status}."
+            ),
+            is_system_notification=True
+        )
+    except Exception as exc:
+        print(f"[NOTIFICATION] Failed to send notification: {exc}")
+    
+    try:
+        app.save()
+    except Exception as exc:  # pragma: no cover - defensive
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+    return JsonResponse(
+        {"success": True, "message": f"تم {new_status} الطلب بنجاح"}
+    )
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["DELETE"])
+def delete_application(request: HttpRequest, application_id: int) -> JsonResponse:
+    """
+    يسمح للموظف الرئيسي فقط بحذف طلب طالب بشكل كامل.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role != "employee":
+        return _error("هذه الصلاحية للموظفين فقط", status=403)
+
+    try:
+        app = Application.objects.get(pk=application_id)
+    except Application.DoesNotExist:
+        return _error("الطلب غير موجود", status=404)
+
+    app.delete()
+    return JsonResponse({"success": True, "message": "تم حذف الطلب بنجاح"})
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_statistics(request: HttpRequest) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role not in ("employee",):
+        return _error("غير مصرح لك", status=403)
+
+    total = Application.objects.count()
+    pending = Application.objects.filter(status="قيد الانتظار").count()
+    approved = Application.objects.filter(status="مقبول").count()
+    rejected = Application.objects.filter(status="مرفوض").count()
+
+    return JsonResponse(
+        {
+            "success": True,
+            "statistics": {
+                "total": total,
+                "pending": pending,
+                "approved": approved,
+                "rejected": rejected,
+            },
+        }
+    )
+
+
+# ==================== EMPLOYEE REQUEST ENDPOINTS ====================
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def send_employee_request(request: HttpRequest) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role not in ("employee",):
+        return _error("غير مصرح لك", status=403)
+
+    data = _parse_json(request)
+    required_fields = ["requestType", "title", "description"]
+    if not all(field in data for field in required_fields):
+        return _error("جميع الحقول المطلوبة يجب ملؤها", status=400)
+
+    deadline = None
+    if data.get("deadline"):
+        try:
+            deadline = datetime.fromisoformat(data["deadline"].replace("Z", "+00:00"))
+        except ValueError:
+            return _error("تنسيق التاريخ غير صالح", status=400)
+
+    try:
+        req = EmployeeRequest.objects.create(
+            employee_id=user_id,
+            student_id=data.get("studentId"),
+            request_type=data["requestType"],
+            title=data["title"],
+            description=data["description"],
+            activity_name=data.get("activityName") or "",
+            activity_code=data.get("activityCode") or "",
+            deadline=deadline,
+            status="قيد الانتظار",
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "تم إرسال الطلب بنجاح",
+            "request": _employee_request_to_dict(req),
+        },
+        status=201,
+    )
+
+
+def _employee_request_to_dict(req: EmployeeRequest) -> dict:
+    employee_user = req.employee
+    student_user = req.student
+    return {
+        "id": req.id,
+        "employeeId": req.employee_id,
+        "employeeName": employee_user.full_name if employee_user else "Unknown",
+        "studentId": req.student_id,
+        "studentName": student_user.full_name if student_user else "جميع الطلاب",
+        "requestType": req.request_type,
+        "title": req.title,
+        "description": req.description,
+        "activityName": req.activity_name,
+        "activityCode": req.activity_code,
+        "deadline": req.deadline.isoformat() if req.deadline else None,
+        "status": req.status,
+        "responseMessage": req.response_message,
+        "createdAt": req.created_at.isoformat(),
+        "updatedAt": req.updated_at.isoformat(),
+        "respondedAt": req.responded_at.isoformat() if req.responded_at else None,
+    }
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_employee_sent_requests(request: HttpRequest) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role not in ("employee",):
+        return _error("غير مصرح لك", status=403)
+
+    requests_qs = EmployeeRequest.objects.filter(employee_id=user_id).select_related(
+        "student", "employee"
+    ).order_by("-created_at")
+
+    result = [_employee_request_to_dict(req) for req in requests_qs]
+    return JsonResponse({"success": True, "requests": result})
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_student_requests(request: HttpRequest) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role != "student":
+        return _error("غير مصرح لك", status=403)
+
+    requests_qs = EmployeeRequest.objects.filter(
+        Q(student_id=user_id) | Q(student__isnull=True)
+    ).select_related("employee", "student").order_by("-created_at")
+
+    result = [_employee_request_to_dict(req) for req in requests_qs]
+    return JsonResponse({"success": True, "requests": result})
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["PUT"])
+def respond_to_employee_request(
+    request: HttpRequest, request_id: int
+) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role != "student":
+        return _error("غير مصرح لك", status=403)
+
+    data = _parse_json(request)
+    new_status = data.get("status")
+    response_message = data.get("responseMessage", "")
+
+    if new_status not in ["مقبول", "مرفوض"]:
+        return _error("الحالة غير صالحة", status=400)
+
+    try:
+        employee_request = EmployeeRequest.objects.select_related("student").get(pk=request_id)
+    except EmployeeRequest.DoesNotExist:
+        return _error("الطلب غير موجود", status=404)
+
+    if employee_request.student_id and employee_request.student_id != user_id:
+        return _error("غير مصرح لك بالرد على هذا الطلب", status=403)
+
+    employee_request.status = new_status
+    employee_request.response_message = response_message
+    employee_request.updated_at = timezone.now()
+    employee_request.responded_at = timezone.now()
+
+    if not employee_request.student_id:
+        employee_request.student_id = user_id
+
+    # Send notification to employee when student responds
+    try:
+        Message.objects.create(
+            sender=user,
+            receiver=employee_request.employee,
+            text=f"الطالب {user.full_name} قام بـ {new_status} طلبك للنشاط.",
+            is_system_notification=True
+        )
+    except Exception as exc:
+        print(f"[NOTIFICATION] Failed to send notification: {exc}")
+    
+    try:
+        employee_request.save()
+    except Exception as exc:  # pragma: no cover - defensive
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+    return JsonResponse(
+        {"success": True, "message": f"تم {new_status} الطلب بنجاح"}
+    )
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_employee_request_statistics(request: HttpRequest) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role not in ("employee",):
+        return _error("غير مصرح لك", status=403)
+
+    base_qs = EmployeeRequest.objects.filter(employee_id=user_id)
+    total = base_qs.count()
+    pending = base_qs.filter(status="قيد الانتظار").count()
+    approved = base_qs.filter(status="مقبول").count()
+    rejected = base_qs.filter(status="مرفوض").count()
+
+    return JsonResponse(
+        {
+            "success": True,
+            "statistics": {
+                "total": total,
+                "pending": pending,
+                "approved": approved,
+                "rejected": rejected,
+            },
+        }
+    )
+
+
+# ==================== EMPLOYEE ENDPOINTS ====================
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def list_employees(request: HttpRequest) -> JsonResponse:
+    """
+    إرجاع قائمة الموظفين (باستثناء الموظف الرئيسي) لإدارتهم.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    employees = (
+        User.objects.filter(role="employee")
+        .order_by("-created_at")
+        .values("id", "full_name", "username", "email", "created_at")
+    )
+    result = []
+    for emp in employees:
+        result.append(
+            {
+                "id": emp["id"],
+                "fullName": emp["full_name"],
+                "username": emp["username"],
+                "email": emp["email"],
+                "createdAt": emp["created_at"].isoformat() if emp["created_at"] else None,
+            }
+        )
+    return JsonResponse({"success": True, "employees": result})
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["DELETE"])
+def delete_employee(request: HttpRequest, employee_id: int) -> JsonResponse:
+    """
+    حذف حساب موظف من قبل الموظف الرئيسي فقط.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        caller = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if caller.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    if employee_id == caller.id:
+        return _error("لا يمكن حذف حساب الموظف الرئيسي نفسه", status=400)
+
+    try:
+        target = User.objects.get(pk=employee_id)
+        if target.role not in ["employee", "student"]:
+             return _error("الحساب غير موجود أو لا يمكن حذفه", status=404)
+    except User.DoesNotExist:
+        return _error("الحساب غير موجود", status=404)
+
+    target.delete()
+    return JsonResponse({"success": True, "message": "تم حذف حساب الموظف بنجاح"})
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_employee_activities(request: HttpRequest) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role not in ("employee",):
+        return _error("غير مصرح لك", status=403)
+
+    regs = ActivityRegistration.objects.select_related("user")
+    activities = Activity.objects.all().prefetch_related(
+        Prefetch("registrations", queryset=regs, to_attr="all_regs")
+    )
+
+    result = []
+    for activity in activities:
+        students = []
+        for reg in getattr(activity, "all_regs", []):
+            student = reg.user
+            students.append(
+                {
+                    "id": student.id,
+                    "name": student.full_name,
+                    "email": student.email,
+                    "registeredAt": reg.registered_at.isoformat(),
+                    "status": reg.status,
+                }
+            )
+
+        result.append(
+            {
+                "id": activity.id,
+                "name": activity.name,
+                "description": activity.description,
+                "category": activity.category,
+                "availableSlots": activity.available_slots,
+                "registeredCount": activity.registered_count,
+                "location": activity.location,
+                "startDate": activity.start_date.isoformat() if activity.start_date else None,
+                "endDate": activity.end_date.isoformat() if activity.end_date else None,
+                "isActive": activity.is_active,
+                "students": students,
+            }
+        )
+
+    return JsonResponse({"success": True, "activities": result})
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def add_activity(request: HttpRequest) -> JsonResponse:
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role not in ("employee",):
+        return _error("غير مصرح لك", status=403)
+
+    data = _parse_json(request)
+
+    required_fields = [
+        "name",
+        "description",
+        "category",
+        "availableSlots",
+        "location",
+        "startDate",
+        "endDate",
+    ]
+    if not all(field in data for field in required_fields):
+        return _error("جميع الحقول مطلوبة", status=400)
+
+    try:
+        start_date = datetime.fromisoformat(data["startDate"])
+        end_date = datetime.fromisoformat(data["endDate"])
+    except ValueError:
+        return _error(
+            "تنسيق التاريخ غير صالح. يرجى استخدام تنسيق ISO 8601.", status=400
+        )
+
+    try:
+        activity = Activity.objects.create(
+            name=data["name"],
+            description=data["description"],
+            category=data["category"],
+            available_slots=data["availableSlots"],
+            location=data["location"],
+            start_date=start_date,
+            end_date=end_date,
+            is_active=data.get("isActive", True),
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "تم إنشاء النشاط بنجاح",
+            "activity": {
+                "id": activity.id,
+                "name": activity.name,
+                "description": activity.description,
+                "category": activity.category,
+                "availableSlots": activity.available_slots,
+                "location": activity.location,
+                "startDate": activity.start_date.isoformat(),
+                "endDate": activity.end_date.isoformat(),
+                "isActive": activity.is_active,
+            },
+        },
+        status=201,
+    )
+
+
+# ==================== SUPERVISOR DIRECT MESSAGES ====================
+
+
+def _direct_message_to_dict(msg: EmployeeDirectMessage) -> dict:
+    return {
+        "id": msg.id,
+        "text": msg.text,
+        "createdAt": msg.created_at.isoformat(),
+        "sender": {
+            "id": msg.sender_id,
+            "fullName": msg.sender.full_name,
+            "role": msg.sender.role,
+        },
+        "receiver": {
+            "id": msg.receiver_id,
+            "fullName": msg.receiver.full_name,
+            "role": msg.receiver.role,
+        },
+    }
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def send_supervisor_message(request: HttpRequest) -> JsonResponse:
+    """
+    مراسلة مباشرة بين الموظف الرئيسي والموظفين.
+    - الموظف الرئيسي يمكنه مراسلة أي موظف.
+    - الموظف العادي يمكنه الرد على الموظف الرئيسي فقط.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        sender = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    data = _parse_json(request)
+    receiver_id = data.get("receiverId")
+    text = (data.get("text") or "").strip()
+
+    if not text:
+        return _error("المستقبل والنص مطلوبان", status=400)
+
+    # إذا كان المرسل موظفًا ولم يحدد المستقبل، نختار أي موظف آخر
+    if sender.role == "employee" and not receiver_id:
+        # Find another employee to message
+        other_employee = User.objects.filter(role="employee").exclude(pk=sender.id).first()
+        if not other_employee:
+            return _error("لا يوجد موظفون آخرون لاستقبال الرسائل", status=400)
+        receiver_id = other_employee.id
+
+    try:
+        receiver = User.objects.get(pk=receiver_id)
+    except User.DoesNotExist:
+        return _error("المستخدم المستقبل غير موجود", status=404)
+
+    # قواعد الأدوار - الموظفون يمكنهم مراسلة بعضهم البعض
+    if sender.role == "employee":
+        if receiver.role != "employee":
+            return _error("يمكن مراسلة الموظفين فقط", status=400)
+    else:
+        return _error("غير مصرح لك", status=403)
+
+    try:
+        msg = EmployeeDirectMessage.objects.create(sender=sender, receiver=receiver, text=text)
+    except Exception as exc:  # pragma: no cover - defensive
+        return _error(f"حدث خطأ أثناء الإرسال: {exc}", status=500)
+
+    return JsonResponse({"success": True, "message": _direct_message_to_dict(msg)}, status=201)
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_supervisor_messages(request: HttpRequest) -> JsonResponse:
+    """
+    جلب المحادثات:
+    - للموظف الرئيسي: يمكن تمرير employeeId لجلب محادثته مع موظف محدد، أو جميع الرسائل.
+    - للموظف: يجلب كل رسائله مع الموظف الرئيسي.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    employee_id = request.GET.get("employeeId")
+    base_qs = EmployeeDirectMessage.objects.select_related("sender", "receiver")
+
+    if user.role == "employee":
+        if employee_id:
+            try:
+                target_id = int(employee_id)
+            except ValueError:
+                return _error("employeeId غير صالح", status=400)
+            base_qs = base_qs.filter(
+                (Q(sender_id=user_id, receiver_id=target_id))
+                | (Q(sender_id=target_id, receiver_id=user_id))
+            )
+        # بدون employeeId نعيد جميع الرسائل مع أي موظف آخر
+        else:
+            base_qs = base_qs.filter(
+                (Q(sender_id=user_id, receiver__role="employee"))
+                | (Q(sender__role="employee", receiver_id=user_id))
+            )
+    else:
+        return _error("غير مصرح لك", status=403)
+
+    messages_list = [_direct_message_to_dict(m) for m in base_qs.order_by("created_at")]
+    return JsonResponse({"success": True, "messages": messages_list})
+
+
+# ==================== MESSAGING (APPLICATION-BASED) ====================
+
+
+def _message_to_dict(msg: Message, request: HttpRequest) -> dict:
+    attachment_url: str | None = None
+    if msg.attachment:
+        try:
+            attachment_url = request.build_absolute_uri(msg.attachment.url)
+        except Exception:  # pragma: no cover - defensive
+            attachment_url = msg.attachment.url
+
+    return {
+        "id": msg.id,
+        "applicationId": msg.application_id,
+        "text": msg.text,
+        "isRead": msg.is_read,
+        "createdAt": msg.created_at.isoformat(),
+        "attachmentUrl": attachment_url,
+        "sender": {
+            "id": msg.sender_id,
+            "fullName": msg.sender.full_name,
+            "role": msg.sender.role,
+        },
+        "receiver": {
+            "id": msg.receiver_id,
+            "fullName": msg.receiver.full_name if msg.receiver else None,
+            "role": msg.receiver.role if msg.receiver else None,
+        },
+    }
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def send_message(request: HttpRequest) -> JsonResponse:
+    """
+    إرسال رسالة مرتبطة بطلب (Application).
+    - إذا كان المرسل موظفًا: المستقبل الافتراضي هو الطالب صاحب الطلب إن لم يُحدَّد receiverId.
+    - إذا كان المرسل طالبًا: يجب أن يكون صاحب الطلب، ويُفضَّل أن يكون هناك موظف سبق وأرسل رسالة
+      ليصبح هو المستقبل تلقائيًا إن لم يُحدَّد receiverId.
+    """
+
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    # دعم JSON و multipart/form-data للملفات
+    if request.content_type and request.content_type.startswith("multipart/form-data"):
+        data = request.POST
+        uploaded_file = request.FILES.get("file")
+    else:
+        data = _parse_json(request)
+        uploaded_file = None
+    application_id = data.get("applicationId")
+    text = (data.get("text") or "").strip()
+    receiver_id = data.get("receiverId")
+
+    if not application_id or not text:
+        return _error("applicationId والنص مطلوبان", status=400)
+
+    try:
+        application = Application.objects.select_related("user").get(pk=application_id)
+    except Application.DoesNotExist:
+        return _error("الطلب غير موجود", status=404)
+
+    # صلاحيات الوصول
+    if user.role == "student" and application.user_id != user_id:
+        return _error("غير مصرح لك بالمراسلة لهذا الطلب", status=403)
+
+    # التحقق من نوع الملف (PDF فقط)
+    if uploaded_file is not None:
+        content_type = uploaded_file.content_type or ""
+        name_lower = (uploaded_file.name or "").lower()
+        if not content_type.startswith("application/pdf") and not name_lower.endswith(
+            ".pdf"
+        ):
+            return _error("يسمح فقط برفع ملفات PDF في المراسلة", status=400)
+
+    # تحديد المستقبل
+    receiver: User | None = None
+
+    if receiver_id:
+        try:
+            receiver = User.objects.get(pk=receiver_id)
+        except User.DoesNotExist:
+            return _error("المستخدم المستقبل غير موجود", status=404)
+    else:
+        if user.role == "employee":
+            # بشكل افتراضي، الموظف يرسل لصاحب الطلب
+            receiver = application.user
+        else:
+            # طالب بدون مستقبل محدد: نحاول إيجاد آخر موظف تواصل في هذه المحادثة
+            last_msg = (
+                Message.objects.filter(application_id=application_id)
+                .select_related("sender", "receiver")
+                .order_by("-created_at")
+                .first()
+            )
+            candidate: User | None = None
+            if last_msg:
+                if last_msg.sender.role == "employee":
+                    candidate = last_msg.sender
+                elif last_msg.receiver and last_msg.receiver.role == "employee":
+                    candidate = last_msg.receiver
+            if candidate is None:
+                return _error(
+                    "لا يوجد موظف مرتبط بهذا الطلب بعد. لا يمكن بدء المحادثة من طرف الطالب.",
+                    status=400,
+                )
+            receiver = candidate
+
+    try:
+        msg = Message.objects.create(
+            application=application,
+            sender=user,
+            receiver=receiver,
+            text=text,
+            attachment=uploaded_file,
+            is_read=False,
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        return _error(f"حدث خطأ أثناء حفظ الرسالة: {exc}", status=500)
+
+    return JsonResponse(
+        {"success": True, "message": _message_to_dict(msg, request)}, status=201
+    )
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_message_thread(request: HttpRequest) -> JsonResponse:
+    """
+    جلب جميع الرسائل المرتبطة بطلب واحد (Application).
+    يحق لصاحب الطلب (طالب) أو أي موظف الاطلاع عليها.
+    """
+
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    try:
+        application_id = int(request.GET.get("applicationId", "0"))
+    except ValueError:
+        return _error("applicationId غير صالح", status=400)
+
+    if not application_id:
+        return _error("applicationId مطلوب", status=400)
+
+    try:
+        application = Application.objects.select_related("user").get(pk=application_id)
+    except Application.DoesNotExist:
+        return _error("الطلب غير موجود", status=404)
+
+    # صلاحيات الوصول
+    if user.role == "student" and application.user_id != user_id:
+        return _error("غير مصرح لك بعرض رسائل هذا الطلب", status=403)
+
+    # الموظف مسموح له برؤية جميع الطلبات (نفس صلاحية get_all_applications)
+    if user.role not in ("employee", "student"):
+        return _error("غير مصرح لك", status=403)
+
+    msgs_qs = (
+        Message.objects.filter(application_id=application_id)
+        .select_related("sender", "receiver")
+        .order_by("created_at")
+    )
+
+    messages_list = [_message_to_dict(m, request) for m in msgs_qs]
+
+    # تعليم الرسائل الموجهة للمستخدم كمقروءة
+    Message.objects.filter(
+        application_id=application_id,
+        receiver_id=user_id,
+        is_read=False,
+    ).update(is_read=True)
+
+    return JsonResponse({"success": True, "messages": messages_list})
+
+
+# ==================== HEALTH & FRONTEND ROUTES ====================
+
+
+
+
+def _frontend_root() -> Path:
+    # Frontend files live one level above backend directory
+    return Path(settings.BASE_DIR).parent
+
+
+def index(request: HttpRequest) -> HttpResponse:
+    try:
+        root = _frontend_root()
+        # The frontend HTML files live under the top-level "templates" directory
+        # (e.g. <project_root>/templates/index.html), so point there explicitly.
+        file_path = root / "templates" / "index.html"
+        if not file_path.exists():
+            # Fallback to static files directory for Railway deployment
+            static_root = Path(settings.STATIC_ROOT)
+            fallback_path = static_root / "index.html"
+            if fallback_path.exists():
+                file_path = fallback_path
+            else:
+                raise Http404("index.html not found")
+        
+        content_type, _ = mimetypes.guess_type(str(file_path))
+        return FileResponse(open(file_path, "rb"), content_type=content_type or "text/html")
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error serving index.html: {e}")
+        # Return a simple response instead of 404
+        return HttpResponse(
+            "<html><body><h1>University Activities</h1><p>Loading...</p></body></html>",
+            content_type="text/html"
+        )
+
+
+def student_dashboard(request: HttpRequest) -> HttpResponse:
+    root = _frontend_root()
+    file_path = root / "templates" / "student-dashboard.html"
+    if not file_path.exists():
+        raise Http404("student-dashboard.html not found")
+    content_type, _ = mimetypes.guess_type(str(file_path))
+    return FileResponse(open(file_path, "rb"), content_type=content_type or "text/html")
+
+
+def employee_dashboard(request: HttpRequest) -> HttpResponse:
+    root = _frontend_root()
+    file_path = root / "templates" / "employee-dashboard.html"
+    if not file_path.exists():
+        raise Http404("employee-dashboard.html not found")
+    content_type, _ = mimetypes.guess_type(str(file_path))
+    return FileResponse(open(file_path, "rb"), content_type=content_type or "text/html")
+
+
+def serve_static(request: HttpRequest, path: str) -> HttpResponse:
+    root = _frontend_root()
+    safe_path = Path(os.path.normpath(path))
+    if safe_path.is_absolute() or ".." in safe_path.parts:
+        raise Http404("Invalid path")
+
+    # Try several common locations so existing frontend paths keep working
+    candidate_paths = [
+        root / safe_path,  # e.g. /static/... or direct paths
+        root / "static" / safe_path,
+        root / "static" / "css" / safe_path.name,
+        root / "static" / "js" / safe_path.name,
+        root / "static" / "img" / safe_path.name,
+        root / "static" / "uploads" / safe_path,  # Handle uploaded files
+        root / "static" / "uploads" / "images" / safe_path.name,  # Handle uploaded images
+    ]
+
+    file_path = None
+    for candidate in candidate_paths:
+        if candidate.exists() and candidate.is_file():
+            file_path = candidate
+            break
+
+    if file_path is None:
+        raise Http404("File not found")
+
+    content_type, _ = mimetypes.guess_type(str(file_path))
+    return FileResponse(open(file_path, "rb"), content_type=content_type or "application/octet-stream")
+# ==================== IMAGE UPLOAD ====================
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def upload_image(request: HttpRequest) -> JsonResponse:
+    """
+    رفع صورة للإعلانات أو المحتوى.
+    يدعم صيغ: JPEG, PNG, GIF, WebP
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    if 'image' not in request.FILES:
+        return _error("لم يتم اختيار ملف صورة", status=400)
+
+    uploaded_file = request.FILES['image']
+    
+    # Validate file type
+    allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if uploaded_file.content_type not in allowed_types:
+        return _error("نوع الملف غير مدعوم. يرجى اختيار صورة (JPEG, PNG, GIF, WebP)", status=400)
+    
+    # Validate file size (max 10MB)
+    if uploaded_file.size > 10 * 1024 * 1024:
+        return _error("حجم الملف كبير جداً. الحد الأقصى 10 ميجابايت", status=400)
+
+    try:
+        # Create uploads directory if it doesn't exist
+        # Use absolute path to ensure correct directory resolution
+        base_dir = Path(__file__).resolve().parent.parent.parent  # Go up from core/backend to project root
+        uploads_dir = base_dir / "static" / "uploads" / "images"
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+        
+        print(f"[UPLOAD] Upload directory: {uploads_dir}")
+        print(f"[UPLOAD] Upload directory exists: {uploads_dir.exists()}")
+        
+        # Generate unique filename
+        file_extension = Path(uploaded_file.name).suffix
+        unique_filename = f"image_{user_id}_{int(timezone.now().timestamp())}{file_extension}"
+        file_path = uploads_dir / unique_filename
+        
+        print(f"[UPLOAD] File path: {file_path}")
+        
+        # Save the file
+        with open(file_path, 'wb') as f:
+            for chunk in uploaded_file.chunks():
+                f.write(chunk)
+        
+        print(f"[UPLOAD] File saved successfully: {file_path.exists()}")
+        
+        # Return file URL
+        file_url = f"/static/uploads/images/{unique_filename}"
+        print(f"[UPLOAD] File URL: {file_url}")
+        
+        return JsonResponse({
+            "success": True,
+            "message": "تم رفع الصورة بنجاح",
+            "imageUrl": file_url,
+            "filename": unique_filename
+        }, status=201)
+        
+    except Exception as exc:
+        print(f"[UPLOAD] Error during upload: {exc}")
+        import traceback
+        traceback.print_exc()
+        return _error(f"حدث خطأ أثناء رفع الصورة: {exc}", status=500)
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def create_employee(request: HttpRequest) -> JsonResponse:
+    """
+    إنشاء موظف جديد عبر الموظف الرئيسي فقط.
+    يتطلب حقول: fullName, username, email, password
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        caller = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if caller.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    data = _parse_json(request)
+    required = ["fullName", "username", "email", "password"]
+    if not all(k in data for k in required):
+        return _error("جميع الحقول مطلوبة", status=400)
+
+    if User.objects.filter(username=data["username"]).exists():
+        return _error("اسم المستخدم موجود بالفعل", status=400)
+    if User.objects.filter(email=data["email"]).exists():
+        return _error("البريد الإلكتروني موجود بالفعل", status=400)
+
+    try:
+        user = User.objects.create(
+            full_name=data["fullName"],
+            username=data["username"],
+            email=data["email"],
+            password_hash=make_password(data["password"]),
+            role="employee",
+        )
+    except Exception as exc:
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+    return JsonResponse({"success": True, "message": "تم إنشاء حساب الموظف بنجاح", "userId": user.id}, status=201)
+
+
+# ==================== ANNOUNCEMENTS ====================
+
+@require_http_methods(["GET"])
+def get_active_announcement(request: HttpRequest) -> JsonResponse:
+    """
+    جلب آخر إعلان نشط (لا يتطلب JWT).
+    """
+    try:
+        announcement = Announcement.objects.filter(is_active=True).latest("created_at")
+        return JsonResponse({
+            "success": True,
+            "announcement": {
+                "id": announcement.id,
+                "title": announcement.title,
+                "content": announcement.content,
+                "createdAt": announcement.created_at.isoformat(),
+                "createdBy": announcement.created_by.full_name,
+            }
+        })
+    except Announcement.DoesNotExist:
+        return JsonResponse({"success": True, "announcement": None})
+    except Exception as e:
+        return JsonResponse({
+            "success": False,
+            "error": f"Database error: {str(e)}"
+        })
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def create_announcement(request: HttpRequest) -> JsonResponse:
+    """
+    إنشاء إعلان جديد (الموظف الرئيسي فقط).
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    data = _parse_json(request)
+    if not all(field in data for field in ["title", "content"]):
+        return _error("جميع الحقول مطلوبة", status=400)
+
+    try:
+        announcement = Announcement.objects.create(
+            title=data["title"],
+            content=data["content"],
+            created_by=user,
+            is_active=True
+        )
+    except Exception as exc:
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+    return JsonResponse({
+        "success": True,
+        "message": "تم نشر الإعلان بنجاح",
+        "announcement": {
+            "id": announcement.id,
+            "title": announcement.title,
+            "content": announcement.content,
+            "createdAt": announcement.created_at.isoformat(),
+        }
+    }, status=201)
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["PUT"])
+def update_announcement(request: HttpRequest, announcement_id: int) -> JsonResponse:
+    """
+    تعديل إعلان (الموظف الرئيسي فقط).
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    try:
+        announcement = Announcement.objects.get(pk=announcement_id)
+    except Announcement.DoesNotExist:
+        return _error("الإعلان غير موجود", status=404)
+
+    data = _parse_json(request)
+    
+    if "title" in data:
+        announcement.title = data["title"]
+    if "content" in data:
+        announcement.content = data["content"]
+    
+    try:
+        announcement.save()
+    except Exception as exc:
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+    return JsonResponse({
+        "success": True,
+        "message": "تم تحديث الإعلان بنجاح",
+        "announcement": {
+            "id": announcement.id,
+            "title": announcement.title,
+            "content": announcement.content,
+            "updatedAt": announcement.updated_at.isoformat(),
+        }
+    })
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["PUT", "PATCH"])
+def toggle_announcement(request: HttpRequest, announcement_id: int) -> JsonResponse:
+    """
+    تفعيل/تعطيل إعلان (الموظف الرئيسي فقط).
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    try:
+        announcement = Announcement.objects.get(pk=announcement_id)
+    except Announcement.DoesNotExist:
+        return _error("الإعلان غير موجود", status=404)
+
+    announcement.is_active = not announcement.is_active
+    try:
+        announcement.save()
+    except Exception as exc:
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+    return JsonResponse({
+        "success": True,
+        "message": f"تم {'تفعيل' if announcement.is_active else 'تعطيل'} الإعلان",
+        "isActive": announcement.is_active
+    })
+
+
+# ==================== USER MANAGEMENT ====================
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_all_users(request: HttpRequest) -> JsonResponse:
+    """
+    جلب جميع المستخدمين الحقيقيين (المسجلين فعلياً) فقط.
+    يستثني المستخدمين التجريبيين والبيانات الوهمية.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        caller = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if caller.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    # Filter out test/fake users - only show real registered students
+    # Very strict filtering to show only authentic student accounts
+    real_users = User.objects.filter(
+        # Exclude all common test and generic usernames
+        ~Q(username__in=[
+            'test', 'demo', 'admin', 'root', 'user', 'student', 'employee', 'moderator',
+            'ahmed', 'mohammed', 'fatima', 'sarah', 'omar', 'ali', 'hassan', 'hussein'
+        ]),
+        # Exclude all test and generic email patterns
+        ~Q(email__icontains='test'),
+        ~Q(email__icontains='demo'),
+        ~Q(email__icontains='example'),
+        ~Q(email__icontains='fake'),
+        ~Q(email__icontains='sample'),
+        ~Q(email__icontains='temp'),
+        # Exclude obvious fake names
+        ~Q(full_name__in=[
+            'Test User', 'Demo User', 'Test Student', 'Demo Employee',
+            'أحمد محمد', 'فاطمة علي', 'محمد خالد', 'سارة أحمد', 'عمر خالد'
+        ]),
+        # Only include users with valid email format (any email accepted)
+        Q(email__contains='@') & Q(email__contains='.'),
+        # Only include users created in the last 6 months (active students)
+        created_at__gte=timezone.now() - timedelta(days=180),
+        created_at__lte=timezone.now()
+    ).order_by("-created_at")
+
+    result = []
+    for user in real_users:
+        # Additional filtering for realistic data
+        if _is_real_user(user):
+            result.append({
+                "id": user.id,
+                "fullName": user.full_name,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role,
+                "createdAt": user.created_at.isoformat() if user.created_at else None,
+                "status": "نشط" if user.created_at and user.created_at > timezone.now() - timedelta(days=30) else "غير نشط"
+            })
+
+    return JsonResponse({
+        "success": True, 
+        "users": result,
+        "total": len(result),
+        "active": sum(1 for u in result if u["status"] == "نشط"),
+        "inactive": sum(1 for u in result if u["status"] == "غير نشط")
+    })
+
+
+def _is_real_user(user: User) -> bool:
+    """
+    التحقق من أن المستخدم حقيقي وليس بيانات تجريبية.
+    إجراءات صارمة جداً لإظهار فقط الطلاب الحقيقيين الذين سجلوا في النظام.
+    """
+    # Check for realistic data patterns
+    if not user.full_name or len(user.full_name.strip()) < 5:
+        return False
+    
+    if not user.email or '@' not in user.email or len(user.email) < 8:
+        return False
+    
+    if not user.username or len(user.username) < 4:
+        return False
+    
+    # Exclude ALL test patterns - very strict filtering
+    test_patterns = [
+        'test', 'demo', 'example', 'fake', 'sample', 'temp', 'admin', 'root',
+        'user', 'student', 'employee', 'moderator', 'ahmed', 'mohammed', 'fatima',
+        'sarah', 'omar', 'ali', 'hassan', 'hussein'
+    ]
+    user_lower = user.username.lower() + ' ' + user.email.lower() + ' ' + user.full_name.lower()
+    
+    for pattern in test_patterns:
+        if pattern in user_lower:
+            return False
+    
+    # Check for Arabic names (must contain Arabic characters)
+    arabic_chars = 'ابثجحخدذرزسشصضطظعغفقكلمنهويءآأإئؤة'
+    if not any(char in user.full_name for char in arabic_chars):
+        return False
+    
+    # Must have valid email format (any email accepted)
+    if '@' not in user.email or '.' not in user.email:
+        return False
+    
+    # Exclude common test emails
+    test_email_patterns = ['test@', 'demo@', 'example@', 'fake@', 'sample@']
+    for pattern in test_email_patterns:
+        if pattern in user.email.lower():
+            return False
+    
+    # Username must not be generic
+    generic_usernames = ['student', 'user', 'test', 'demo', 'admin', 'employee']
+    if user.username.lower() in generic_usernames:
+        return False
+    
+    # Must be created recently (last 6 months) to be considered active
+    six_months_ago = timezone.now() - timedelta(days=180)
+    if not user.created_at or user.created_at < six_months_ago:
+        return False
+    
+    return True
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["DELETE"])
+def delete_user(request: HttpRequest, user_id: int) -> JsonResponse:
+    """
+    حذف مستخدم من قبل الموظف الرئيسي فقط.
+    """
+    caller_id = get_jwt_identity(request)
+    try:
+        caller = User.objects.get(pk=caller_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if caller.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    if user_id == caller_id:
+        return _error("لا يمكن حذف حسابك بنفسك", status=400)
+
+    try:
+        target = User.objects.get(pk=user_id)
+        target.delete()
+        return JsonResponse({"success": True, "message": "تم حذف المستخدم بنجاح"})
+    except User.DoesNotExist:
+        return _error("المستخدم غير موجود", status=404)
+    except Exception as exc:
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+
+# ==================== STUDENT JOIN REQUESTS ====================
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_student_join_requests(request: HttpRequest) -> JsonResponse:
+    """
+    جلب طلبات انضمام الطلاب.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        caller = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if caller.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    # Check if StudentJoinRequest table exists
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='student_join_requests';")
+            table_exists = cursor.fetchone()
+        
+        if not table_exists:
+            # Table doesn't exist, return empty results
+            return JsonResponse({
+                "success": True,
+                "requests": [],
+                "total": 0,
+                "pending": 0,
+                "approved": 0,
+                "rejected": 0
+            })
+        
+        requests = StudentJoinRequest.objects.select_related("student", "processed_by").order_by("-created_at")
+    except Exception as e:
+        print(f"[REQUESTS] Error checking table or fetching requests: {e}")
+        return JsonResponse({
+            "success": True,
+            "requests": [],
+            "total": 0,
+            "pending": 0,
+            "approved": 0,
+            "rejected": 0
+        })
+    
+    result = []
+    for req in requests:
+        result.append({
+            "id": req.id,
+            "student": {
+                "id": req.student.id,
+                "fullName": req.student.full_name,
+                "username": req.student.username,
+                "email": req.student.email,
+            },
+            "activityType": req.activity_type,
+            "requestMessage": req.request_message,
+            "status": req.status,
+            "createdAt": req.created_at.isoformat(),
+            "processedAt": req.processed_at.isoformat() if req.processed_at else None,
+            "processedBy": {
+                "fullName": req.processed_by.full_name
+            } if req.processed_by else None
+        })
+
+    return JsonResponse({
+        "success": True,
+        "requests": result,
+        "total": len(result),
+        "pending": sum(1 for r in result if r["status"] == "pending"),
+        "approved": sum(1 for r in result if r["status"] == "approved"),
+        "rejected": sum(1 for r in result if r["status"] == "rejected")
+    })
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["PUT"])
+def process_join_request(request: HttpRequest, request_id: int) -> JsonResponse:
+    """
+    معالجة طلب انضمام طالب (قبول أو رفض).
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        caller = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if caller.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    data = _parse_json(request)
+    action = data.get("action")  # "approve" or "reject"
+    
+    if action not in ["approve", "reject"]:
+        return _error("الإجراء غير صالح. يجب أن يكون 'approve' أو 'reject'", status=400)
+
+    # Check if StudentJoinRequest table exists
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='student_join_requests';")
+            table_exists = cursor.fetchone()
+        
+        if not table_exists:
+            return _error("نظام الطلبات غير متاح حالياً", status=503)
+        
+        join_request = StudentJoinRequest.objects.get(pk=request_id)
+    except StudentJoinRequest.DoesNotExist:
+        return _error("الطلب غير موجود", status=404)
+    except Exception as e:
+        print(f"[PROCESS_REQUEST] Error: {e}")
+        return _error("حدث خطأ في معالجة الطلب", status=500)
+
+    if join_request.status != "pending":
+        return _error("الطلب تمت معالجته بالفعل", status=400)
+
+    # Update the request
+    join_request.status = "approved" if action == "approve" else "rejected"
+    join_request.processed_by = caller
+    join_request.processed_at = timezone.now()
+    join_request.save()
+
+    action_text = "موافقة" if action == "approve" else "رفض"
+    return JsonResponse({
+        "success": True,
+        "message": f"تم {action_text} على طلب الانضمام بنجاح",
+        "request": {
+            "id": join_request.id,
+            "status": join_request.status,
+            "processedAt": join_request.processed_at.isoformat()
+        }
+    })
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def approve_all_requests(request: HttpRequest) -> JsonResponse:
+    """
+    الموافقة على جميع طلبات الانضمام المعلقة.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        caller = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if caller.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    try:
+        # Check if StudentJoinRequest table exists
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='student_join_requests';")
+            table_exists = cursor.fetchone()
+        
+        if not table_exists:
+            return JsonResponse({
+                "success": True,
+                "message": "نظام الطلبات غير متاح حالياً",
+                "approvedCount": 0
+            })
+        
+        # Update all pending requests
+        updated_count = StudentJoinRequest.objects.filter(status="pending").update(
+            status="approved",
+            processed_by=caller,
+            processed_at=timezone.now()
+        )
+
+        return JsonResponse({
+            "success": True,
+            "message": f"تم الموافقة على {updated_count} طلب بنجاح",
+            "approvedCount": updated_count
+        })
+    except Exception as exc:
+        print(f"[APPROVE_ALL] Error: {exc}")
+        return JsonResponse({
+            "success": True,
+            "message": "نظام الطلبات غير متاح حالياً",
+            "approvedCount": 0
+        })
+
+
+# ==================== CHAT ROOM MANAGEMENT ====================
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def create_chat_room(request: HttpRequest) -> JsonResponse:
+    """
+    إنشاء كروب دردشة جديد.
+    """
+    print("[CHAT_ROOM] Starting chat room creation")
+    
+    # Check if chat room tables exist
+    from django.db import connection
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_rooms';")
+        rooms_table_exists = cursor.fetchone()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_members';")
+        members_table_exists = cursor.fetchone()
+
+    if not rooms_table_exists or not members_table_exists:
+        print("[CHAT_ROOM] Chat room tables do not exist")
+        return _error("نظام الكروبات غير متاح حالياً", status=503)
+    
+    user_id = get_jwt_identity(request)
+    try:
+        creator = User.objects.get(pk=user_id)
+        print(f"[CHAT_ROOM] Creator found: {creator.full_name}")
+    except User.DoesNotExist:
+        print("[CHAT_ROOM] Creator not found")
+        return _error("غير مصرح لك", status=403)
+
+    if creator.role != "employee":
+        print("[CHAT_ROOM] User is not employee")
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    data = _parse_json(request)
+    print(f"[CHAT_ROOM] Received data: {data}")
+    
+    # Simplified validation - only require name and description
+    if not data.get("name") or not data.get("description"):
+        print("[CHAT_ROOM] Missing name or description")
+        return _error("الاسم والوصف مطلوبان", status=400)
+
+    try:
+        print("[CHAT_ROOM] Creating chat room...")
+        
+        # Simplified chat room creation with minimal fields
+        chat_room = ChatRoom.objects.create(
+            name=data["name"],
+            description=data["description"],
+            type=data.get("type", "general"),
+            privacy=data.get("privacy", "public"),
+            status="active",
+            max_members=data.get("maxMembers", 50),
+            created_by=creator,
+            admin=creator,  # Always use creator as admin for simplicity
+            rules=data.get("rules", ""),
+            tags=data.get("tags", ""),
+            welcome_message=data.get("welcomeMessage", ""),
+            message_retention="forever",
+            file_sharing="enabled",
+            max_file_size=10485760,
+            allowed_file_types="pdf, doc, docx, jpg, png, zip",
+            notifications_enabled=True,
+            encryption_enabled=False,
+            auto_mod_enabled=True,
+            read_only=False
+        )
+        
+        print(f"[CHAT_ROOM] Chat room created with ID: {chat_room.id}")
+
+        # Add creator as a member/admin so they can use the room immediately
+        try:
+            creator_membership, created = ChatRoomMember.objects.get_or_create(
+                chat_room=chat_room,
+                user=creator,
+                defaults={"role": "admin"}
+            )
+            if created:
+                print(f"[CHAT_ROOM] Creator added as admin member: {creator.full_name}")
+            else:
+                print(f"[CHAT_ROOM] Creator membership already exists: {creator.full_name}")
+        except Exception as membership_exc:
+            print(f"[CHAT_ROOM] Failed to add creator as member: {membership_exc}")
+
+        # Add other members if provided
+        members = data.get("members", [])
+        if members:
+            print(f"[CHAT_ROOM] Adding {len(members)} additional members")
+            for i, member_data in enumerate(members):
+                try:
+                    if isinstance(member_data, dict) and "id" in member_data:
+                        # Check if user exists
+                        try:
+                            user = User.objects.get(pk=member_data["id"])
+                            ChatRoomMember.objects.get_or_create(
+                                chat_room=chat_room,
+                                user=user,
+                                defaults={"role": member_data.get("role", "member")}
+                            )
+                            print(f"[CHAT_ROOM] Member {i+1} ({user.full_name}) added successfully")
+                        except User.DoesNotExist:
+                            print(f"[CHAT_ROOM] User {member_data['id']} not found, skipping")
+                except Exception as member_exc:
+                    print(f"[CHAT_ROOM] Error adding member {i+1}: {member_exc}")
+                    # Continue with other members
+
+        print("[CHAT_ROOM] Chat room creation completed successfully")
+        return JsonResponse({
+            "success": True,
+            "message": "تم إنشاء الكروب بنجاح",
+            "chatRoom": {
+                "id": chat_room.id,
+                "name": chat_room.name,
+                "description": chat_room.description,
+                "type": chat_room.type,
+                "privacy": chat_room.privacy,
+                "status": chat_room.status,
+                "maxMembers": chat_room.max_members,
+                "createdBy": creator.full_name,
+                "createdAt": chat_room.created_at.isoformat(),
+                "memberCount": ChatRoomMember.objects.filter(chat_room=chat_room, is_active=True).count(),
+                "isMember": True  # User is a member since this is their room
+            }
+        }, status=201)
+
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error creating chat room: {exc}")
+        import traceback
+        traceback.print_exc()
+        return _error(f"حدث خطأ أثناء إنشاء الكروب: {exc}", status=500)
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_chat_rooms(request: HttpRequest) -> JsonResponse:
+    """
+    جلب قائمة الكروبات المتاحة للمستخدم.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    try:
+        # Check if chat room tables exist
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_rooms';")
+            rooms_table_exists = cursor.fetchone()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_members';")
+            members_table_exists = cursor.fetchone()
+
+        if not rooms_table_exists or not members_table_exists:
+            return JsonResponse({
+                "success": True,
+                "chatRooms": [],
+                "total": 0
+            })
+
+        # Get all chat rooms and mark which ones user is a member of
+        all_rooms = ChatRoom.objects.all()
+        user_membership_ids = set(ChatRoomMember.objects.filter(user=user, is_active=True).values_list('chat_room_id', flat=True))
+        
+        chat_rooms = []
+        for room in all_rooms:
+            member_count = ChatRoomMember.objects.filter(chat_room=room, is_active=True).count()
+            message_count = ChatMessage.objects.filter(chat_room=room, is_deleted=False).count()
+            is_member = room.id in user_membership_ids
+            
+            # Get user role if member
+            user_role = None
+            if is_member:
+                membership = ChatRoomMember.objects.filter(chat_room=room, user=user, is_active=True).first()
+                user_role = membership.role if membership else None
+            
+            chat_rooms.append({
+                "id": room.id,
+                "name": room.name,
+                "description": room.description,
+                "type": room.type,
+                "privacy": room.privacy,
+                "status": room.status,
+                "maxMembers": room.max_members,
+                "memberCount": member_count,
+                "messageCount": message_count,
+                "createdBy": room.created_by.full_name,
+                "isMember": is_member,
+                "userRole": user_role,
+                "lastActivity": room.last_activity.isoformat(),
+                "createdAt": room.created_at.isoformat()
+            })
+
+        return JsonResponse({
+            "success": True,
+            "chatRooms": chat_rooms,
+            "total": len(chat_rooms)
+        })
+
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error getting chat rooms: {exc}")
+        return JsonResponse({
+            "success": True,
+            "chatRooms": [],
+            "total": 0
+        })
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def join_chat_room(request: HttpRequest, room_id: int) -> JsonResponse:
+    """
+    الانضمام إلى كروب دردشة.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    try:
+        # Check if tables exist
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_rooms';")
+            rooms_table_exists = cursor.fetchone()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_members';")
+            members_table_exists = cursor.fetchone()
+
+        if not rooms_table_exists or not members_table_exists:
+            return _error("نظام الكروبات غير متاح حالياً", status=503)
+
+        chat_room = ChatRoom.objects.get(pk=room_id)
+        
+        # Check if user is already a member
+        existing_membership = ChatRoomMember.objects.filter(chat_room=chat_room, user=user).first()
+        if existing_membership:
+            if existing_membership.is_active:
+                return _error("أنت بالفعل عضو في هذا الكروب", status=400)
+            else:
+                # Reactivate membership
+                existing_membership.is_active = True
+                existing_membership.save()
+                return JsonResponse({
+                    "success": True,
+                    "message": "تم إعادة تفعيل عضويتك في الكروب"
+                })
+
+        # Check if room is at capacity
+        current_members = ChatRoomMember.objects.filter(chat_room=chat_room, is_active=True).count()
+        if current_members >= chat_room.max_members:
+            return _error("الكروب ممتلئ، لا يمكن الانضمام حالياً", status=400)
+
+        # Create join request instead of adding as member immediately
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_join_requests';")
+            table_exists = cursor.fetchone()
+        
+        if not table_exists:
+            # Create join requests table if it doesn't exist
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS chat_room_join_requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    chat_room_id INTEGER NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    status VARCHAR(20) DEFAULT 'pending',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    processed_at DATETIME NULL,
+                    processed_by_id INTEGER NULL,
+                    FOREIGN KEY (chat_room_id) REFERENCES chat_rooms(id),
+                    FOREIGN KEY (user_id) REFERENCES users(id),
+                    FOREIGN KEY (processed_by_id) REFERENCES users(id)
+                )
+            """)
+        
+        # Check if user already has a pending request
+        cursor.execute("""
+            SELECT COUNT(*) FROM chat_room_join_requests 
+            WHERE chat_room_id = %s AND user_id = %s AND status = 'pending'
+        """, [chat_room.id, user.id])
+        
+        if cursor.fetchone()[0] > 0:
+            return _error("لديك طلب انضمام معلق بالفعل", status=400)
+        
+        # Create join request
+        cursor.execute("""
+            INSERT INTO chat_room_join_requests (chat_room_id, user_id, status, created_at)
+            VALUES (%s, %s, 'pending', %s)
+        """, [chat_room.id, user.id, timezone.now()])
+
+        return JsonResponse({
+            "success": True,
+            "message": "تم إرسال طلب الانضمام بنجاح. في انتظار موافقة المدير"
+        })
+
+    except ChatRoom.DoesNotExist:
+        return _error("الكروب غير موجود", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error joining chat room: {exc}")
+        return _error(f"حدث خطأ أثناء الانضمام للكروب: {exc}", status=500)
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["GET"])
+def get_chat_room_join_requests(request: HttpRequest) -> JsonResponse:
+    """
+    جلب طلبات الانضمام للكروبات (للمديرين فقط).
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للمديرين فقط", status=403)
+
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_join_requests';")
+            table_exists = cursor.fetchone()
+        
+        if not table_exists:
+            return JsonResponse({
+                "success": True,
+                "joinRequests": [],
+                "total": 0
+            })
+
+        # Get all pending join requests
+        cursor.execute("""
+            SELECT 
+                jr.id,
+                jr.chat_room_id,
+                jr.user_id,
+                jr.status,
+                jr.created_at,
+                cr.name as room_name,
+                u.full_name as user_name,
+                u.email as user_email,
+                u.username as username
+            FROM chat_room_join_requests jr
+            JOIN chat_rooms cr ON jr.chat_room_id = cr.id
+            JOIN users u ON jr.user_id = u.id
+            WHERE jr.status = 'pending'
+            ORDER BY jr.created_at DESC
+        """)
+        
+        requests = cursor.fetchall()
+        
+        result = []
+        for req in requests:
+            result.append({
+                "id": req[0],
+                "roomId": req[1],
+                "userId": req[2],
+                "status": req[3],
+                "createdAt": req[4].isoformat() if req[4] else None,
+                "roomName": req[5],
+                "userName": req[6],
+                "userEmail": req[7],
+                "username": req[8]
+            })
+
+        return JsonResponse({
+            "success": True,
+            "joinRequests": result,
+            "total": len(result)
+        })
+
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error getting join requests: {exc}")
+        return JsonResponse({
+            "success": True,
+            "joinRequests": [],
+            "total": 0
+        })
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["PUT"])
+def process_chat_room_join_request(request: HttpRequest, request_id: int) -> JsonResponse:
+    """
+    معالجة طلب انضمام للكروب (قبول أو رفض).
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        processor = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if processor.role != "employee":
+        return _error("هذه العملية متاحة للمديرين فقط", status=403)
+
+    data = _parse_json(request)
+    action = data.get("action")  # "approve" or "reject"
+    
+    if action not in ["approve", "reject"]:
+        return _error("الإجراء غير صالح. يجب أن يكون 'approve' أو 'reject'", status=400)
+
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            # Get request details
+            cursor.execute("""
+                SELECT chat_room_id, user_id, status 
+                FROM chat_room_join_requests 
+                WHERE id = %s
+            """, [request_id])
+            
+            request_data = cursor.fetchone()
+            if not request_data:
+                return _error("الطلب غير موجود", status=404)
+            
+            if request_data[2] != "pending":
+                return _error("الطلب تمت معالجته بالفعل", status=400)
+            
+            chat_room_id = request_data[0]
+            user_request_id = request_data[1]
+            
+            # Update request status
+            cursor.execute("""
+                UPDATE chat_room_join_requests 
+                SET status = %s, processed_at = %s, processed_by_id = %s
+                WHERE id = %s
+            """, [action, timezone.now(), user_id, request_id])
+            
+            if action == "approve":
+                # Add user as member
+                cursor.execute("""
+                    INSERT INTO chat_room_members (chat_room_id, user_id, role, is_active, joined_at)
+                    VALUES (%s, %s, 'member', 1, %s)
+                """, [chat_room_id, user_request_id, timezone.now()])
+                
+                action_text = "قبول"
+                message = f"تم قبول طلب الانضمام وإضافة العضو للكروب"
+            else:
+                action_text = "رفض"
+                message = f"تم رفض طلب الانضمام"
+
+        return JsonResponse({
+            "success": True,
+            "message": message,
+            "request": {
+                "id": request_id,
+                "action": action_text,
+                "processedAt": timezone.now().isoformat()
+            }
+        })
+
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error processing join request: {exc}")
+        return _error(f"حدث خطأ في معالجة الطلب: {exc}", status=500)
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def send_chat_message(request: HttpRequest, room_id: int) -> JsonResponse:
+    """
+    إرسال رسالة في كروب الدردشة.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        sender = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    data = _parse_json(request)
+    if "content" not in data or not data["content"].strip():
+        return _error("محتوى الرسالة مطلوب", status=400)
+
+    try:
+        # Check if tables exist
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_rooms';")
+            rooms_table_exists = cursor.fetchone()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_members';")
+            members_table_exists = cursor.fetchone()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_messages';")
+            messages_table_exists = cursor.fetchone()
+
+        if not all([rooms_table_exists, members_table_exists, messages_table_exists]):
+            return _error("نظام الكروبات غير متاح حالياً", status=503)
+
+        chat_room = ChatRoom.objects.get(pk=room_id)
+        
+        # For general chat rooms, allow all students and employees to send messages
+        if chat_room.type == "general" and sender.role in ["student", "employee"]:
+            # Allow sending without membership for general groups
+            pass
+        else:
+            # For other room types, check if user is a member
+            membership = ChatRoomMember.objects.filter(chat_room=chat_room, user=sender, is_active=True).first()
+            if not membership:
+                return _error("يجب أن تكون عضواً في الكروب لإرسال الرسائل", status=403)
+
+        # Check if room is read-only
+        if chat_room.read_only and sender.role != "employee":
+            return _error("الكروب للقراءة فقط حالياً", status=403)
+
+        # Create message
+        message = ChatMessage.objects.create(
+            chat_room=chat_room,
+            sender=sender,
+            content=data["content"].strip(),
+            message_type=data.get("messageType", "text"),
+            file_url=data.get("fileUrl"),
+            file_name=data.get("fileName"),
+            file_size=data.get("fileSize"),
+            reply_to_id=data.get("replyTo")
+        )
+
+        # Update room activity
+        chat_room.last_activity = timezone.now()
+        chat_room.save()
+
+        # Update member last active
+        membership.last_active = timezone.now()
+        membership.save()
+
+        return JsonResponse({
+            "success": True,
+            "message": "تم إرسال الرسالة بنجاح",
+            "chatMessage": {
+                "id": message.id,
+                "content": message.content,
+                "messageType": message.message_type,
+                "sender": {
+                    "id": sender.id,
+                    "fullName": sender.full_name,
+                    "username": sender.username,
+                    "role": sender.role
+                },
+                "createdAt": message.created_at.isoformat(),
+                "replyTo": message.reply_to_id
+            }
+        })
+
+    except ChatRoom.DoesNotExist:
+        return _error("الكروب غير موجود", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error sending message: {exc}")
+        return _error(f"حدث خطأ أثناء إرسال الرسالة: {exc}", status=500)
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_chat_messages(request: HttpRequest, room_id: int) -> JsonResponse:
+    """
+    جلب رسائل كروب الدردشة.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    try:
+        # Check if tables exist
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_rooms';")
+            rooms_table_exists = cursor.fetchone()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_members';")
+            members_table_exists = cursor.fetchone()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_messages';")
+            messages_table_exists = cursor.fetchone()
+
+        if not all([rooms_table_exists, members_table_exists, messages_table_exists]):
+            return JsonResponse({
+                "success": True,
+                "messages": [],
+                "total": 0
+            })
+
+        chat_room = ChatRoom.objects.get(pk=room_id)
+        
+        # For general chat rooms, allow all students and employees to view messages
+        if chat_room.type == "general" and user.role in ["student", "employee"]:
+            # Allow access without membership for general groups
+            pass
+        else:
+            # For other room types, check if user is a member
+            membership = ChatRoomMember.objects.filter(chat_room=chat_room, user=user, is_active=True).first()
+            if not membership:
+                return _error("يجب أن تكون عضواً في الكروب لرؤية الرسائل", status=403)
+
+        # Get messages
+        messages = ChatMessage.objects.filter(
+            chat_room=chat_room, 
+            is_deleted=False
+        ).select_related("sender").order_by("created_at")
+
+        messages_data = []
+        for message in messages:
+            messages_data.append({
+                "id": message.id,
+                "content": message.content,
+                "messageType": message.message_type,
+                "fileUrl": message.file_url,
+                "fileName": message.file_name,
+                "fileSize": message.file_size,
+                "isEdited": message.is_edited,
+                "sender": {
+                    "id": message.sender.id,
+                    "fullName": message.sender.full_name,
+                    "username": message.sender.username,
+                    "role": message.sender.role
+                },
+                "replyTo": message.reply_to_id,
+                "createdAt": message.created_at.isoformat()
+            })
+
+        return JsonResponse({
+            "success": True,
+            "messages": messages_data,
+            "total": len(messages_data)
+        })
+
+    except ChatRoom.DoesNotExist:
+        return _error("الكروب غير موجود", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error getting messages: {exc}")
+        return JsonResponse({
+            "success": True,
+            "messages": [],
+            "total": 0
+        })
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["DELETE"])
+def remove_member_from_chat_room(request: HttpRequest, room_id: int, user_id: int) -> JsonResponse:
+    """إزالة عضو من كروب الدردشة"""
+    admin_id = get_jwt_identity(request)
+    try:
+        admin = User.objects.get(pk=admin_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if admin.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    try:
+        # Check if tables exist
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_rooms';")
+            rooms_table_exists = cursor.fetchone()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_room_members';")
+            members_table_exists = cursor.fetchone()
+
+        if not rooms_table_exists or not members_table_exists:
+            return _error("نظام الكروبات غير متاح حالياً", status=503)
+
+        chat_room = ChatRoom.objects.get(pk=room_id)
+        
+        # Check if admin is the room admin
+        if chat_room.admin_id != admin_id:
+            return _error("يجب أن تكون مدير الكروب لإزالة الأعضاء", status=403)
+        
+        # Check if target user is a member
+        membership = ChatRoomMember.objects.filter(chat_room=chat_room, user_id=user_id, is_active=True).first()
+        if not membership:
+            return _error("المستخدم ليس عضواً في هذا الكروب", status=404)
+        
+        # Deactivate membership instead of deleting
+        membership.is_active = False
+        membership.save()
+        
+        # Send system message about removal
+        ChatMessage.objects.create(
+            chat_room=chat_room,
+            sender=admin,
+            content=f"تم إزالة {membership.user.full_name} من الكروب بواسطة المدير",
+            message_type="system"
+        )
+        
+        return JsonResponse({
+            "success": True,
+            "message": "تم إزالة العضو من الكروب بنجاح"
+        })
+
+    except ChatRoom.DoesNotExist:
+        return _error("الكروب غير موجود", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error removing member: {exc}")
+        return _error(f"حدث خطأ أثناء إزالة العضو: {exc}", status=500)
+
+

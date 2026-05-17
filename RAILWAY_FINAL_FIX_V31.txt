@@ -1,0 +1,34 @@
+RAILWAY FINAL FIX V31.0 - Replace runserver with gunicorn in Railway Dashboard
+
+CRITICAL DISCOVERY: Railway Dashboard Start Command still using runserver!
+PROBLEM: Railway logs show "Starting development server" and "Watching for file changes with StatReloader"
+
+EVIDENCE: Railway logs clearly show:
+Starting development server at http://0.0.0.0:8080/
+INFO autoreload 4 ... Watching for file changes with StatReloader
+Stopping Container
+
+ROOT CAUSE: Railway Dashboard Start Command override is using:
+python manage.py runserver
+
+INSTEAD OF:
+gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT
+
+SOLUTION: Go to Railway Dashboard and change Start Command:
+1. Railway → Service → Settings
+2. Find "Start Command" field
+3. Replace with: gunicorn university_activities.wsgi:application --bind 0.0.0.0:$PORT
+4. Remove any runserver references
+
+ADDITIONAL FIX: Disabled runtime migrations in middleware to prevent instability
+- DatabaseInitializationMiddleware no longer runs migrations during runtime
+- This prevents restart loops and instability
+
+EXPECTED RESULT:
+- No more "Starting development server" messages
+- No more "Watching for file changes with StatReloader"
+- Railway container stays stable
+- No more restart loops
+- Application runs in production mode with gunicorn
+
+THIS IS THE FINAL SOLUTION - Railway Dashboard configuration fix!
