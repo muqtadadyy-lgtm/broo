@@ -1,52 +1,39 @@
-# ULTIMATE CACHE BUST V25.0 - Force Railway to rebuild from scratch
-ARG CACHE_BUST_V25=2024-05-08-04-30-ULTIMATE
-FROM python:3.11.9-slim AS cache_bust_v25
+FROM python:3.11.9-slim
 
-# Force layer cache bust with unique timestamp
-RUN echo "=== CACHE BUST V25.0: $CACHE_BUST_V25 ===" && \
-    echo "=== FORCING COMPLETE REBUILD ===" && \
-    mkdir -p /tmp/cache_bust && \
-    echo "ULTIMATE_CACHE_BUST_V25" > /tmp/cache_bust/bust_marker && \
-    cat /tmp/cache_bust/bust_marker
+# Force rebuild to remove postgresql-client completely - v5.0 FINAL
+ARG RAILWAY_REBUILD=5
 
 WORKDIR /app
 
-# Install system dependencies - restructured to break cache
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
     gcc \
     default-libmysqlclient-dev \
     pkg-config \
     python3-dev \
-    && rm -rf /var/lib/apt/lists/* && \
-    echo "=== SYSTEM DEPS INSTALLED V25.0 ==="
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies - restructured
-COPY backend/requirements.txt /tmp/requirements.txt
+# Copy requirements and install Python dependencies
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r /tmp/requirements.txt && \
-    echo "=== PYTHON DEPS INSTALLED V25.0 ==="
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code - restructured to break cache
-COPY . /app/source/
-RUN echo "=== SOURCE CODE COPIED V25.0 ===" && \
-    ls -la /app/source/
+# Copy the application code
+COPY . .
 
-# Change to backend directory - restructured
-WORKDIR /app/source/backend
-RUN echo "=== WORKING DIR SET V25.0: $(pwd) ==="
+# Change to backend directory
+WORKDIR /app/backend
 
-# Create logs directory - restructured
-RUN mkdir -p logs && \
-    echo "=== LOGS DIR CREATED V25.0 ==="
+# Create logs directory
+RUN mkdir -p logs
 
-# COMPLETELY DISABLED: Collect static files - removed entirely
-# This was causing the build to fail with old cached code
+# Collect static files (can be done during build)
+RUN echo "=== Collecting static files ===" && python manage.py collectstatic --noinput || echo "Static collection failed"
 
 # Expose port (Railway will map this)
 EXPOSE 8080
 
 # Railway will provide PORT environment variable dynamically
 
-# ULTIMATE CACHE BUST V25.0 - Completely restructured CMD
-CMD ["sh", "-c", "echo '=== ULTIMATE CACHE BUST V25.0 ===' && echo '=== RAILWAY FORCED TO USE LATEST CODE ===' && echo '=== CONTAINER STARTING ===' && echo '=== PORT: '$PORT' ===' && echo '=== PWD: '$(pwd)' ===' && echo '=== DOCKERFILE RESTRUCTURED ===' && python manage.py runserver 0.0.0.0:$PORT"]
+# Production CMD - run migrations and start gunicorn with Railway PORT - v5.0 FINAL
+CMD ["sh", "-c", "echo \"=== RAILWAY PORT: ${PORT:-8080} ===\" && python manage.py migrate --noinput && exec gunicorn university_activities.wsgi:application --bind 0.0.0.0:${PORT:-8080}"]

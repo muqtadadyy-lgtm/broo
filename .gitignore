@@ -24,10 +24,13 @@ wheels/
 venv/
 .venv/
 ENV/
+**/venv/
+**/.venv/
 
 # Database
 *.sqlite3
 *.sqlite3-journal
+db.sqlite3
 
 # IDE
 .idea/
@@ -37,14 +40,19 @@ ENV/
 
 # Environment variables
 .env
+.env.*
 backend/.env
+!.env.example
 
 # Build and uploaded files
 backend/staticfiles/
 backend/media/
+media/
+staticfiles/
 
 # Logs
 *.log
+logs/
 
 # OS generated files
 .DS_Store
