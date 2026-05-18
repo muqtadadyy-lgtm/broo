@@ -493,25 +493,37 @@ function closeStudentNotifications() {
     document.getElementById('studentNotificationsModal').style.display = 'none';
 }
 
-function loadStudentNotifications() {
-    // Get only real notifications from the main system
-    studentNotifications = [];
-    
-    // Check if there are any real notifications in the main system
-    if (typeof userNotifications !== 'undefined' && userNotifications.length > 0) {
-        studentNotifications = userNotifications.filter(notification => 
-            notification.targetUser === 'student' || 
-            notification.targetUser === 'all'
-        );
-    }
-    
-    // If no real notifications exist, show empty state
-    if (studentNotifications.length === 0) {
+async function loadStudentNotifications() {
+    // Load notifications from API
+    try {
+        const result = await apiGetNotifications();
+        
+        if (result.success && result.notifications) {
+            studentNotifications = result.notifications.map(notification => ({
+                id: notification.id,
+                title: notification.title,
+                content: notification.content,
+                type: notification.type || 'general',
+                read: notification.read || false,
+                timestamp: notification.createdAt
+            }));
+        } else {
+            studentNotifications = [];
+        }
+        
+        // If no notifications exist, show empty state
+        if (studentNotifications.length === 0) {
+            showEmptyNotificationsState();
+        } else {
+            displayStudentNotifications();
+        }
+        updateControlPanelCounts();
+    } catch (error) {
+        console.error('[STUDENT NOTIFICATIONS] Error loading notifications:', error);
+        studentNotifications = [];
         showEmptyNotificationsState();
-    } else {
-        displayStudentNotifications();
+        updateControlPanelCounts();
     }
-    updateControlPanelCounts();
 }
 
 function displayStudentNotifications() {
@@ -597,23 +609,34 @@ function closeStudentImages() {
     document.getElementById('studentImagesModal').style.display = 'none';
 }
 
-function loadStudentImages() {
-    // Get only real images from the main system
-    studentImages = [];
-    
-    // Check if there are any real images in the main system
-    if (typeof adminImages !== 'undefined' && adminImages.length > 0) {
-        studentImages = adminImages.filter(image => 
-            image.createdBy === 'admin' || 
-            image.official === true
-        );
-    }
-    
-    // If no real images exist, show empty state
-    if (studentImages.length === 0) {
+async function loadStudentImages() {
+    // Load images from API
+    try {
+        const result = await apiGetImages();
+        
+        if (result.success && result.images) {
+            studentImages = result.images.map(image => ({
+                id: image.id,
+                title: image.title || 'صورة',
+                url: image.url || image.image_url,
+                date: image.createdAt,
+                type: image.type || 'general',
+                createdBy: image.createdBy || 'النظام'
+            }));
+        } else {
+            studentImages = [];
+        }
+        
+        // If no images exist, show empty state
+        if (studentImages.length === 0) {
+            showEmptyImagesState();
+        } else {
+            displayStudentImages();
+        }
+    } catch (error) {
+        console.error('[STUDENT IMAGES] Error loading images:', error);
+        studentImages = [];
         showEmptyImagesState();
-    } else {
-        displayStudentImages();
     }
 }
 
@@ -673,23 +696,37 @@ function closeStudentVideos() {
     document.getElementById('studentVideosModal').style.display = 'none';
 }
 
-function loadStudentVideos() {
-    // Get only real videos from the main system
-    studentVideos = [];
-    
-    // Check if there are any real videos in the main system
-    if (typeof adminVideos !== 'undefined' && adminVideos.length > 0) {
-        studentVideos = adminVideos.filter(video => 
-            video.createdBy === 'admin' || 
-            video.official === true
-        );
-    }
-    
-    // If no real videos exist, show empty state
-    if (studentVideos.length === 0) {
+async function loadStudentVideos() {
+    // Load videos from API
+    try {
+        const result = await apiGetVideos();
+        
+        if (result.success && result.videos) {
+            studentVideos = result.videos.map(video => ({
+                id: video.id,
+                title: video.title,
+                description: video.description,
+                thumbnail: video.thumbnail_url || 'https://via.placeholder.com/300x200?text=Video',
+                videoUrl: video.video_url,
+                duration: video.duration || '0:00',
+                date: video.createdAt,
+                type: video.category,
+                createdBy: video.createdBy
+            }));
+        } else {
+            studentVideos = [];
+        }
+        
+        // If no videos exist, show empty state
+        if (studentVideos.length === 0) {
+            showEmptyVideosState();
+        } else {
+            displayStudentVideos();
+        }
+    } catch (error) {
+        console.error('[STUDENT VIDEOS] Error loading videos:', error);
+        studentVideos = [];
         showEmptyVideosState();
-    } else {
-        displayStudentVideos();
     }
 }
 
@@ -752,23 +789,47 @@ function closeStudentContests() {
     document.getElementById('studentContestsModal').style.display = 'none';
 }
 
-function loadStudentContests() {
-    // Get only real contests from the main system
-    studentContests = [];
-    
-    // Check if there are any real contests in the main system
-    if (typeof adminContests !== 'undefined' && adminContests.length > 0) {
-        studentContests = adminContests.filter(contest => 
-            contest.createdBy === 'admin' || 
-            contest.official === true
-        );
-    }
-    
-    // If no real contests exist, show empty state
-    if (studentContests.length === 0) {
+async function loadStudentContests() {
+    // Load contests from API
+    try {
+        const result = await apiGetContests();
+        
+        if (result.success && result.contests) {
+            // Filter to show only public/active contests for students
+            studentContests = result.contests
+                .filter(contest => 
+                    contest.visibility === 'public' || 
+                    contest.status === 'active' ||
+                    contest.status === 'upcoming'
+                )
+                .map(contest => ({
+                    id: contest.id,
+                    title: contest.name,
+                    type: contest.status === 'active' ? 'active' : contest.status === 'upcoming' ? 'upcoming' : 'completed',
+                    description: contest.description,
+                    deadline: contest.endDate,
+                    prize: contest.prize || 'غير محدد',
+                    participants: contest.maxParticipants || 0,
+                    startDate: contest.startDate,
+                    endDate: contest.endDate,
+                    eligibility: contest.eligibility,
+                    requirements: contest.rules,
+                    createdBy: contest.createdBy
+                }));
+        } else {
+            studentContests = [];
+        }
+        
+        // If no contests exist, show empty state
+        if (studentContests.length === 0) {
+            showEmptyContestsState();
+        } else {
+            displayStudentContests();
+        }
+    } catch (error) {
+        console.error('[STUDENT CONTESTS] Error loading contests:', error);
+        studentContests = [];
         showEmptyContestsState();
-    } else {
-        displayStudentContests();
     }
 }
 

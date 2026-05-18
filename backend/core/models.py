@@ -502,5 +502,165 @@ class ChatMessage(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover - debug representation only
         return f"Message {self.id} in {self.chat_room.name} by {self.sender.full_name}"
-    
-    
+
+
+class Contest(models.Model):
+    """
+    نموذج المسابقات.
+    لإدارة المسابقات المختلفة في النظام.
+    """
+
+    name = models.CharField(max_length=200)
+    type = models.CharField(
+        max_length=20,
+        choices=[
+            ("academic", "أكاديمية"),
+            ("sports", "رياضية"),
+            ("art", "فنية"),
+            ("technology", "تقنية"),
+            ("general", "عامة"),
+            ("creative", "إبداعية"),
+        ],
+        default="general"
+    )
+    description = models.TextField()
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    eligibility = models.JSONField(default=list)  # ['students', 'employees', 'all']
+    requirements = models.TextField()
+    max_participants = models.IntegerField(default=50)
+    prize = models.TextField(blank=True, null=True)
+    rules = models.TextField()
+    judges = models.JSONField(default=list)  # List of judge names
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("draft", "مسودة"),
+            ("active", "نشطة"),
+            ("upcoming", "قادمة"),
+            ("completed", "مكتملة"),
+        ],
+        default="draft"
+    )
+    visibility = models.CharField(
+        max_length=20,
+        choices=[
+            ("public", "عامة"),
+            ("private", "خاصة"),
+            ("restricted", "مقيدة"),
+        ],
+        default="public"
+    )
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_contests")
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "contests"
+        indexes = [
+            models.Index(fields=["created_by"]),
+            models.Index(fields=["type"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["visibility"]),
+            models.Index(fields=["start_date"]),
+            models.Index(fields=["end_date"]),
+            models.Index(fields=["created_at"]),
+        ]
+        ordering = ["-created_at"]
+
+    def save(self, *args, **kwargs):
+        self.updated_at = timezone.now()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:  # pragma: no cover - debug representation only
+        return f"Contest {self.id} - {self.name} ({self.type})"
+
+
+class Video(models.Model):
+    """
+    نموذج الفيديوهات.
+    لإدارة الفيديوهات المنشورة في النظام.
+    """
+
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    category = models.CharField(
+        max_length=20,
+        choices=[
+            ("general", "عام"),
+            ("educational", "تعليمي"),
+            ("announcement", "إعلان"),
+            ("tutorial", "دليل"),
+            ("entertainment", "ترفيهي"),
+        ],
+        default="general"
+    )
+    video_url = models.URLField()
+    thumbnail_url = models.URLField(blank=True, null=True)
+    tags = models.JSONField(default=list)  # List of tags
+    duration = models.CharField(max_length=20, blank=True, null=True)  # e.g., "5:30"
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("draft", "مسودة"),
+            ("published", "منشور"),
+            ("archived", "مؤرشف"),
+        ],
+        default="draft"
+    )
+    visibility = models.CharField(
+        max_length=20,
+        choices=[
+            ("public", "عام"),
+            ("private", "خاص"),
+            ("students_only", "للطلاب فقط"),
+        ],
+        default="public"
+    )
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_videos")
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "videos"
+        indexes = [
+            models.Index(fields=["created_by"]),
+            models.Index(fields=["category"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["visibility"]),
+            models.Index(fields=["created_at"]),
+        ]
+        ordering = ["-created_at"]
+
+    def save(self, *args, **kwargs):
+        self.updated_at = timezone.now()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:  # pragma: no cover - debug representation only
+        return f"Video {self.id} - {self.title} ({self.category})"
+
+
+class StudentPost(models.Model):
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="student_posts")
+    image = models.ImageField(upload_to="student_posts/", null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+    is_active = models.BooleanField(default=True) # For moderation purposes
+
+    class Meta:
+        db_table = "student_posts"
+        indexes = [
+            models.Index(fields=["author"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["is_active"]),
+        ]
+        ordering = ["-created_at"]
+
+    def save(self, *args, **kwargs):
+        self.updated_at = timezone.now()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"Post {self.id} by {self.author.username} - {self.title}"

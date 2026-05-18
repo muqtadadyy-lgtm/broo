@@ -22,11 +22,13 @@ from .models import (
     ChatMessage,
     ChatRoom,
     ChatRoomMember,
+    Contest,
     EmployeeDirectMessage,
     EmployeeRequest,
     Message,
     StudentJoinRequest,
     User,
+    Video,
 )
 
 
@@ -1068,8 +1070,7 @@ def list_employees(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role != "employee":
-        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+    # REMOVED: Role check - now allows any authenticated user (student or employee) to upload images
 
     employees = (
         User.objects.filter(role="employee")
@@ -1633,8 +1634,7 @@ def upload_image(request: HttpRequest) -> JsonResponse:
     except User.DoesNotExist:
         return _error("غير مصرح لك", status=403)
 
-    if user.role != "employee":
-        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+    # تم إزالة التحقق من الدور هنا للسماح لأي مستخدم مصادق عليه برفع الصور.
 
     if 'image' not in request.FILES:
         return _error("لم يتم اختيار ملف صورة", status=400)
@@ -1690,6 +1690,284 @@ def upload_image(request: HttpRequest) -> JsonResponse:
         import traceback
         traceback.print_exc()
         return _error(f"حدث خطأ أثناء رفع الصورة: {exc}", status=500)
+
+
+# ==================== STUDENT POSTS ====================
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def create_student_post(request: HttpRequest) -> JsonResponse:
+    """
+    إنشاء منشور جديد بواسطة طالب.
+    يمكن أن يتضمن صورة.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("المستخدم غير موجود", status=404)
+
+    if user.role != "student":
+        return _error("هذه العملية متاحة للطلاب فقط", status=403)
+
+    if request.content_type and request.content_type.startswith("multipart/form-data"):
+        data = request.POST
+        uploaded_image = request.FILES.get("image")
+    else:
+        data = _parse_json(request)
+        uploaded_image = None
+
+    required_fields = ["title", "content"]
+    if not all(field in data for field in required_fields):
+        return _error("العنوان والمحتوى مطلوبان", status=400)
+
+    title = data["title"]
+    content = data["content"]
+
+    image_path = None
+    if uploaded_image:
+        # Validate file type (similar to upload_image)
+        allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        if uploaded_image.content_type not in allowed_types:
+            return _error("نوع ملف الصورة غير مدعوم. يرجى اختيار صورة (JPEG, PNG, GIF, WebP)", status=400)
+        
+        # Validate file size (max 10MB)
+        if uploaded_file.size > 10 * 1024 * 1024:
+            return _error("حجم ملف الصورة كبير جداً. الحد الأقصى 10 ميجابايت", status=400)
+
+        try:
+            # Save the image to a specific student_posts directory
+            base_dir = Path(__file__).resolve().parent.parent.parent
+            uploads_dir = base_dir / "media" / "student_posts" # Using MEDIA_ROOT for user uploads
+            uploads_dir.mkdir(parents=True, exist_ok=True)
+            
+            file_extension = Path(uploaded_image.name).suffix
+            unique_filename = f"post_image_{user_id}_{int(timezone.now().timestamp())}{file_extension}"
+            file_path = uploads_dir / unique_filename
+            
+            with open(file_path, 'wb') as f:
+                for chunk in uploaded_image.chunks():
+                    f.write(chunk)
+            
+            image_path = f"student_posts/{unique_filename}" # Relative path for ImageField
+        except Exception as exc:
+            print(f"[STUDENT_POST] Error saving image: {exc}")
+            return _error(f"حدث خطأ أثناء حفظ الصورة: {exc}", status=500)
+
+    try:
+        post = StudentPost.objects.create(
+            title=title,
+            content=content,
+            author=user,
+            image=image_path, # Assign the relative path to the ImageField
+            is_active=True # Default to active, can be moderated later
+        )
+    except Exception as exc:
+        print(f"[STUDENT_POST] Error creating post: {exc}")
+        return _error(f"حدث خطأ أثناء إنشاء المنشور: {exc}", status=500)
+
+    return JsonResponse({
+        "success": True,
+        "message": "تم إنشاء المنشور بنجاح",
+        "post": {
+            "id": post.id,
+            "title": post.title,
+            "content": post.content,
+            "author": post.author.full_name,
+            "imageUrl": request.build_absolute_uri(post.image.url) if post.image else None,
+            "createdAt": post.created_at.isoformat(),
+            "isActive": post.is_active
+        }
+    }, status=201)
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_all_student_posts(request: HttpRequest) -> JsonResponse:
+    """
+    جلب جميع منشورات الطلاب النشطة.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("المستخدم غير موجود", status=404)
+    
+    # All authenticated users can view student posts
+    posts_qs = StudentPost.objects.filter(is_active=True).select_related("author").order_by("-created_at")
+
+    result = []
+    for post in posts_qs:
+        result.append({
+            "id": post.id,
+            "title": post.title,
+            "content": post.content,
+            "author": {
+                "id": post.author.id,
+                "fullName": post.author.full_name,
+                "username": post.author.username,
+                "role": post.author.role,
+            },
+            "imageUrl": request.build_absolute_uri(post.image.url) if post.image else None,
+            "createdAt": post.created_at.isoformat(),
+            "updatedAt": post.updated_at.isoformat(),
+            "isActive": post.is_active
+        })
+    
+    return JsonResponse({"success": True, "posts": result})
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["PUT", "PATCH"])
+def toggle_student_post_active_status(request: HttpRequest, post_id: int) -> JsonResponse:
+    """
+    تفعيل/تعطيل منشور طالب (للموظفين فقط لأغراض الإشراف).
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    try:
+        post = StudentPost.objects.get(pk=post_id)
+    except StudentPost.DoesNotExist:
+        return _error("المنشور غير موجود", status=404)
+
+    post.is_active = not post.is_active
+    try:
+        post.save()
+    except Exception as exc:
+        return _error(f"حدث خطأ: {exc}", status=500)
+
+    return JsonResponse({
+        "success": True,
+        "message": f"تم {'تفعيل' if post.is_active else 'تعطيل'} المنشور بنجاح",
+        "isActive": post.is_active
+    })
+
+
+# ==================== VIDEO MANAGEMENT ====================
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def create_video(request: HttpRequest) -> JsonResponse:
+    """
+    إنشاء فيديو جديد (للموظفين فقط).
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("المستخدم غير موجود", status=404)
+
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    data = _parse_json(request)
+    required_fields = ["title", "description", "videoUrl", "category"]
+    if not all(field in data for field in required_fields):
+        return _error("العنوان والوصف ورابط الفيديو والفئة مطلوبة", status=400)
+
+    title = data["title"]
+    description = data["description"]
+    video_url = data["videoUrl"]
+    category = data["category"]
+    thumbnail_url = data.get("thumbnailUrl")
+    tags = data.get("tags", [])  # Expects a list, will be stored as JSON
+    duration = data.get("duration")
+    status = data.get("status", "draft")  # Default to draft
+    visibility = data.get("visibility", "public")  # Default to public
+
+    # Validate status and visibility choices
+    if status not in [choice[0] for choice in Video._meta.get_field('status').choices]:
+        return _error("حالة الفيديو غير صالحة", status=400)
+    if visibility not in [choice[0] for choice in Video._meta.get_field('visibility').choices]:
+        return _error("رؤية الفيديو غير صالحة", status=400)
+
+    try:
+        video = Video.objects.create(
+            title=title,
+            description=description,
+            video_url=video_url,
+            thumbnail_url=thumbnail_url,
+            category=category,
+            tags=tags,
+            duration=duration,
+            status=status,
+            visibility=visibility,
+            created_by=user,
+        )
+    except Exception as exc:
+        print(f"[CREATE_VIDEO] Error creating video: {exc}")
+        return _error(f"حدث خطأ أثناء إنشاء الفيديو: {exc}", status=500)
+
+    return JsonResponse({
+        "success": True,
+        "message": "تم إنشاء الفيديو بنجاح",
+        "video": {
+            "id": video.id,
+            "title": video.title,
+            "description": video.description,
+            "videoUrl": video.video_url,
+            "thumbnailUrl": video.thumbnail_url,
+            "category": video.category,
+            "tags": video.tags,
+            "duration": video.duration,
+            "status": video.status,
+            "visibility": video.visibility,
+            "createdBy": video.created_by.full_name,
+            "createdAt": video.created_at.isoformat(),
+        }
+    }, status=201)
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_videos(request: HttpRequest) -> JsonResponse:
+    """
+    جلب الفيديوهات المتاحة بناءً على دور المستخدم.
+    - الموظفون يمكنهم رؤية جميع الفيديوهات.
+    - الطلاب يمكنهم رؤية الفيديوهات ذات الرؤية 'public' أو 'students_only'.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("المستخدم غير موجود", status=404)
+
+    # Base queryset for published videos
+    videos_qs = Video.objects.filter(status="published").select_related("created_by").order_by("-created_at")
+
+    if user.role == "student":
+        # Students can only see 'public' or 'students_only' videos
+        videos_qs = videos_qs.filter(Q(visibility="public") | Q(visibility="students_only"))
+    # Employees can see all published videos (no further filtering needed)
+
+    result = []
+    for video in videos_qs:
+        result.append({
+            "id": video.id,
+            "title": video.title,
+            "description": video.description,
+            "videoUrl": video.video_url,
+            "thumbnailUrl": video.thumbnail_url,
+            "category": video.category,
+            "tags": video.tags,
+            "duration": video.duration,
+            "status": video.status,
+            "visibility": video.visibility,
+            "createdBy": video.created_by.full_name,
+            "createdAt": video.created_at.isoformat(),
+        })
+    
+    return JsonResponse({"success": True, "videos": result})
 
 
 @csrf_exempt
@@ -1880,6 +2158,121 @@ def toggle_announcement(request: HttpRequest, announcement_id: int) -> JsonRespo
         "message": f"تم {'تفعيل' if announcement.is_active else 'تعطيل'} الإعلان",
         "isActive": announcement.is_active
     })
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_all_announcements(request: HttpRequest) -> JsonResponse:
+    """
+    جلب جميع الإعلانات للطلاب.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    try:
+        announcements = Announcement.objects.all().order_by("-created_at")
+        announcement_list = []
+
+        for announcement in announcements:
+            announcement_list.append({
+                "id": announcement.id,
+                "title": announcement.title,
+                "content": announcement.content,
+                "type": announcement.announcement_type if hasattr(announcement, 'announcement_type') else 'general',
+                "createdAt": announcement.created_at.isoformat(),
+                "createdBy": announcement.created_by.full_name if announcement.created_by else 'النظام',
+                "isActive": announcement.is_active
+            })
+
+        return JsonResponse({
+            "success": True,
+            "announcements": announcement_list,
+            "total": len(announcement_list)
+        })
+
+    except Exception as e:
+        print(f"[ANNOUNCEMENTS] Error fetching announcements: {e}")
+        return _error("حدث خطأ في جلب الإعلانات", status=500)
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_images(request: HttpRequest) -> JsonResponse:
+    """
+    جلب جميع الصور للطلاب.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    try:
+        # Check if images table exists
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='images';")
+            table_exists = cursor.fetchone()
+
+        if not table_exists:
+            return JsonResponse({
+                "success": True,
+                "images": [],
+                "total": 0
+            })
+
+        # Since there's no Image model, we'll return empty for now
+        # This should be implemented when Image model is added
+        return JsonResponse({
+            "success": True,
+            "images": [],
+            "total": 0,
+            "message": "ميزة الصور قيد التطوير"
+        })
+
+    except Exception as e:
+        print(f"[IMAGES] Error fetching images: {e}")
+        return _error("حدث خطأ في جلب الصور", status=500)
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_notifications(request: HttpRequest) -> JsonResponse:
+    """
+    جلب جميع الإشعارات للطالب الحالي.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    try:
+        notifications = Notification.objects.filter(user=user).order_by("-created_at")
+        notification_list = []
+
+        for notification in notifications:
+            notification_list.append({
+                "id": notification.id,
+                "title": notification.title,
+                "content": notification.message,
+                "type": "general",
+                "read": notification.read if hasattr(notification, 'read') else False,
+                "createdAt": notification.created_at.isoformat()
+            })
+
+        return JsonResponse({
+            "success": True,
+            "notifications": notification_list,
+            "total": len(notification_list)
+        })
+
+    except Exception as e:
+        print(f"[NOTIFICATIONS] Error fetching notifications: {e}")
+        return _error("حدث خطأ في جلب الإشعارات", status=500)
 
 
 # ==================== USER MANAGEMENT ====================
@@ -2911,5 +3304,267 @@ def remove_member_from_chat_room(request: HttpRequest, room_id: int, user_id: in
     except Exception as exc:
         print(f"[CHAT_ROOM] Error removing member: {exc}")
         return _error(f"حدث خطأ أثناء إزالة العضو: {exc}", status=500)
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def create_contest(request: HttpRequest) -> JsonResponse:
+    """
+    إنشاء مسابقة جديدة.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    data = _parse_json(request)
+
+    # Validate required fields
+    required_fields = ["name", "description", "startDate", "endDate", "requirements", "rules"]
+    for field in required_fields:
+        if field not in data or not data[field]:
+            return _error(f"الحقل {field} مطلوب", status=400)
+
+    # Validate dates
+    try:
+        start_date = datetime.fromisoformat(data["startDate"])
+        end_date = datetime.fromisoformat(data["endDate"])
+        if start_date >= end_date:
+            return _error("تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء", status=400)
+    except ValueError:
+        return _error("تاريخ غير صالح", status=400)
+
+    # Validate eligibility
+    eligibility = data.get("eligibility", [])
+    if not isinstance(eligibility, list) or len(eligibility) == 0:
+        return _error("يجب اختيار فئة واحدة على الأقل للمشاركة", status=400)
+
+    try:
+        contest = Contest.objects.create(
+            name=data["name"],
+            type=data.get("type", "general"),
+            description=data["description"],
+            start_date=start_date,
+            end_date=end_date,
+            eligibility=eligibility,
+            requirements=data["requirements"],
+            max_participants=data.get("maxParticipants", 50),
+            prize=data.get("prize", ""),
+            rules=data["rules"],
+            judges=data.get("judges", []),
+            status=data.get("status", "draft"),
+            visibility=data.get("visibility", "public"),
+            created_by=user
+        )
+
+        return JsonResponse({
+            "success": True,
+            "message": "تم إنشاء المسابقة بنجاح",
+            "contest": {
+                "id": contest.id,
+                "name": contest.name,
+                "type": contest.type,
+                "description": contest.description,
+                "startDate": contest.start_date.isoformat(),
+                "endDate": contest.end_date.isoformat(),
+                "status": contest.status,
+                "visibility": contest.visibility
+            }
+        }, status=201)
+
+    except Exception as e:
+        print(f"[CONTEST] Error creating contest: {e}")
+        return _error("حدث خطأ في إنشاء المسابقة", status=500)
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_contests(request: HttpRequest) -> JsonResponse:
+    """
+    جلب قائمة المسابقات.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    try:
+        # Check if contest table exists
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='contests';")
+            table_exists = cursor.fetchone()
+
+        if not table_exists:
+            return JsonResponse({
+                "success": True,
+                "contests": [],
+                "total": 0
+            })
+
+        contests = Contest.objects.all()
+        contest_list = []
+
+        for contest in contests:
+            contest_list.append({
+                "id": contest.id,
+                "name": contest.name,
+                "type": contest.type,
+                "description": contest.description,
+                "startDate": contest.start_date.isoformat(),
+                "endDate": contest.end_date.isoformat(),
+                "eligibility": contest.eligibility,
+                "maxParticipants": contest.max_participants,
+                "prize": contest.prize,
+                "rules": contest.rules,
+                "judges": contest.judges,
+                "status": contest.status,
+                "visibility": contest.visibility,
+                "createdBy": contest.created_by.full_name,
+                "createdAt": contest.created_at.isoformat()
+            })
+
+        return JsonResponse({
+            "success": True,
+            "contests": contest_list,
+            "total": len(contest_list)
+        })
+
+    except Exception as e:
+        print(f"[CONTEST] Error fetching contests: {e}")
+        return _error("حدث خطأ في جلب المسابقات", status=500)
+
+
+@csrf_exempt
+@jwt_required
+@require_http_methods(["POST"])
+def create_video(request: HttpRequest) -> JsonResponse:
+    """
+    إنشاء فيديو جديد.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    if user.role != "employee":
+        return _error("هذه العملية متاحة للموظفين فقط", status=403)
+
+    data = _parse_json(request)
+
+    # Validate required fields
+    required_fields = ["title", "description", "video_url"]
+    for field in required_fields:
+        if field not in data or not data[field]:
+            return _error(f"الحقل {field} مطلوب", status=400)
+
+    try:
+        video = Video.objects.create(
+            title=data["title"],
+            description=data["description"],
+            category=data.get("category", "general"),
+            video_url=data["video_url"],
+            thumbnail_url=data.get("thumbnail_url", ""),
+            tags=data.get("tags", []),
+            duration=data.get("duration", ""),
+            status=data.get("status", "published"),
+            visibility=data.get("visibility", "public"),
+            created_by=user
+        )
+
+        return JsonResponse({
+            "success": True,
+            "message": "تم نشر الفيديو بنجاح",
+            "video": {
+                "id": video.id,
+                "title": video.title,
+                "category": video.category,
+                "description": video.description,
+                "video_url": video.video_url,
+                "thumbnail_url": video.thumbnail_url,
+                "duration": video.duration,
+                "status": video.status,
+                "visibility": video.visibility,
+                "createdBy": video.created_by.full_name,
+                "createdAt": video.created_at.isoformat()
+            }
+        }, status=201)
+
+    except Exception as e:
+        print(f"[VIDEO] Error creating video: {e}")
+        return _error("حدث خطأ في نشر الفيديو", status=500)
+
+
+@jwt_required
+@require_http_methods(["GET"])
+def get_videos(request: HttpRequest) -> JsonResponse:
+    """
+    جلب قائمة الفيديوهات.
+    """
+    user_id = get_jwt_identity(request)
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return _error("غير مصرح لك", status=403)
+
+    try:
+        # Check if video table exists
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='videos';")
+            table_exists = cursor.fetchone()
+
+        if not table_exists:
+            return JsonResponse({
+                "success": True,
+                "videos": [],
+                "total": 0
+            })
+
+        # Filter videos based on user role and visibility
+        if user.role == "student":
+            # Students can see public and students_only videos
+            videos = Video.objects.filter(
+                status="published",
+                visibility__in=["public", "students_only"]
+            )
+        else:
+            # Employees can see all published videos
+            videos = Video.objects.filter(status="published")
+
+        video_list = []
+
+        for video in videos:
+            video_list.append({
+                "id": video.id,
+                "title": video.title,
+                "category": video.category,
+                "description": video.description,
+                "video_url": video.video_url,
+                "thumbnail_url": video.thumbnail_url,
+                "tags": video.tags,
+                "duration": video.duration,
+                "status": video.status,
+                "visibility": video.visibility,
+                "createdBy": video.created_by.full_name,
+                "createdAt": video.created_at.isoformat()
+            })
+
+        return JsonResponse({
+            "success": True,
+            "videos": video_list,
+            "total": len(video_list)
+        })
+
+    except Exception as e:
+        print(f"[VIDEO] Error fetching videos: {e}")
+        return _error("حدث خطأ في جلب الفيديوهات", status=500)
 
 

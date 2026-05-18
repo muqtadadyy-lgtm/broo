@@ -351,6 +351,75 @@ async function apiRemoveMemberFromChatRoom(roomId, userId) {
     }
 }
 
+async function apiCreateContest(contestData) {
+    try {
+        const response = await apiRequest('/contests', {
+            method: 'POST',
+            body: JSON.stringify(contestData)
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+}
+
+async function apiGetContests() {
+    try {
+        const response = await apiRequest('/contests/list', {
+            method: 'GET'
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message, contests: [] };
+    }
+}
+
+async function apiGetChatRoomJoinRequests() {
+    try {
+        const response = await apiRequest('/chat-rooms/join-requests', {
+            method: 'GET'
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message, joinRequests: [] };
+    }
+}
+
+async function apiProcessChatRoomJoinRequest(requestId, action) {
+    try {
+        const response = await apiRequest(`/chat-rooms/join-requests/${requestId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ action: action })
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+}
+
+async function apiCreateVideo(videoData) {
+    try {
+        const response = await apiRequest('/videos', {
+            method: 'POST',
+            body: JSON.stringify(videoData)
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+}
+
+async function apiGetVideos() {
+    try {
+        const response = await apiRequest('/videos/list', {
+            method: 'GET'
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message, videos: [] };
+    }
+}
+
 // ==================== SUPERVISOR MESSAGES ====================
 
 async function apiGetSupervisorMessages(employeeId = null) {
@@ -663,6 +732,28 @@ async function apiToggleAnnouncement(id, active) {
         return response;
     } catch (error) {
         return { success: false, message: error.message };
+    }
+}
+
+async function apiGetImages() {
+    try {
+        const response = await apiRequest('/images/list', {
+            method: 'GET'
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message, images: [] };
+    }
+}
+
+async function apiGetNotifications() {
+    try {
+        const response = await apiRequest('/notifications/list', {
+            method: 'GET'
+        });
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message, notifications: [] };
     }
 }
 

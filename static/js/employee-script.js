@@ -1097,6 +1097,91 @@ function closeContestModal() {
 // ==================== STUDENT JOIN REQUESTS ====================
 
 let studentJoinRequests = [];
+let chatRoomJoinRequests = [];
+
+async function refreshChatRoomJoinRequests() {
+    try {
+        const result = await apiGetChatRoomJoinRequests();
+        if (result.success) {
+            chatRoomJoinRequests = result.joinRequests || [];
+            displayChatRoomJoinRequests();
+            showNotification('تم تحديث طلبات انضمام الكروبات', 'success');
+        } else {
+            showNotification(result.message || 'فشل تحديث طلبات الانضمام', 'error');
+        }
+    } catch (error) {
+        console.error('[CHAT ROOM] Error loading join requests:', error);
+        showNotification('حدث خطأ في تحميل طلبات الانضمام', 'error');
+    }
+}
+
+function displayChatRoomJoinRequests() {
+    const container = document.getElementById('chatRoomJoinRequests');
+    if (!container) return;
+
+    if (chatRoomJoinRequests.length === 0) {
+        container.innerHTML = `
+            <div class="no-requests">
+                <i class="fas fa-inbox"></i>
+                <p>لا توجد طلبات انضمام للكروبات</p>
+                <small>سيظهر هنا الطلبات عندما يطلب الطلاب الانضمام للكروبات</small>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = chatRoomJoinRequests.map(request => {
+        const statusClass = request.status === 'pending' ? 'pending' : 
+                           request.status === 'approved' ? 'approved' : 'rejected';
+        const statusText = request.status === 'pending' ? 'قيد الانتظار' :
+                           request.status === 'approved' ? 'تمت الموافقة' : 'مرفوض';
+        const createdAt = request.createdAt ? new Date(request.createdAt).toLocaleString('ar-SA') : '';
+
+        return `
+            <div class="request-item ${statusClass}">
+                <div class="request-info">
+                    <div class="request-header">
+                        <h4>${request.userName}</h4>
+                        <span class="request-status ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="request-details">
+                        <p><strong>الكروب:</strong> ${request.roomName}</p>
+                        <p><strong>البريد:</strong> ${request.userEmail}</p>
+                        <p><strong>التاريخ:</strong> ${createdAt}</p>
+                    </div>
+                </div>
+                <div class="request-actions">
+                    ${request.status === 'pending' ? `
+                        <button class="approve-btn" onclick="processChatRoomJoinRequest(${request.id}, 'approve')">
+                            <i class="fas fa-check"></i> قبول
+                        </button>
+                        <button class="reject-btn" onclick="processChatRoomJoinRequest(${request.id}, 'reject')">
+                            <i class="fas fa-times"></i> رفض
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function processChatRoomJoinRequest(requestId, action) {
+    try {
+        const actionText = action === 'approve' ? 'قبول' : 'رفض';
+        showNotification(`جاري ${actionText} طلب الانضمام...`, 'info');
+
+        const result = await apiProcessChatRoomJoinRequest(requestId, action);
+        if (result.success) {
+            showNotification(result.message, 'success');
+            refreshChatRoomJoinRequests(); // Refresh the list
+        } else {
+            showNotification(result.message || 'فشل معالجة الطلب', 'error');
+        }
+    } catch (error) {
+        console.error('[CHAT ROOM] Error processing join request:', error);
+        showNotification('حدث خطأ في معالجة الطلب', 'error');
+    }
+}
 
 async function refreshStudentRequests() {
     try {
@@ -1264,46 +1349,47 @@ async function createContest() {
             rules: rules,
             judges: judges.split(',').map(j => j.trim()).filter(j => j),
             status: status,
-            visibility: visibility,
-            createdBy: currentUser.fullName,
-            createdAt: new Date().toISOString()
+            visibility: visibility
         };
         
-        // Here you would normally send to API
         showNotification('جاري إنشاء المسابقة...', 'info');
         
-        // Simulate creation
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Send to API
+        const result = await apiCreateContest(contestData);
         
-        const typeText = type === 'academic' ? 'أكاديمية' : 
-                        type === 'sports' ? 'رياضية' : 
-                        type === 'art' ? 'فنية' : 
-                        type === 'technology' ? 'تقنية' : 
-                        type === 'general' ? 'عامة' : 'إبداعية';
-        
-        showNotification(`تم إنشاء المسابقة "${name}" (${typeText}) بنجاح`, 'success');
-        
-        // Clear form
-        document.getElementById('contestName').value = '';
-        document.getElementById('contestType').value = 'academic';
-        document.getElementById('contestDescription').value = '';
-        document.getElementById('contestStartDate').value = '';
-        document.getElementById('contestEndDate').value = '';
-        document.getElementById('contestRequirements').value = '';
-        document.getElementById('contestMaxParticipants').value = '50';
-        document.getElementById('contestPrize').value = '';
-        document.getElementById('contestRules').value = '';
-        document.getElementById('contestJudges').value = '';
-        document.getElementById('contestStatus').value = 'draft';
-        document.getElementById('contestVisibility').value = 'public';
-        
-        // Reset eligibility checkboxes
-        document.querySelectorAll('input[name="eligibility"]').forEach(checkbox => {
-            checkbox.checked = checkbox.value === 'students';
-        });
-        
-        // Close modal
-        closeContestModal();
+        if (result.success) {
+            const typeText = type === 'academic' ? 'أكاديمية' : 
+                            type === 'sports' ? 'رياضية' : 
+                            type === 'art' ? 'فنية' : 
+                            type === 'technology' ? 'تقنية' : 
+                            type === 'general' ? 'عامة' : 'إبداعية';
+            
+            showNotification(`تم إنشاء المسابقة "${name}" (${typeText}) بنجاح`, 'success');
+            
+            // Clear form
+            document.getElementById('contestName').value = '';
+            document.getElementById('contestType').value = 'academic';
+            document.getElementById('contestDescription').value = '';
+            document.getElementById('contestStartDate').value = '';
+            document.getElementById('contestEndDate').value = '';
+            document.getElementById('contestRequirements').value = '';
+            document.getElementById('contestMaxParticipants').value = '50';
+            document.getElementById('contestPrize').value = '';
+            document.getElementById('contestRules').value = '';
+            document.getElementById('contestJudges').value = '';
+            document.getElementById('contestStatus').value = 'draft';
+            document.getElementById('contestVisibility').value = 'public';
+            
+            // Reset eligibility checkboxes
+            document.querySelectorAll('input[name="eligibility"]').forEach(checkbox => {
+                checkbox.checked = checkbox.value === 'students';
+            });
+            
+            // Close modal
+            closeContestModal();
+        } else {
+            showNotification(result.message || 'فشل إنشاء المسابقة', 'error');
+        }
         
     } catch (error) {
         console.error('Error creating contest:', error);
@@ -2833,7 +2919,6 @@ async function sendNotification() {
     }
 }
 
-// Chat Room Management Functions
 function openChatRoomModal() {
     const modal = document.getElementById('chatRoomModal');
     if (!modal) return;
@@ -2841,9 +2926,9 @@ function openChatRoomModal() {
     modal.classList.add('active');
     toggleFabMenu();
     loadChatRooms();
+    refreshChatRoomJoinRequests();
     displayExistingChatRooms();
 }
-
 function displayExistingChatRooms() {
     const roomsList = document.getElementById('existingChatRoomsList');
     
@@ -4420,39 +4505,44 @@ async function submitVideoReel() {
     }
     
     try {
-        // Create FormData for file upload
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('description', description);
-        formData.append('category', category);
-        formData.append('tags', tags);
-        formData.append('video', videoFile);
-        if (thumbnailFile) {
-            formData.append('thumbnail', thumbnailFile);
+        showNotification('جاري نشر الفيديو...', 'info');
+        
+        // For now, use a placeholder URL since we don't have file upload functionality
+        // In a real implementation, you would upload the file to a server and get the URL
+        const videoUrl = URL.createObjectURL(videoFile);
+        const thumbnailUrl = thumbnailFile ? URL.createObjectURL(thumbnailFile) : '';
+        
+        const videoData = {
+            title: title,
+            description: description,
+            category: category,
+            tags: tags.split(',').map(t => t.trim()).filter(t => t),
+            video_url: videoUrl,
+            thumbnail_url: thumbnailUrl,
+            status: 'published',
+            visibility: 'public'
+        };
+        
+        const result = await apiCreateVideo(videoData);
+        
+        if (result.success) {
+            showNotification('تم نشر الفيديو بنجاح', 'success');
+            
+            // Clear form
+            document.getElementById('videoTitle').value = '';
+            document.getElementById('videoDescription').value = '';
+            document.getElementById('videoCategory').value = 'general';
+            document.getElementById('videoTags').value = '';
+            document.getElementById('videoFile').value = '';
+            document.getElementById('videoThumbnail').value = '';
+            document.getElementById('videoFileInfo').textContent = 'لم يتم اختيار ملف بعد';
+            document.getElementById('thumbnailFileInfo').textContent = 'لم يتم اختيار صورة بعد';
+            
+            // Close modal
+            closeVideoReelModal();
+        } else {
+            showNotification(result.message || 'فشل نشر الفيديو', 'error');
         }
-        formData.append('createdBy', currentUser.fullName);
-        
-        // Here you would normally send to API
-        // For now, simulate upload and show success
-        showNotification('جاري رفع الفيديو...', 'info');
-        
-        // Simulate upload progress
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        showNotification('تم نشر الفيديو بنجاح', 'success');
-        
-        // Clear form
-        document.getElementById('videoTitle').value = '';
-        document.getElementById('videoDescription').value = '';
-        document.getElementById('videoCategory').value = 'general';
-        document.getElementById('videoTags').value = '';
-        document.getElementById('videoFile').value = '';
-        document.getElementById('videoThumbnail').value = '';
-        document.getElementById('videoFileInfo').textContent = 'لم يتم اختيار ملف بعد';
-        document.getElementById('thumbnailFileInfo').textContent = 'لم يتم اختيار صورة بعد';
-        
-        // Close modal
-        closeVideoReelModal();
         
     } catch (error) {
         console.error('Error submitting video reel:', error);

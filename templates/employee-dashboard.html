@@ -587,30 +587,27 @@
                 </div>
                 
                 <div class="form-section">
-                    <h3>طلبات الانضمام للطلاب</h3>
+                    <h3>طلبات الانضمام للكروبات</h3>
                     <div class="student-requests">
                         <div class="requests-info">
-                            <p><i class="fas fa-info-circle"></i> يمكن للطلاب إنشاء حسابات وطلب الانضمام للأنشطة. سيتم مراجعة الطلبات والموافقة عليها تلقائياً.</p>
+                            <p><i class="fas fa-info-circle"></i> يمكن للطلاب طلب الانضمام للكروبات. سيتم مراجعة الطلبات والموافقة عليها من قبل المدير.</p>
                         </div>
                         
                         <div class="requests-list-section">
                             <h4>طلبات الانضمام الحالية:</h4>
-                            <div class="requests-list" id="studentJoinRequests">
-                                <!-- Student requests will be displayed here -->
+                            <div class="requests-list" id="chatRoomJoinRequests">
+                                <!-- Chat room join requests will be displayed here -->
                                 <div class="no-requests">
                                     <i class="fas fa-inbox"></i>
-                                    <p>لا توجد طلبات انضمام حالية</p>
-                                    <small>سيظهر هنا الطلاب الذين طلبوا الانضمام للأنشطة</small>
+                                    <p>لا توجد طلبات انضمام للكروبات</p>
+                                    <small>سيظهر هنا الطلبات عندما يطلب الطلاب الانضمام للكروبات</small>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="requests-actions">
-                            <button type="button" class="approve-all-btn" onclick="approveAllRequests()">
-                                <i class="fas fa-check-double"></i> موافقة على كل الطلبات
-                            </button>
-                            <button type="button" class="refresh-requests-btn" onclick="refreshStudentRequests()">
-                                <i class="fas fa-sync"></i> تحديث الطلبات
+                            <button type="button" class="refresh-requests-btn" onclick="refreshChatRoomJoinRequests()">
+                                <i class="fas fa-sync"></i> تحديث طلبات الكروبات
                             </button>
                         </div>
                     </div>

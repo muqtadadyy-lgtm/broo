@@ -36,8 +36,11 @@ urlpatterns = [
     path("test", views.test_endpoint, name="test_endpoint"),
     path("announcements/active", views.get_active_announcement, name="get_active_announcement"),
     path("announcements", views.create_announcement, name="create_announcement"),
+    path("announcements/list", views.get_all_announcements, name="get_all_announcements"),
     path("announcements/<int:announcement_id>", views.update_announcement, name="update_announcement"),
     path("announcements/<int:announcement_id>/toggle", views.toggle_announcement, name="toggle_announcement"),
+    path("images/list", views.get_images, name="get_images"),
+    path("notifications/list", views.get_notifications, name="get_notifications"),
     # User management
     path("users/all", views.get_all_users, name="get_all_users"),
     path("users/<int:user_id>", views.delete_user, name="delete_user"),
@@ -71,4 +74,17 @@ urlpatterns = [
     # Message search and management
     path('chat-rooms/<int:room_id>/search', chat_room_enhancements.search_chat_messages, name='search_chat_messages'),
     path('chat-rooms/<int:room_id>/messages/<int:message_id>/delete', chat_room_enhancements.delete_chat_message, name='delete_chat_message'),
+    
+    # Contest management
+    path('contests', views.create_contest, name='create_contest'),
+    path('contests/list', views.get_contests, name='get_contests'),
+    
+    # Video management
+    path('videos', views.create_video, name='create_video'),
+    path('videos/list', views.get_videos, name='get_videos'),
+
+    # Student Posts
+    path("student-posts/create", views.create_student_post, name="create_student_post"),
+    path("student-posts/", views.get_all_student_posts, name="get_all_student_posts"),
+    path("student-posts/<int:post_id>/toggle", views.toggle_student_post_active_status, name="toggle_student_post_active_status"),
 ]
