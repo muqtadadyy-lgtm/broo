@@ -52,25 +52,25 @@
 .employee-actions-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-bottom: 15px;
+    gap: 12px;
+    margin-bottom: 20px;
 }
 
 .employee-action-btn {
     background: var(--employee-card-bg);
     backdrop-filter: blur(15px);
     border: 2px solid rgba(139, 92, 246, 0.3);
-    border-radius: var(--employee-border-radius-sm);
-    padding: 12px;
+    border-radius: var(--employee-border-radius);
+    padding: 16px;
     cursor: pointer;
     transition: var(--employee-transition);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
     box-shadow: var(--employee-shadow);
-    min-height: 80px;
+    min-height: 100px;
     position: relative;
     overflow: hidden;
 }
@@ -103,8 +103,8 @@
 
 /* Icon Circle */
 .employee-icon-circle {
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     background: linear-gradient(135deg, var(--employee-primary), var(--employee-accent));
     border-radius: 50%;
     display: flex;
@@ -116,14 +116,14 @@
 }
 
 .employee-icon-circle i {
-    font-size: 18px;
+    font-size: 22px;
     color: white;
 }
 
 /* Button Text */
 .employee-btn-text {
     color: var(--text-primary);
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
     text-align: center;
     position: relative;
@@ -132,8 +132,8 @@
 
 /* Logout Button */
 .employee-logout-section {
-    margin-top: 15px;
-    padding-top: 15px;
+    margin-top: 20px;
+    padding-top: 20px;
     border-top: 1px solid rgba(139, 92, 246, 0.2);
 }
 
@@ -142,17 +142,17 @@
     background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.15));
     backdrop-filter: blur(15px);
     border: 2px solid rgba(239, 68, 68, 0.3);
-    border-radius: var(--employee-border-radius-sm);
-    padding: 10px;
+    border-radius: var(--employee-border-radius);
+    padding: 14px;
     cursor: pointer;
     transition: var(--employee-transition);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
     box-shadow: var(--employee-shadow);
     color: var(--text-primary);
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
 }
 
@@ -167,8 +167,8 @@
 }
 
 .employee-logout-icon {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     background: linear-gradient(135deg, #ef4444, #dc2626);
     border-radius: 50%;
     display: flex;
@@ -178,146 +178,38 @@
 }
 
 .employee-logout-icon i {
-    font-size: 14px;
+    font-size: 18px;
     color: white;
 }
 
 /* Mobile Responsive Design */
 @media (max-width: 768px) {
     .employee-dashboard-header {
-        padding: 10px;
+        padding: 15px;
         border-radius: var(--employee-border-radius);
-        margin-bottom: 10px;
+        margin-bottom: 15px;
     }
     
     .employee-header-content {
         flex-direction: column;
         text-align: center;
-        gap: 6px;
+        gap: 10px;
     }
     
     .employee-welcome {
-        font-size: 13px;
-    }
-    
-    .employee-actions-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 6px;
-        margin-bottom: 10px;
-    }
-    
-    .employee-action-btn {
-        padding: 8px;
-        min-height: 65px;
-        gap: 6px;
-    }
-    
-    .employee-icon-circle {
-        width: 32px;
-        height: 32px;
-    }
-    
-    .employee-icon-circle i {
         font-size: 15px;
     }
     
-    .employee-btn-text {
-        font-size: 10px;
-        line-height: 1.2;
-    }
-    
-    .employee-logout-section {
-        margin-top: 10px;
-        padding-top: 10px;
-    }
-    
-    .employee-logout-btn {
-        padding: 8px;
-        font-size: 10px;
-        gap: 6px;
-    }
-    
-    .employee-logout-icon {
-        width: 26px;
-        height: 26px;
-    }
-    
-    .employee-logout-icon i {
-        font-size: 11px;
-    }
-}
-
-@media (max-width: 480px) {
-    .employee-dashboard-header {
-        padding: 8px;
-        border-radius: var(--employee-border-radius-sm);
-        margin-bottom: 8px;
-    }
-    
-    .employee-header-content {
-        gap: 5px;
-    }
-    
-    .employee-welcome {
-        font-size: 12px;
-    }
-    
-    .employee-actions-grid {
-        gap: 5px;
-        margin-bottom: 8px;
-    }
-    
-    .employee-action-btn {
-        padding: 6px;
-        min-height: 60px;
-        gap: 5px;
-    }
-    
-    .employee-icon-circle {
-        width: 28px;
-        height: 28px;
-    }
-    
-    .employee-icon-circle i {
-        font-size: 13px;
-    }
-    
-    .employee-btn-text {
-        font-size: 9px;
-        line-height: 1.1;
-    }
-    
-    .employee-logout-section {
-        margin-top: 8px;
-        padding-top: 8px;
-    }
-    
-    .employee-logout-btn {
-        padding: 6px;
-        font-size: 9px;
-        gap: 5px;
-    }
-    
-    .employee-logout-icon {
-        width: 24px;
-        height: 24px;
-    }
-    
-    .employee-logout-icon i {
-        font-size: 10px;
-    }
-}
-
-/* Tablet Responsive Design */
-@media (min-width: 769px) and (max-width: 1023px) {
     .employee-actions-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        gap: 10px;
+        margin-bottom: 15px;
     }
     
     .employee-action-btn {
         padding: 14px;
         min-height: 90px;
+        gap: 10px;
     }
     
     .employee-icon-circle {
@@ -331,6 +223,114 @@
     
     .employee-btn-text {
         font-size: 13px;
+        line-height: 1.3;
+    }
+    
+    .employee-logout-section {
+        margin-top: 15px;
+        padding-top: 15px;
+    }
+    
+    .employee-logout-btn {
+        padding: 12px;
+        font-size: 13px;
+        gap: 10px;
+    }
+    
+    .employee-logout-icon {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .employee-logout-icon i {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .employee-dashboard-header {
+        padding: 12px;
+        border-radius: var(--employee-border-radius-sm);
+        margin-bottom: 12px;
+    }
+    
+    .employee-header-content {
+        gap: 8px;
+    }
+    
+    .employee-welcome {
+        font-size: 14px;
+    }
+    
+    .employee-actions-grid {
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    
+    .employee-action-btn {
+        padding: 12px;
+        min-height: 85px;
+        gap: 8px;
+    }
+    
+    .employee-icon-circle {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .employee-icon-circle i {
+        font-size: 18px;
+    }
+    
+    .employee-btn-text {
+        font-size: 12px;
+        line-height: 1.2;
+    }
+    
+    .employee-logout-section {
+        margin-top: 12px;
+        padding-top: 12px;
+    }
+    
+    .employee-logout-btn {
+        padding: 10px;
+        font-size: 12px;
+        gap: 8px;
+    }
+    
+    .employee-logout-icon {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .employee-logout-icon i {
+        font-size: 14px;
+    }
+}
+
+/* Tablet Responsive Design */
+@media (min-width: 769px) and (max-width: 1023px) {
+    .employee-actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+    }
+    
+    .employee-action-btn {
+        padding: 18px;
+        min-height: 110px;
+    }
+    
+    .employee-icon-circle {
+        width: 55px;
+        height: 55px;
+    }
+    
+    .employee-icon-circle i {
+        font-size: 24px;
+    }
+    
+    .employee-btn-text {
+        font-size: 15px;
     }
 }
 
@@ -338,24 +338,24 @@
 @media (min-width: 1024px) {
     .employee-actions-grid {
         grid-template-columns: repeat(4, 1fr);
-        gap: 15px;
+        gap: 18px;
     }
     
     .employee-action-btn {
-        padding: 18px;
-        min-height: 100px;
+        padding: 20px;
+        min-height: 120px;
     }
     
     .employee-icon-circle {
-        width: 50px;
-        height: 50px;
+        width: 60px;
+        height: 60px;
     }
     
     .employee-icon-circle i {
-        font-size: 22px;
+        font-size: 26px;
     }
     
     .employee-btn-text {
-        font-size: 14px;
+        font-size: 16px;
     }
 }
