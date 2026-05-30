@@ -640,27 +640,28 @@ class Video(models.Model):
         return f"Video {self.id} - {self.title} ({self.category})"
 
 
-class StudentPost(models.Model):
-    title = models.CharField(max_length=255)
-    content = models.TextField()
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="student_posts")
-    image = models.ImageField(upload_to="student_posts/", null=True, blank=True)
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(default=timezone.now)
-    is_active = models.BooleanField(default=True) # For moderation purposes
+# class StudentPost(models.Model):
+#     DISABLED: Causing Pillow dependency issues on Railway deployment
+#     title = models.CharField(max_length=255)
+#     content = models.TextField()
+#     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="student_posts")
+#     image = models.ImageField(upload_to="student_posts/", null=True, blank=True)
+#     created_at = models.DateTimeField(default=timezone.now)
+#     updated_at = models.DateTimeField(default=timezone.now)
+#     is_active = models.BooleanField(default=True) # For moderation purposes
 
-    class Meta:
-        db_table = "student_posts"
-        indexes = [
-            models.Index(fields=["author"]),
-            models.Index(fields=["created_at"]),
-            models.Index(fields=["is_active"]),
-        ]
-        ordering = ["-created_at"]
+#     class Meta:
+#         db_table = "student_posts"
+#         indexes = [
+#             models.Index(fields=["author"]),
+#             models.Index(fields=["created_at"]),
+#             models.Index(fields=["is_active"]),
+#         ]
+#         ordering = ["-created_at"]
 
-    def save(self, *args, **kwargs):
-        self.updated_at = timezone.now()
-        super().save(*args, **kwargs)
+#     def save(self, *args, **kwargs):
+#         self.updated_at = timezone.now()
+#         super().save(*args, **kwargs)
 
-    def __str__(self) -> str:
-        return f"Post {self.id} by {self.author.username} - {self.title}"
+#     def __str__(self) -> str:
+#         return f"Post {self.id} by {self.author.username} - {self.title}"
