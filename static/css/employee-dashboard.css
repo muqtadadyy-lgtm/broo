@@ -1,0 +1,331 @@
+/* Employee Dashboard - Modern 2026 Design */
+/* Purple Glassmorphism Theme with Circular Grid Layout */
+
+:root {
+    --employee-primary: #8b5cf6;
+    --employee-primary-light: #a78bfa;
+    --employee-primary-dark: #7c3aed;
+    --employee-accent: #d946ef;
+    --employee-bg: rgba(139, 92, 246, 0.1);
+    --employee-card-bg: rgba(255, 255, 255, 0.15);
+    --employee-glass: backdrop-filter: blur(20px);
+    --employee-glow: 0 0 30px rgba(139, 92, 246, 0.3);
+    --employee-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    --employee-shadow-hover: 0 12px 40px rgba(139, 92, 246, 0.25);
+    --employee-border-radius: 16px;
+    --employee-border-radius-sm: 12px;
+    --employee-border-radius-lg: 24px;
+    --employee-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Employee Dashboard Header */
+.employee-dashboard-header {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(217, 70, 239, 0.15));
+    backdrop-filter: blur(20px);
+    padding: 20px;
+    border-radius: var(--employee-border-radius-lg);
+    margin-bottom: 20px;
+    box-shadow: var(--employee-shadow);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.employee-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.employee-welcome {
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.employee-welcome strong {
+    color: var(--employee-primary);
+    font-weight: 700;
+}
+
+/* Employee Action Buttons Grid */
+.employee-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.employee-action-btn {
+    background: var(--employee-card-bg);
+    backdrop-filter: blur(15px);
+    border: 2px solid rgba(139, 92, 246, 0.3);
+    border-radius: var(--employee-border-radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: var(--employee-transition);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    box-shadow: var(--employee-shadow);
+    min-height: 120px;
+    position: relative;
+    overflow: hidden;
+}
+
+.employee-action-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(217, 70, 239, 0.05));
+    opacity: 0;
+    transition: var(--employee-transition);
+}
+
+.employee-action-btn:hover {
+    border-color: var(--employee-primary);
+    transform: translateY(-5px);
+    box-shadow: var(--employee-shadow-hover);
+}
+
+.employee-action-btn:hover::before {
+    opacity: 1;
+}
+
+.employee-action-btn:active {
+    transform: translateY(-2px);
+}
+
+/* Icon Circle */
+.employee-icon-circle {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--employee-primary), var(--employee-accent));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--employee-glow);
+    position: relative;
+    z-index: 1;
+}
+
+.employee-icon-circle i {
+    font-size: 24px;
+    color: white;
+}
+
+/* Button Text */
+.employee-btn-text {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+/* Logout Button */
+.employee-logout-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.employee-logout-btn {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.15));
+    backdrop-filter: blur(15px);
+    border: 2px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--employee-border-radius);
+    padding: 15px;
+    cursor: pointer;
+    transition: var(--employee-transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: var(--employee-shadow);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.employee-logout-btn:hover {
+    border-color: #ef4444;
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(239, 68, 68, 0.25);
+}
+
+.employee-logout-btn:active {
+    transform: translateY(-1px);
+}
+
+.employee-logout-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.employee-logout-icon i {
+    font-size: 18px;
+    color: white;
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+    .employee-dashboard-header {
+        padding: 15px;
+        border-radius: var(--employee-border-radius);
+        margin-bottom: 15px;
+    }
+    
+    .employee-header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .employee-welcome {
+        font-size: 16px;
+    }
+    
+    .employee-actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .employee-action-btn {
+        padding: 15px;
+        min-height: 100px;
+    }
+    
+    .employee-icon-circle {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .employee-icon-circle i {
+        font-size: 20px;
+    }
+    
+    .employee-btn-text {
+        font-size: 12px;
+    }
+    
+    .employee-logout-section {
+        margin-top: 15px;
+        padding-top: 15px;
+    }
+    
+    .employee-logout-btn {
+        padding: 12px;
+        font-size: 13px;
+    }
+    
+    .employee-logout-icon {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .employee-logout-icon i {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .employee-dashboard-header {
+        padding: 12px;
+        border-radius: var(--employee-border-radius-sm);
+        margin-bottom: 12px;
+    }
+    
+    .employee-welcome {
+        font-size: 14px;
+    }
+    
+    .employee-actions-grid {
+        gap: 10px;
+    }
+    
+    .employee-action-btn {
+        padding: 12px;
+        min-height: 90px;
+    }
+    
+    .employee-icon-circle {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .employee-icon-circle i {
+        font-size: 18px;
+    }
+    
+    .employee-btn-text {
+        font-size: 11px;
+    }
+    
+    .employee-logout-btn {
+        padding: 10px;
+        font-size: 12px;
+    }
+    
+    .employee-logout-icon {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .employee-logout-icon i {
+        font-size: 14px;
+    }
+}
+
+/* Tablet Responsive Design */
+@media (min-width: 769px) and (max-width: 1023px) {
+    .employee-actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+    }
+    
+    .employee-action-btn {
+        padding: 18px;
+        min-height: 110px;
+    }
+}
+
+/* Desktop Design */
+@media (min-width: 1024px) {
+    .employee-actions-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+    }
+    
+    .employee-action-btn {
+        padding: 25px;
+        min-height: 140px;
+    }
+    
+    .employee-icon-circle {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .employee-icon-circle i {
+        font-size: 28px;
+    }
+    
+    .employee-btn-text {
+        font-size: 15px;
+    }
+}

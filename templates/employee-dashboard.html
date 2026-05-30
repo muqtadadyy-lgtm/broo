@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>لوحة تحكم الموظف - نظام الأنشطة الطلابية</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="animations.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/animations.css">
+    <link rel="stylesheet" href="/static/css/employee-dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="dashboard-body theme-blue-light">
+<body class="dashboard-body theme-purple">
     <!-- Language Selector Dropdown -->
     <div class="language-selector-dropdown">
         <button class="language-toggle-btn" onclick="toggleLanguageMenu()" title="تغيير اللغة">
@@ -82,27 +83,49 @@
                 <h1 data-ar="نظام الأنشطة الطلابية - لوحة تحكم الموظف" data-en="Student Activities System - Employee Dashboard" data-fr="Système des Activités Étudiantes - Tableau de bord employé" data-ku="سیستەمی چالا خوێندکارێ - ڕوواری کارمەند">نظام الأنشطة الطلابية - لوحة تحكم الموظف</h1>
             </div>
             <div class="user-section">
-                <span class="welcome-text"><span data-ar="مرحباً،" data-en="Welcome," data-fr="Bienvenue," data-ku="بەخێربێیت،">مرحباً،</span> <strong id="employeeName"></strong></span>
-                <button class="submit-btn" id="createEmployeeBtn" style="display:none" onclick="openCreateEmployeeModal()" title="إنشاء موظف جديد" data-title-ar="إنشاء موظف جديد" data-title-ku="دروستکردنی کارمەندی نوێ">
-                    <i class="fas fa-user-plus"></i>
-                    <span data-ar="إنشاء موظف" data-en="Create Employee" data-fr="Créer Employé" data-ku="دروستکردنی کارمەند">إنشاء موظف</span>
+                <span class="employee-welcome"><span data-ar="مرحباً،" data-en="Welcome," data-fr="Bienvenue," data-ku="بەخێربێیت،">مرحباً،</span> <strong id="employeeName"></strong></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Employee Actions Grid -->
+    <div class="employee-dashboard-header">
+        <div class="employee-header-content">
+            <div class="employee-actions-grid">
+                <button class="employee-action-btn" id="createEmployeeBtn" style="display:none" onclick="openCreateEmployeeModal()" title="إنشاء موظف جديد" data-title-ar="إنشاء موظف جديد" data-title-ku="دروستکردنی کارمەندی نوێ">
+                    <div class="employee-icon-circle">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <span class="employee-btn-text" data-ar="إنشاء موظف" data-en="Create Employee" data-fr="Créer Employé" data-ku="دروستکردنی کارمەند">إنشاء موظف</span>
                 </button>
-                <button class="ghost-btn" id="manageEmployeesBtn" style="display:none" onclick="openEmployeesModal()" title="إدارة الموظفين">
-                    <i class="fas fa-users-cog"></i>
-                    <span data-ar="إدارة الموظفين" data-en="Manage Staff">إدارة الموظفين</span>
+                <button class="employee-action-btn" id="manageEmployeesBtn" style="display:none" onclick="openEmployeesModal()" title="إدارة الموظفين">
+                    <div class="employee-icon-circle">
+                        <i class="fas fa-users-cog"></i>
+                    </div>
+                    <span class="employee-btn-text" data-ar="إدارة الموظفين" data-en="Manage Staff">إدارة الموظفين</span>
                 </button>
-                <button class="message-btn" id="supervisorInboxBtn" style="display:none" onclick="openSupervisorChat()" title="مدير الموظفين">
-                    <i class="fas fa-comments"></i>
-                    <span data-ar="مدير الموظفين" data-en="Supervisor Chat">مدير الموظفين</span>
+                <button class="employee-action-btn" id="supervisorInboxBtn" style="display:none" onclick="openSupervisorChat()" title="مدير الموظفين">
+                    <div class="employee-icon-circle">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <span class="employee-btn-text" data-ar="مدير الموظفين" data-en="Supervisor Chat">مدير الموظفين</span>
                 </button>
-                <button class="edit-profile-btn" onclick="openEditProfileModal()">
-                    <i class="fas fa-user-edit"></i> <span data-ar="تعديل الملف الشخصي" data-en="Edit Profile" data-fr="Modifier le profil" data-ku="دەستکاری پروفایل">تعديل الملف الشخصي</span>
-                </button>
-                <button class="logout-btn" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span data-ar="تسجيل الخروج" data-en="Logout" data-fr="Déconnexion" data-ku="دەرچوون">تسجيل الخروج</span>
+                <button class="employee-action-btn" onclick="openEditProfileModal()">
+                    <div class="employee-icon-circle">
+                        <i class="fas fa-user-edit"></i>
+                    </div>
+                    <span class="employee-btn-text" data-ar="تعديل الملف" data-en="Edit Profile" data-fr="Modifier le profil" data-ku="دەستکاری پروفایل">تعديل الملف</span>
                 </button>
             </div>
+        </div>
+        <div class="employee-logout-section">
+            <button class="employee-logout-btn" onclick="logout()">
+                <div class="employee-logout-icon">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+                <span data-ar="تسجيل الخروج" data-en="Logout" data-fr="Déconnexion" data-ku="دەرچوون">تسجيل الخروج</span>
+            </button>
+        </div>
         </div>
     </header>
 
