@@ -51,7 +51,7 @@
 /* Employee Action Buttons Grid */
 .employee-actions-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-bottom: 20px;
 }
@@ -201,7 +201,7 @@
     }
     
     .employee-actions-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 10px;
         margin-bottom: 15px;
     }
@@ -263,6 +263,7 @@
     }
     
     .employee-actions-grid {
+        grid-template-columns: repeat(3, 1fr);
         gap: 8px;
         margin-bottom: 12px;
     }
@@ -311,7 +312,7 @@
 /* Tablet Responsive Design */
 @media (min-width: 769px) and (max-width: 1023px) {
     .employee-actions-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 14px;
     }
     
@@ -337,7 +338,7 @@
 /* Desktop Design */
 @media (min-width: 1024px) {
     .employee-actions-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 18px;
     }
     
