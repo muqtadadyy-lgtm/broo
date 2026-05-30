@@ -25,7 +25,9 @@ from .models import (
     EmployeeDirectMessage,
     EmployeeRequest,
     Message,
+    MessageReaction,
     StudentJoinRequest,
+    TypingIndicator,
     User,
 )
 
@@ -2920,5 +2922,319 @@ def remove_member_from_chat_room(request: HttpRequest, room_id: int, user_id: in
     except Exception as exc:
         print(f"[CHAT_ROOM] Error removing member: {exc}")
         return _error(f"حدث خطأ أثناء إزالة العضو: {exc}", status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@jwt_required
+def add_message_reaction(request: HttpRequest, message_id: int) -> JsonResponse:
+    """
+    إضافة رد فعل على رسالة.
+    """
+    try:
+        user_id = get_jwt_identity(request)
+        user = User.objects.get(pk=user_id)
+        data = _parse_json(request)
+        emoji = data.get("emoji")
+
+        if not emoji:
+            return _error("يجب تحديد رمز التعبير (emoji)", status=400)
+
+        message = ChatMessage.objects.get(pk=message_id)
+
+        # Check if user is a member of the chat room
+        membership = ChatRoomMember.objects.filter(
+            chat_room=message.chat_room,
+            user=user,
+            is_active=True
+        ).first()
+
+        if not membership and message.chat_room.type != "general":
+            return _error("يجب أن تكون عضواً في الكروب لإضافة رد فعل", status=403)
+
+        # Check if reaction already exists
+        existing_reaction = MessageReaction.objects.filter(
+            message=message,
+            user=user,
+            emoji=emoji
+        ).first()
+
+        if existing_reaction:
+            # Remove reaction if it already exists (toggle)
+            existing_reaction.delete()
+            return JsonResponse({
+                "success": True,
+                "message": "تم إزالة رد الفعل",
+                "action": "removed"
+            })
+
+        # Add new reaction
+        MessageReaction.objects.create(
+            message=message,
+            user=user,
+            emoji=emoji
+        )
+
+        return JsonResponse({
+            "success": True,
+            "message": "تم إضافة رد الفعل بنجاح",
+            "action": "added"
+        })
+
+    except ChatMessage.DoesNotExist:
+        return _error("الرسالة غير موجودة", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error adding reaction: {exc}")
+        return _error(f"حدث خطأ أثناء إضافة رد الفعل: {exc}", status=500)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+@jwt_required
+def get_message_reactions(request: HttpRequest, message_id: int) -> JsonResponse:
+    """
+    الحصول على ردود الفعل على رسالة.
+    """
+    try:
+        message = ChatMessage.objects.get(pk=message_id)
+        reactions = MessageReaction.objects.filter(message=message)
+
+        # Group reactions by emoji
+        reaction_groups = {}
+        for reaction in reactions:
+            if reaction.emoji not in reaction_groups:
+                reaction_groups[reaction.emoji] = {
+                    "emoji": reaction.emoji,
+                    "count": 0,
+                    "users": []
+                }
+            reaction_groups[reaction.emoji]["count"] += 1
+            reaction_groups[reaction.emoji]["users"].append({
+                "id": reaction.user.id,
+                "name": reaction.user.full_name
+            })
+
+        return JsonResponse({
+            "success": True,
+            "reactions": list(reaction_groups.values()),
+            "total": len(reactions)
+        })
+
+    except ChatMessage.DoesNotExist:
+        return _error("الرسالة غير موجودة", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error getting reactions: {exc}")
+        return _error(f"حدث خطأ أثناء الحصول على ردود الفعل: {exc}", status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@jwt_required
+def set_typing_indicator(request: HttpRequest, room_id: int) -> JsonResponse:
+    """
+    تعيين مؤشر الكتابة.
+    """
+    try:
+        user_id = get_jwt_identity(request)
+        user = User.objects.get(pk=user_id)
+
+        chat_room = ChatRoom.objects.get(pk=room_id)
+
+        # Check if user is a member of the chat room
+        membership = ChatRoomMember.objects.filter(
+            chat_room=chat_room,
+            user=user,
+            is_active=True
+        ).first()
+
+        if not membership and chat_room.type != "general":
+            return _error("يجب أن تكون عضواً في الكروب", status=403)
+
+        # Update or create typing indicator
+        indicator, created = TypingIndicator.objects.update_or_create(
+            chat_room=chat_room,
+            user=user,
+            defaults={"last_updated": timezone.now()}
+        )
+
+        if not created:
+            indicator.last_updated = timezone.now()
+            indicator.save()
+
+        return JsonResponse({
+            "success": True,
+            "message": "تم تحديث مؤشر الكتابة"
+        })
+
+    except ChatRoom.DoesNotExist:
+        return _error("الكروب غير موجود", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error setting typing indicator: {exc}")
+        return _error(f"حدث خطأ أثناء تحديث مؤشر الكتابة: {exc}", status=500)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+@jwt_required
+def get_typing_indicators(request: HttpRequest, room_id: int) -> JsonResponse:
+    """
+    الحصول على مؤشرات الكتابة في الكروب.
+    """
+    try:
+        chat_room = ChatRoom.objects.get(pk=room_id)
+
+        # Get typing indicators from the last 10 seconds
+        cutoff_time = timezone.now() - timedelta(seconds=10)
+        indicators = TypingIndicator.objects.filter(
+            chat_room=chat_room,
+            last_updated__gte=cutoff_time
+        )
+
+        typing_users = []
+        for indicator in indicators:
+            typing_users.append({
+                "id": indicator.user.id,
+                "name": indicator.user.full_name
+            })
+
+        return JsonResponse({
+            "success": True,
+            "typingUsers": typing_users,
+            "count": len(typing_users)
+        })
+
+    except ChatRoom.DoesNotExist:
+        return _error("الكروب غير موجود", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error getting typing indicators: {exc}")
+        return _error(f"حدث خطأ أثناء الحصول على مؤشرات الكتابة: {exc}", status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@jwt_required
+def pin_message(request: HttpRequest, message_id: int) -> JsonResponse:
+    """
+    تثبيت رسالة في الكروب.
+    """
+    try:
+        user_id = get_jwt_identity(request)
+        user = User.objects.get(pk=user_id)
+
+        message = ChatMessage.objects.get(pk=message_id)
+
+        # Check if user is admin or moderator
+        membership = ChatRoomMember.objects.filter(
+            chat_room=message.chat_room,
+            user=user,
+            is_active=True
+        ).first()
+
+        if not membership or membership.role not in ["admin", "moderator"]:
+            return _error("يجب أن تكون مديراً أو مشرفاً لتثبيت الرسائل", status=403)
+
+        # Toggle pin status
+        message.is_pinned = not message.is_pinned
+        message.save()
+
+        return JsonResponse({
+            "success": True,
+            "message": "تم تحديث حالة التثبيت",
+            "isPinned": message.is_pinned
+        })
+
+    except ChatMessage.DoesNotExist:
+        return _error("الرسالة غير موجودة", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error pinning message: {exc}")
+        return _error(f"حدث خطأ أثناء تثبيت الرسالة: {exc}", status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@jwt_required
+def edit_message(request: HttpRequest, message_id: int) -> JsonResponse:
+    """
+    تعديل رسالة.
+    """
+    try:
+        user_id = get_jwt_identity(request)
+        user = User.objects.get(pk=user_id)
+        data = _parse_json(request)
+        new_content = data.get("content")
+
+        if not new_content:
+            return _error("يجب تحديد محتوى الرسالة الجديد", status=400)
+
+        message = ChatMessage.objects.get(pk=message_id)
+
+        # Check if user is the sender
+        if message.sender != user:
+            return _error("يمكنك فقط تعديل رسائلك الخاصة", status=403)
+
+        # Update message
+        message.content = new_content
+        message.is_edited = True
+        message.save()
+
+        return JsonResponse({
+            "success": True,
+            "message": "تم تعديل الرسالة بنجاح",
+            "editedMessage": {
+                "id": message.id,
+                "content": message.content,
+                "isEdited": message.is_edited,
+                "updatedAt": message.updated_at.isoformat()
+            }
+        })
+
+    except ChatMessage.DoesNotExist:
+        return _error("الرسالة غير موجودة", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error editing message: {exc}")
+        return _error(f"حدث خطأ أثناء تعديل الرسالة: {exc}", status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@jwt_required
+def delete_message(request: HttpRequest, message_id: int) -> JsonResponse:
+    """
+    حذف رسالة.
+    """
+    try:
+        user_id = get_jwt_identity(request)
+        user = User.objects.get(pk=user_id)
+
+        message = ChatMessage.objects.get(pk=message_id)
+
+        # Check if user is the sender or admin/moderator
+        membership = ChatRoomMember.objects.filter(
+            chat_room=message.chat_room,
+            user=user,
+            is_active=True
+        ).first()
+
+        is_sender = message.sender == user
+        is_admin = membership and membership.role in ["admin", "moderator"]
+
+        if not is_sender and not is_admin:
+            return _error("يمكنك فقط حذف رسائلك الخاصة أو كونك مديراً/مشرفاً", status=403)
+
+        # Soft delete
+        message.is_deleted = True
+        message.save()
+
+        return JsonResponse({
+            "success": True,
+            "message": "تم حذف الرسالة بنجاح"
+        })
+
+    except ChatMessage.DoesNotExist:
+        return _error("الرسالة غير موجودة", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error deleting message: {exc}")
+        return _error(f"حدث خطأ أثناء حذف الرسالة: {exc}", status=500)
+
 
 

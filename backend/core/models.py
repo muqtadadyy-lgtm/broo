@@ -482,6 +482,7 @@ class ChatMessage(models.Model):
     reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name="replies")
     is_edited = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
+    is_pinned = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(default=timezone.now)
 
@@ -493,6 +494,7 @@ class ChatMessage(models.Model):
             models.Index(fields=["message_type"]),
             models.Index(fields=["created_at"]),
             models.Index(fields=["reply_to"]),
+            models.Index(fields=["is_pinned"]),
         ]
         ordering = ["created_at"]
 
@@ -502,5 +504,50 @@ class ChatMessage(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover - debug representation only
         return f"Message {self.id} in {self.chat_room.name} by {self.sender.full_name}"
-    
-    
+
+
+class MessageReaction(models.Model):
+    """
+    نموذج ردود الفعل على الرسائل.
+    """
+    message = models.ForeignKey(ChatMessage, on_delete=models.CASCADE, related_name="reactions")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="message_reactions")
+    emoji = models.CharField(max_length=50)  # Store emoji character
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "message_reactions"
+        indexes = [
+            models.Index(fields=["message"]),
+            models.Index(fields=["user"]),
+            models.Index(fields=["emoji"]),
+        ]
+        unique_together = [["message", "user", "emoji"]]
+
+    def __str__(self) -> str:  # pragma: no cover - debug representation only
+        return f"{self.user.full_name} reacted with {self.emoji} on message {self.message.id}"
+
+
+class TypingIndicator(models.Model):
+    """
+    نموذج مؤشرات الكتابة.
+    """
+    chat_room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name="typing_indicators")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="typing_indicators")
+    last_updated = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "typing_indicators"
+        indexes = [
+            models.Index(fields=["chat_room"]),
+            models.Index(fields=["user"]),
+            models.Index(fields=["last_updated"]),
+        ]
+        unique_together = [["chat_room", "user"]]
+
+    def save(self, *args, **kwargs):
+        self.last_updated = timezone.now()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:  # pragma: no cover - debug representation only
+        return f"{self.user.full_name} is typing in {self.chat_room.name}"

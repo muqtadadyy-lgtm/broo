@@ -71,4 +71,17 @@ urlpatterns = [
     # Message search and management
     path('chat-rooms/<int:room_id>/search', chat_room_enhancements.search_chat_messages, name='search_chat_messages'),
     path('chat-rooms/<int:room_id>/messages/<int:message_id>/delete', chat_room_enhancements.delete_chat_message, name='delete_chat_message'),
+    
+    # Message reactions
+    path('messages/<int:message_id>/reactions/add', views.add_message_reaction, name='add_message_reaction'),
+    path('messages/<int:message_id>/reactions', views.get_message_reactions, name='get_message_reactions'),
+    
+    # Typing indicators
+    path('chat-rooms/<int:room_id>/typing', views.set_typing_indicator, name='set_typing_indicator'),
+    path('chat-rooms/<int:room_id>/typing/users', views.get_typing_indicators, name='get_typing_indicators'),
+    
+    # Message management
+    path('messages/<int:message_id>/pin', views.pin_message, name='pin_message'),
+    path('messages/<int:message_id>/edit', views.edit_message, name='edit_message'),
+    path('messages/<int:message_id>/delete', views.delete_message, name='delete_message'),
 ]
