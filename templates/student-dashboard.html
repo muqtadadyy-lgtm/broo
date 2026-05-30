@@ -434,10 +434,70 @@
                 </button>
             </div>
             <div class="chat-rooms-content">
+                <div class="chat-rooms-toolbar">
+                    <input type="text" id="studentChatSearchInput" placeholder="بحث في الرسائل..." onkeypress="if(event.key === 'Enter') searchStudentChatMessages()">
+                    <button class="search-btn" onclick="searchStudentChatMessages()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="stats-btn" onclick="viewStudentRoomStats()">
+                        <i class="fas fa-chart-bar"></i> إحصائيات
+                    </button>
+                </div>
                 <div id="studentChatRoomsList" class="chat-rooms-grid"></div>
                 <button class="primary-btn" onclick="openStudentChatInterface()">
                     <i class="fas fa-plus"></i> فتح واجهة الدردشة
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Chat Interface Modal -->
+    <div class="modal" id="studentChatInterfaceModal">
+        <div class="modal-content extra-large">
+            <div class="modal-header">
+                <h2><i class="fas fa-comments"></i> واجهة الدردشة</h2>
+                <button class="close-btn" onclick="closeStudentChatInterface()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="chat-interface">
+                <div class="chat-sidebar">
+                    <div class="chat-room-info">
+                        <h3>كروب الدردشة</h3>
+                        <div class="room-details">
+                            <p><strong>الاسم:</strong> <span id="studentCurrentRoomName">كروب الطلاب</span></p>
+                            <p><strong>الأعضاء:</strong> <span id="studentCurrentRoomMembersCount">0</span></p>
+                            <p><strong>المتصلين:</strong> <span id="studentOnlineMembersCount">0</span></p>
+                        </div>
+                    </div>
+                    <div class="members-list">
+                        <h4>الأعضاء</h4>
+                        <div class="member-status-list" id="studentMemberStatusList"></div>
+                    </div>
+                </div>
+                <div class="chat-main">
+                    <div class="chat-messages" id="studentChatMessages">
+                        <div class="welcome-message">
+                            <i class="fas fa-info-circle"></i>
+                            <span>مرحباً بك في كروب الدردشة!</span>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <div class="message-composer">
+                            <div class="input-toolbar">
+                                <button class="toolbar-btn" onclick="addStudentEmoji()" title="إضافة رمز تعبيري"><i class="fas fa-smile"></i></button>
+                                <button class="toolbar-btn" onclick="attachStudentFile()" title="إرفاق ملف"><i class="fas fa-paperclip"></i></button>
+                            </div>
+                            <div class="message-input-container">
+                                <textarea id="studentMessageInput" placeholder="اكتب رسالتك هنا..." onkeypress="handleStudentMessageKeyPress(event)" oninput="handleStudentMessageInput()"></textarea>
+                                <button class="send-btn" onclick="sendStudentMessage()" id="studentSendButton"><i class="fas fa-paper-plane"></i></button>
+                            </div>
+                            <div class="typing-indicator" id="studentTypingIndicator" style="display: none;">
+                                <span id="studentTypingText">أحد الأعضاء يكتب...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

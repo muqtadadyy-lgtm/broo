@@ -3116,6 +3116,10 @@ function selectRoom(roomId) {
             joinBtn.style.display = room.isMember ? 'none' : 'block';
         }
         
+        // Load room messages and members
+        loadRoomMessages(roomId);
+        loadRoomMembers(roomId);
+        
         // Refresh display
         displayChatRooms();
         
@@ -3126,16 +3130,387 @@ function selectRoom(roomId) {
             // Show join prompt
             const messagesDiv = document.getElementById('chatMessages');
             if (messagesDiv) {
-                messagesDiv.innerHTML = `
-                    <div class="join-prompt">
-                        <i class="fas fa-user-plus"></i>
-                        <h4>انضم إلى "${room.name}"</h4>
-                        <p>${room.description}</p>
-                        <p>اضغط على "طلب الانضمام" للانضمام إلى هذا الكروب</p>
-                    </div>
-                `;
+                messagesDiv.innerHTML = '<p class="join-prompt">انضم للكروب لعرض الرسائل</p>';
             }
         }
+    }
+}
+
+async function loadRoomMessages(roomId) {
+    try {
+        const result = await apiGetChatMessages(roomId);
+        if (result.success && result.messages) {
+            displayRoomMessages(result.messages);
+        } else {
+            const messagesDiv = document.getElementById('chatMessages');
+            if (messagesDiv) {
+                messagesDiv.innerHTML = '<p class="no-messages">لا توجد رسائل بعد</p>';
+            }
+        }
+    } catch (error) {
+        console.error('[EMPLOYEE CHAT] Error loading messages:', error);
+    }
+}
+
+async function loadRoomMembers(roomId) {
+    try {
+        const result = await apiGetChatRoomMembers(roomId);
+        if (result.success && result.members) {
+            displayRoomMembers(result.members);
+        }
+    } catch (error) {
+        console.error('[EMPLOYEE CHAT] Error loading members:', error);
+    }
+}
+
+function displayRoomMessages(messages) {
+    const container = document.getElementById('chatMessages');
+    if (!container) return;
+    
+    if (messages.length === 0) {
+        container.innerHTML = '<p class="no-messages">لا توجد رسائل بعد</p>';
+        return;
+    }
+    
+    const user = apiGetCurrentUser();
+    container.innerHTML = messages.map(msg => `
+        <div class="message ${msg.sender?.id === user?.id ? 'user-message' : 'other-message'}">
+            <div class="message-header">
+                <span class="sender-name">${msg.sender?.fullName || 'مستخدم'}</span>
+                <span class="message-time">${formatMessageTime(msg.createdAt)}</span>
+            </div>
+            <div class="message-content">${msg.content}</div>
+            ${msg.fileUrl ? `<div class="message-attachment"><a href="${msg.fileUrl}" target="_blank"><i class="fas fa-file"></i> ${msg.fileName || 'ملف'}</a></div>` : ''}
+        </div>
+    `).join('');
+    
+    container.scrollTop = container.scrollHeight;
+}
+
+function displayRoomMembers(members) {
+    const container = document.getElementById('roomMembersList');
+    if (!container) return;
+    
+    container.innerHTML = members.map(member => `
+        <div class="member-item">
+            <div class="member-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="member-info">
+                <span class="member-name">${member.fullName}</span>
+                <span class="member-role">${getRoleText(member.role)}</span>
+            </div>
+            ${member.role !== 'admin' ? `
+                <div class="member-actions">
+                    <button class="action-btn" onclick="manageMember(${member.userId}, 'promote')" title="ترقية">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button class="action-btn" onclick="manageMember(${member.userId}, 'demote')" title="خفض">
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                    <button class="action-btn danger" onclick="manageMember(${member.userId}, 'ban')" title="حظر">
+                        <i class="fas fa-ban"></i>
+                    </button>
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+function getRoleText(role) {
+    const roles = {
+        'admin': 'مدير',
+        'moderator': 'مشرف',
+        'member': 'عضو'
+    };
+    return roles[role] || 'عضو';
+}
+
+function formatMessageTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) return 'الآن';
+    if (diff < 3600000) return `منذ ${Math.floor(diff / 60000)} د`;
+    if (diff < 86400000) return `منذ ${Math.floor(diff / 3600000)} س`;
+    
+    return date.toLocaleDateString('ar-IQ', { 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+async function manageMember(userId, action) {
+    if (!selectedRoomId) {
+        showNotification('لم يتم تحديد الكروب', 'error');
+        return;
+    }
+    
+    const actionText = action === 'promote' ? 'ترقية' : action === 'demote' ? 'خفض' : 'حظر';
+    
+    try {
+        const result = await apiManageChatRoomMember(selectedRoomId, userId, action);
+        if (result.success) {
+            showNotification(`تم ${actionText} العضو بنجاح`, 'success');
+            loadRoomMembers(selectedRoomId);
+        } else {
+            showNotification(result.message || `فشل ${actionText}`, 'error');
+        }
+    } catch (error) {
+        console.error('[EMPLOYEE CHAT] Error managing member:', error);
+        showNotification('حدث خطأ', 'error');
+    }
+}
+
+async function updateRoomSettings() {
+    if (!selectedRoomId) {
+        showNotification('لم يتم تحديد الكروب', 'error');
+        return;
+    }
+    
+    const settings = {
+        name: document.getElementById('editRoomName')?.value,
+        description: document.getElementById('editRoomDescription')?.value,
+        maxMembers: parseInt(document.getElementById('editMaxMembers')?.value) || 50,
+        notificationsEnabled: document.getElementById('editNotifications')?.checked || true,
+        readOnly: document.getElementById('editReadOnly')?.checked || false
+    };
+    
+    try {
+        const result = await apiUpdateChatRoomSettings(selectedRoomId, settings);
+        if (result.success) {
+            showNotification('تم تحديث الإعدادات بنجاح', 'success');
+            loadChatRooms();
+            closeEditRoomModal();
+        } else {
+            showNotification(result.message || 'فشل تحديث الإعدادات', 'error');
+        }
+    } catch (error) {
+        console.error('[EMPLOYEE CHAT] Error updating settings:', error);
+        showNotification('حدث خطأ', 'error');
+    }
+}
+
+async function viewRoomStatistics() {
+    if (!selectedRoomId) {
+        showNotification('لم يتم تحديد الكروب', 'error');
+        return;
+    }
+    
+    try {
+        const result = await apiGetChatRoomStats(selectedRoomId);
+        if (result.success && result.statistics) {
+            displayEmployeeRoomStats(result.statistics);
+        } else {
+            showNotification(result.message || 'فشل تحميل الإحصائيات', 'error');
+        }
+    } catch (error) {
+        console.error('[EMPLOYEE CHAT] Error loading stats:', error);
+        showNotification('حدث خطأ', 'error');
+    }
+}
+
+function displayEmployeeRoomStats(stats) {
+    const modal = document.createElement('div');
+    modal.className = 'modal stats-modal';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="modal-content stats-content">
+            <div class="modal-header">
+                <h2>إحصائيات الكروب</h2>
+                <button class="close-btn" onclick="this.closest('.modal').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <div class="stat-value">${stats.members?.total || 0}</div>
+                    <div class="stat-label">إجمالي الأعضاء</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-user-shield"></i>
+                    <div class="stat-value">${stats.members?.admins || 0}</div>
+                    <div class="stat-label">المديرون</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-user-tie"></i>
+                    <div class="stat-value">${stats.members?.moderators || 0}</div>
+                    <div class="stat-label">المشرفون</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-comments"></i>
+                    <div class="stat-value">${stats.messages?.total || 0}</div>
+                    <div class="stat-label">إجمالي الرسائل</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-calendar-day"></i>
+                    <div class="stat-value">${stats.messages?.today || 0}</div>
+                    <div class="stat-label">رسائل اليوم</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-chart-line"></i>
+                    <div class="stat-value">${stats.messages?.average_per_day || 0}</div>
+                    <div class="stat-label">متوسط الرسائل/يوم</div>
+                </div>
+            </div>
+            <div class="top-contributors">
+                <h3>أكثر المساهمين</h3>
+                ${stats.top_contributors?.length > 0 ? 
+                    stats.top_contributors.map(user => `
+                        <div class="contributor-item">
+                            <span class="contributor-name">${user.name}</span>
+                            <span class="contributor-count">${user.messages} رسالة</span>
+                        </div>
+                    `).join('') : 
+                    '<p class="no-contributors">لا توجد بيانات</p>'
+                }
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+async function searchRoomMessages() {
+    const query = document.getElementById('chatSearchInput')?.value?.trim();
+    if (!query || query.length < 2) {
+        showNotification('يجب إدخال كلمة بحث بطول حرفين على الأقل', 'error');
+        return;
+    }
+    
+    if (!selectedRoomId) {
+        showNotification('لم يتم تحديد الكروب', 'error');
+        return;
+    }
+    
+    try {
+        const result = await apiSearchChatMessages(selectedRoomId, query);
+        if (result.success && result.results) {
+            displaySearchResults(result.results, query);
+        } else {
+            showNotification(result.message || 'لم يتم العثور على نتائج', 'info');
+        }
+    } catch (error) {
+        console.error('[EMPLOYEE CHAT] Error searching messages:', error);
+        showNotification('حدث خطأ أثناء البحث', 'error');
+    }
+}
+
+function displaySearchResults(results, query) {
+    const container = document.getElementById('chatMessages');
+    
+    if (results.length === 0) {
+        container.innerHTML = `
+            <div class="no-search-results">
+                <i class="fas fa-search"></i>
+                <p>لم يتم العثور على نتائج لـ "${query}"</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const user = apiGetCurrentUser();
+    container.innerHTML = `
+        <div class="search-results-header">
+            <i class="fas fa-search"></i>
+            <span>نتائج البحث عن "${query}" (${results.length})</span>
+            <button class="clear-search-btn" onclick="loadRoomMessages(${selectedRoomId})">
+                <i class="fas fa-times"></i> مسح
+            </button>
+        </div>
+    ` + results.map(msg => `
+        <div class="message search-result ${msg.sender?.id === user?.id ? 'user-message' : 'other-message'}">
+            <div class="message-header">
+                <span class="sender-name">${msg.sender?.name || 'مستخدم'}</span>
+                <span class="message-time">${formatMessageTime(msg.createdAt)}</span>
+            </div>
+            <div class="message-content">${highlightSearchTerm(msg.content, query)}</div>
+        </div>
+    `).join('');
+    
+    container.scrollTop = 0;
+}
+
+function highlightSearchTerm(text, query) {
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.replace(regex, '<mark>$1</mark>');
+}
+
+async function deleteRoomMessage(messageId) {
+    if (!selectedRoomId) {
+        showNotification('لم يتم تحديد الكروب', 'error');
+        return;
+    }
+    
+    if (!confirm('هل أنت متأكد من حذف هذه الرسالة؟')) {
+        return;
+    }
+    
+    try {
+        const result = await apiDeleteChatMessage(selectedRoomId, messageId);
+        if (result.success) {
+            showNotification('تم حذف الرسالة بنجاح', 'success');
+            loadRoomMessages(selectedRoomId);
+        } else {
+            showNotification(result.message || 'فشل حذف الرسالة', 'error');
+        }
+    } catch (error) {
+        console.error('[EMPLOYEE CHAT] Error deleting message:', error);
+        showNotification('حدث خطأ', 'error');
+    }
+}
+
+async function archiveRoom() {
+    if (!selectedRoomId) {
+        showNotification('لم يتم تحديد الكروب', 'error');
+        return;
+    }
+    
+    if (!confirm('هل أنت متأكد من أرشفة هذا الكروب؟ سيتم منع إرسال الرسائل الجديدة.')) {
+        return;
+    }
+    
+    try {
+        const result = await apiArchiveChatRoom(selectedRoomId);
+        if (result.success) {
+            showNotification('تم أرشفة الكروب بنجاح', 'success');
+            loadChatRooms();
+        } else {
+            showNotification(result.message || 'فشل أرشفة الكروب', 'error');
+        }
+    } catch (error) {
+        console.error('[EMPLOYEE CHAT] Error archiving room:', error);
+        showNotification('حدث خطأ', 'error');
+    }
+}
+
+async function deleteRoom() {
+    if (!selectedRoomId) {
+        showNotification('لم يتم تحديد الكروب', 'error');
+        return;
+    }
+    
+    if (!confirm('هل أنت متأكد من حذف هذا الكروب؟ هذا الإجراء لا يمكن عكسه.')) {
+        return;
+    }
+    
+    try {
+        const result = await apiDeleteChatRoom(selectedRoomId);
+        if (result.success) {
+            showNotification('تم حذف الكروب بنجاح', 'success');
+            selectedRoomId = null;
+            loadChatRooms();
+        } else {
+            showNotification(result.message || 'فشل حذف الكروب', 'error');
+        }
+    } catch (error) {
+        console.error('[EMPLOYEE CHAT] Error deleting room:', error);
+        showNotification('حدث خطأ', 'error');
     }
 }
 
@@ -3367,12 +3742,16 @@ let groupsData = [];
 let currentGroupsTab = 'all';
 
 function openGroupsManagementModal() {
+    console.log('[GROUPS MGMT] Opening groups management modal...');
     const modal = document.getElementById('groupsManagementModal');
+    console.log('[GROUPS MGMT] Modal element:', modal);
     if (modal) {
         modal.style.display = 'flex';
         modal.classList.add('active');
+        console.log('[GROUPS MGMT] Modal display set to flex, active class added');
         loadGroupsData();
     } else {
+        console.error('[GROUPS MGMT] Modal not found!');
         showNotification('خطأ: واجهة إدارة الكروبات غير موجودة', 'error');
     }
 }
@@ -4623,3 +5002,63 @@ async function submitAnnouncement() {
         showNotification('حدث خطأ في نشر الإعلان', 'error');
     }
 }
+
+// Make groups management functions globally available
+window.openGroupsManagementModal = openGroupsManagementModal;
+window.closeGroupsManagementModal = closeGroupsManagementModal;
+window.showGroupsTab = showGroupsTab;
+window.refreshGroupsData = refreshGroupsData;
+window.exportGroupsData = exportGroupsData;
+
+// Test function to verify groups modal works
+window.testGroupsModal = function() {
+    console.log('[TEST] Testing groups modal...');
+    console.log('[TEST] Function exists:', typeof window.openGroupsManagementModal);
+    const modal = document.getElementById('groupsManagementModal');
+    console.log('[TEST] Modal exists:', !!modal);
+    if (modal) {
+        console.log('[TEST] Current display:', modal.style.display);
+        console.log('[TEST] Current classes:', modal.className);
+    }
+    try {
+        window.openGroupsManagementModal();
+        console.log('[TEST] Function called successfully');
+    } catch (error) {
+        console.error('[TEST] Error calling function:', error);
+    }
+};
+
+// Make contest functions globally available
+window.openContestModal = openContestModal;
+window.closeContestModal = closeContestModal;
+window.createContest = createContest;
+
+// Make other modal functions globally available
+window.openEditProfileModal = openEditProfileModal;
+window.closeEditProfileModal = closeEditProfileModal;
+window.openCreateEmployeeModal = openCreateEmployeeModal;
+window.closeCreateEmployeeModal = closeCreateEmployeeModal;
+window.openEmployeesModal = openEmployeesModal;
+window.closeEmployeesModal = closeEmployeesModal;
+window.openAnnouncementAdminModal = openAnnouncementAdminModal;
+window.openMessageModal = openMessageModal;
+window.closeMessageModal = closeMessageModal;
+window.closeDetailsModal = closeDetailsModal;
+window.openImageAnnouncementModal = openImageAnnouncementModal;
+window.closeImageAnnouncementModal = closeImageAnnouncementModal;
+window.openStudentRequestsModal = openStudentRequestsModal;
+window.closeStudentRequestsModal = closeStudentRequestsModal;
+window.openNotificationModal = openNotificationModal;
+window.closeNotificationModal = closeNotificationModal;
+window.openChatInterfaceModal = openChatInterfaceModal;
+window.closeChatInterfaceModal = closeChatInterfaceModal;
+window.openUserManagementModal = openUserManagementModal;
+window.closeUserManagementModal = closeUserManagementModal;
+window.openCreateUserModal = openCreateUserModal;
+window.closeCreateUserModal = closeCreateUserModal;
+window.openChatRoomModal = openChatRoomModal;
+window.closeChatRoomModal = closeChatRoomModal;
+window.openVideoReelModal = openVideoReelModal;
+window.closeVideoReelModal = closeVideoReelModal;
+window.openAnnouncementModal = openAnnouncementModal;
+window.closeAnnouncementModal = closeAnnouncementModal;
