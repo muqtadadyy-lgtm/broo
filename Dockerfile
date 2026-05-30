@@ -1,7 +1,7 @@
 FROM python:3.11.9-slim
 
-# Force rebuild to remove postgresql-client completely - v6.0 FINAL
-ARG RAILWAY_REBUILD=6
+# Force rebuild to remove postgresql-client completely - v7.0 FINAL
+ARG RAILWAY_REBUILD=7
 
 WORKDIR /app
 
@@ -35,5 +35,5 @@ EXPOSE 8080
 
 # Railway will provide PORT environment variable dynamically
 
-# Production CMD - run migrations and start gunicorn with Railway PORT - v6.0 FINAL
+# Production CMD - run migrations and start gunicorn with Railway PORT - v7.0 FINAL
 CMD ["sh", "-c", "echo \"=== RAILWAY PORT: ${PORT:-8080} ===\" && python manage.py migrate --noinput && exec gunicorn university_activities.wsgi:application --bind 0.0.0.0:${PORT:-8080}"]
