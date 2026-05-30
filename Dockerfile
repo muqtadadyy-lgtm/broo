@@ -1,7 +1,7 @@
 FROM python:3.11.9-slim
 
-# Force rebuild to remove postgresql-client completely - v6.0 FINAL
-ARG RAILWAY_REBUILD=6
+# Force rebuild to remove postgresql-client completely - v5.0 FINAL
+ARG RAILWAY_REBUILD=5
 
 WORKDIR /app
 

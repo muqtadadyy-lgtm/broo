@@ -47,8 +47,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
-    "rest_framework",
-    "drf_yasg",
     "core",
 ]
 
@@ -60,7 +58,6 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     # DISABLED: django.contrib.auth.middleware.AuthenticationMiddleware - auth app removed
     "core.middleware.CustomAuthLoggingMiddleware",  # Custom auth logging to prevent unauthorized warnings
-    "core.rate_limit_middleware.RateLimitMiddleware",  # Rate limiting for API protection
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # REMOVED: DatabaseInitializationMiddleware - causing Railway restart loops
@@ -144,10 +141,9 @@ else:
     
     # Try multiple paths for database
     possible_paths = [
-        "./db.sqlite3",
-        "db.sqlite3",
         "/app/backend/db.sqlite3",
-        "/tmp/db.sqlite3"
+        "/tmp/db.sqlite3", 
+        "./db.sqlite3"
     ]
     
     db_path = None
@@ -239,38 +235,15 @@ JWT_ALGORITHM = "HS256"
 JWT_ACCESS_TOKEN_EXPIRES_HOURS = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", "24"))
 
 # Caching configuration for performance
-# Use Redis if available, otherwise fallback to local memory cache
-REDIS_URL = os.getenv("REDIS_URL", None)
-
-if REDIS_URL:
-    CACHES = {
-        "default": {
-            "BACKEND": "django_redis.cache.RedisCache",
-            "LOCATION": REDIS_URL,
-            "OPTIONS": {
-                "CLIENT_CLASS": "django_redis.client.DefaultClient",
-                "CONNECTION_POOL_KWARGS": {
-                    "max_connections": 50,
-                    "retry_on_timeout": True,
-                },
-                "SOCKET_CONNECT_TIMEOUT": 5,
-                "SOCKET_TIMEOUT": 5,
-            },
-            "KEY_PREFIX": "university_activities",
-            "TIMEOUT": 300,  # 5 minutes default
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "university-activities-cache",
+        "OPTIONS": {
+            "MAX_ENTRIES": 1000
         }
     }
-else:
-    # Fallback to local memory cache for development
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "university-activities-cache",
-            "OPTIONS": {
-                "MAX_ENTRIES": 1000
-            }
-        }
-    }
+}
 
 # Enhanced logging configuration for better debugging
 LOGGING = {
@@ -281,13 +254,6 @@ LOGGING = {
             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
             'style': '{',
         },
-        'simple': {
-            'format': '{levelname} {asctime} {message}',
-            'style': '{',
-        },
-        'json': {
-            'format': '{"level": "%(levelname)s", "time": "%(asctime)s", "module": "%(module)s", "message": "%(message)s"}',
-        },
     },
     'handlers': {
         'console': {
@@ -295,30 +261,11 @@ LOGGING = {
             'formatter': 'verbose',
         },
         'file': {
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'logs', 'django_debug.log'),
             'formatter': 'verbose',
             'encoding': 'utf-8',
-            'maxBytes': 10 * 1024 * 1024,  # 10MB
-            'backupCount': 5,
-        },
-        'error_file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'django_error.log'),
-            'formatter': 'verbose',
-            'encoding': 'utf-8',
-            'maxBytes': 10 * 1024 * 1024,  # 10MB
-            'backupCount': 5,
-            'level': 'ERROR',
-        },
-        'security_file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'security.log'),
-            'formatter': 'json',
-            'encoding': 'utf-8',
-            'maxBytes': 5 * 1024 * 1024,  # 5MB
-            'backupCount': 10,
-            'level': 'WARNING',
+            'mode': 'a',
         },
     },
     'root': {
@@ -332,26 +279,16 @@ LOGGING = {
             'propagate': False,
         },
         'django.request': {
-            'handlers': ['console', 'file', 'error_file'],
-            'level': 'WARNING',
+            'handlers': ['console', 'file'],
+            'level': 'WARNING',  # Reduce verbosity for request logging
             'propagate': False,
         },
         'django.security': {
-            'handlers': ['console', 'security_file', 'error_file'],
-            'level': 'WARNING',
-            'propagate': False,
-        },
-        'django.db.backends': {
             'handlers': ['console', 'file'],
-            'level': 'WARNING',
+            'level': 'ERROR',  # Only show security errors
             'propagate': False,
         },
         'university_activities': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'core': {
             'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': False,
