@@ -84,4 +84,9 @@ urlpatterns = [
     path('messages/<int:message_id>/pin', views.pin_message, name='pin_message'),
     path('messages/<int:message_id>/edit', views.edit_message, name='edit_message'),
     path('messages/<int:message_id>/delete', views.delete_message, name='delete_message'),
+    
+    # Enhanced chat room features
+    path('chat-rooms/<int:room_id>/search-enhanced', views.search_chat_messages_enhanced, name='search_chat_messages_enhanced'),
+    path('chat-rooms/<int:room_id>/statistics', views.get_chat_room_statistics, name='get_chat_room_statistics'),
+    path('chat-rooms/<int:room_id>/export', views.export_chat_messages, name='export_chat_messages'),
 ]

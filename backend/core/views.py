@@ -3237,4 +3237,246 @@ def delete_message(request: HttpRequest, message_id: int) -> JsonResponse:
         return _error(f"حدث خطأ أثناء حذف الرسالة: {exc}", status=500)
 
 
+@csrf_exempt
+@require_http_methods(["GET"])
+@jwt_required
+def search_chat_messages_enhanced(request: HttpRequest, room_id: int) -> JsonResponse:
+    """
+    البحث المتقدم في رسائل الكروب.
+    """
+    try:
+        user_id = get_jwt_identity(request)
+        user = User.objects.get(pk=user_id)
+        
+        query = request.GET.get("query", "")
+        message_type = request.GET.get("type", None)
+        sender_id = request.GET.get("sender_id", None)
+        date_from = request.GET.get("date_from", None)
+        date_to = request.GET.get("date_to", None)
+        
+        chat_room = ChatRoom.objects.get(pk=room_id)
+        
+        # Check if user is a member
+        membership = ChatRoomMember.objects.filter(
+            chat_room=chat_room,
+            user=user,
+            is_active=True
+        ).first()
+        
+        if not membership and chat_room.type != "general":
+            return _error("يجب أن تكون عضواً في الكروب للبحث", status=403)
+        
+        # Build query
+        messages_query = ChatMessage.objects.filter(
+            chat_room=chat_room,
+            is_deleted=False
+        )
+        
+        if query:
+            messages_query = messages_query.filter(content__icontains=query)
+        
+        if message_type:
+            messages_query = messages_query.filter(message_type=message_type)
+        
+        if sender_id:
+            messages_query = messages_query.filter(sender_id=sender_id)
+        
+        if date_from:
+            messages_query = messages_query.filter(created_at__gte=date_from)
+        
+        if date_to:
+            messages_query = messages_query.filter(created_at__lte=date_to)
+        
+        # Get pinned messages first
+        messages = messages_query.order_by('-is_pinned', '-created_at')[:50]
+        
+        messages_data = []
+        for message in messages:
+            # Get reactions
+            reactions = MessageReaction.objects.filter(message=message)
+            reaction_data = []
+            for reaction in reactions:
+                reaction_data.append({
+                    "emoji": reaction.emoji,
+                    "user": reaction.user.full_name
+                })
+            
+            messages_data.append({
+                "id": message.id,
+                "content": message.content,
+                "messageType": message.message_type,
+                "sender": {
+                    "id": message.sender.id,
+                    "fullName": message.sender.full_name,
+                    "username": message.sender.username,
+                    "role": message.sender.role
+                },
+                "createdAt": message.created_at.isoformat(),
+                "isPinned": message.is_pinned,
+                "isEdited": message.is_edited,
+                "replyTo": message.reply_to_id,
+                "reactions": reaction_data,
+                "fileUrl": message.file_url,
+                "fileName": message.file_name
+            })
+        
+        return JsonResponse({
+            "success": True,
+            "messages": messages_data,
+            "total": len(messages_data)
+        })
+        
+    except ChatRoom.DoesNotExist:
+        return _error("الكروب غير موجود", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error searching messages: {exc}")
+        return _error(f"حدث خطأ أثناء البحث: {exc}", status=500)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+@jwt_required
+def get_chat_room_statistics(request: HttpRequest, room_id: int) -> JsonResponse:
+    """
+    الحصول على إحصائيات الكروب.
+    """
+    try:
+        user_id = get_jwt_identity(request)
+        user = User.objects.get(pk=user_id)
+        
+        chat_room = ChatRoom.objects.get(pk=room_id)
+        
+        # Check if user is a member
+        membership = ChatRoomMember.objects.filter(
+            chat_room=chat_room,
+            user=user,
+            is_active=True
+        ).first()
+        
+        if not membership and chat_room.type != "general":
+            return _error("يجب أن تكون عضواً في الكروب", status=403)
+        
+        # Get statistics
+        total_messages = ChatMessage.objects.filter(
+            chat_room=chat_room,
+            is_deleted=False
+        ).count()
+        
+        total_members = ChatRoomMember.objects.filter(
+            chat_room=chat_room,
+            is_active=True
+        ).count()
+        
+        # Messages by type
+        messages_by_type = {}
+        for msg_type, label in [("text", "نص"), ("image", "صورة"), ("file", "ملف"), ("system", "نظام")]:
+            count = ChatMessage.objects.filter(
+                chat_room=chat_room,
+                message_type=msg_type,
+                is_deleted=False
+            ).count()
+            messages_by_type[label] = count
+        
+        # Most active members (by message count)
+        from django.db.models import Count
+        active_members = ChatMessage.objects.filter(
+            chat_room=chat_room,
+            is_deleted=False
+        ).values('sender__full_name').annotate(
+            message_count=Count('id')
+        ).order_by('-message_count')[:5]
+        
+        # Pinned messages count
+        pinned_count = ChatMessage.objects.filter(
+            chat_room=chat_room,
+            is_pinned=True,
+            is_deleted=False
+        ).count()
+        
+        # Messages today
+        today = timezone.now().date()
+        messages_today = ChatMessage.objects.filter(
+            chat_room=chat_room,
+            is_deleted=False,
+            created_at__date=today
+        ).count()
+        
+        return JsonResponse({
+            "success": True,
+            "statistics": {
+                "totalMessages": total_messages,
+                "totalMembers": total_members,
+                "messagesByType": messages_by_type,
+                "activeMembers": list(active_members),
+                "pinnedMessages": pinned_count,
+                "messagesToday": messages_today,
+                "createdAt": chat_room.created_at.isoformat(),
+                "lastActivity": chat_room.last_activity.isoformat()
+            }
+        })
+        
+    except ChatRoom.DoesNotExist:
+        return _error("الكروب غير موجود", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error getting statistics: {exc}")
+        return _error(f"حدث خطأ أثناء الحصول على الإحصائيات: {exc}", status=500)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+@jwt_required
+def export_chat_messages(request: HttpRequest, room_id: int) -> JsonResponse:
+    """
+    تصدير رسائل الكروب.
+    """
+    try:
+        user_id = get_jwt_identity(request)
+        user = User.objects.get(pk=user_id)
+        
+        chat_room = ChatRoom.objects.get(pk=room_id)
+        
+        # Check if user is admin or moderator
+        membership = ChatRoomMember.objects.filter(
+            chat_room=chat_room,
+            user=user,
+            is_active=True
+        ).first()
+        
+        if not membership or membership.role not in ["admin", "moderator"]:
+            return _error("يجب أن تكون مديراً أو مشرفاً لتصدير الرسائل", status=403)
+        
+        # Get all messages
+        messages = ChatMessage.objects.filter(
+            chat_room=chat_room,
+            is_deleted=False
+        ).order_by('created_at')
+        
+        # Create export data
+        export_data = []
+        for message in messages:
+            export_data.append({
+                "id": message.id,
+                "sender": message.sender.full_name,
+                "content": message.content,
+                "type": message.message_type,
+                "createdAt": message.created_at.isoformat(),
+                "isEdited": message.is_edited
+            })
+        
+        return JsonResponse({
+            "success": True,
+            "exportData": export_data,
+            "roomName": chat_room.name,
+            "exportDate": timezone.now().isoformat(),
+            "totalMessages": len(export_data)
+        })
+        
+    except ChatRoom.DoesNotExist:
+        return _error("الكروب غير موجود", status=404)
+    except Exception as exc:
+        print(f"[CHAT_ROOM] Error exporting messages: {exc}")
+        return _error(f"حدث خطأ أثناء تصدير الرسائل: {exc}", status=500)
+
+
+
 
