@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>نظام الأنشطة الطلابية</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="animations.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/animations.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="theme-blue-light">
+<body class="theme-blue">
     <!-- Language Selector Dropdown -->
     <div class="language-selector-dropdown">
         <button class="language-toggle-btn" onclick="toggleLanguageMenu()" title="تغيير اللغة">
@@ -48,20 +48,24 @@
             <div class="theme-menu-header" data-ar="اختر الثيم المفضل" data-en="Choose Your Theme" data-fr="Choisissez votre thème" data-ku="تێمای دڵخواز هەڵبژێرە">اختر الثيم المفضل</div>
             <div class="theme-options">
                 <button class="theme-option" onclick="changeTheme('blue-light')" data-theme="blue-light">
-                    <span class="theme-color" style="background-color: #eff6ff; border: 2px solid #bfdbfe;"></span>
+                    <span class="theme-color" style="background: linear-gradient(135deg, #3b82f6, #06b6d4);"></span>
                     <span class="theme-name" data-ar="أزرق فاتح" data-en="Light Blue" data-fr="Bleu clair" data-ku="شینی ڕوون">أزرق فاتح</span>
                 </button>
                 <button class="theme-option" onclick="changeTheme('sky-blue')" data-theme="sky-blue">
-                    <span class="theme-color" style="background-color: #4a90e2;"></span>
+                    <span class="theme-color" style="background: linear-gradient(135deg, #06b6d4, #0891b2);"></span>
                     <span class="theme-name" data-ar="أزرق سماوي" data-en="Sky Blue" data-fr="Bleu ciel" data-ku="شینی ئاسمانی">أزرق سماوي</span>
                 </button>
                 <button class="theme-option" onclick="changeTheme('purple')" data-theme="purple">
-                    <span class="theme-color" style="background-color: #9b6dd4;"></span>
+                    <span class="theme-color" style="background: linear-gradient(135deg, #8b5cf6, #d946ef);"></span>
                     <span class="theme-name" data-ar="بنفسجي" data-en="Purple" data-fr="Violet" data-ku="مۆر">بنفسجي</span>
                 </button>
                 <button class="theme-option" onclick="changeTheme('blue')" data-theme="blue">
-                    <span class="theme-color" style="background-color: #3b82f6;"></span>
+                    <span class="theme-color" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);"></span>
                     <span class="theme-name" data-ar="أزرق غامق" data-en="Dark Blue" data-fr="Bleu foncé" data-ku="شینی تیرە">أزرق غامق</span>
+                </button>
+                <button class="theme-option" onclick="changeTheme('white')" data-theme="white">
+                    <span class="theme-color" style="background: linear-gradient(135deg, #ffffff, #f1f5f9); border: 2px solid #e2e8f0;"></span>
+                    <span class="theme-name" data-ar="أبيض" data-en="White" data-fr="Blanc" data-ku="سپی">أبيض</span>
                 </button>
             </div>
         </div>
@@ -162,11 +166,11 @@
     <!-- Notification -->
     <div class="notification" id="notification"></div>
 
-    <script src="translations.js"></script>
-    <script src="guide.js"></script>
-    <script src="messaging-system.js"></script>
-    <script src="api-client.js"></script>
-    <script src="script.js"></script>
+    <script src="/static/js/translations.js"></script>
+    <script src="/static/js/guide.js"></script>
+    <script src="/static/js/messaging-system.js"></script>
+    <script src="/static/js/api-client.js"></script>
+    <script src="/static/js/script.js"></script>
     <!-- تم حذف السكريبت الخاص بنافذة الشروط المخصصة -->
 </body>
 </html>
