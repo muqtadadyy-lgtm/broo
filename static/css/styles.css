@@ -3223,3 +3223,268 @@ h1, h2, h3, h4, h5, h6 {font-weight:700;letter-spacing:-0.01em;line-height:1.2;}
     .language-menu {width:320px}
     .theme-menu {width:360px}
 }
+
+/* Mobile Responsive Design */
+@media (max-width:768px) {
+    html {font-size:14px}
+    
+    body {
+        padding:0;
+        overflow-x:hidden;
+    }
+    
+    .container {
+        padding:15px;
+        min-height:100vh;
+    }
+    
+    .auth-card {
+        padding:30px 20px;
+        border-radius:20px;
+        max-width:100%;
+    }
+    
+    .logo-container {
+        margin-bottom:30px;
+    }
+    
+    .logo-circle {
+        width:80px;
+        height:80px;
+    }
+    
+    .logo-circle i {
+        font-size:40px;
+    }
+    
+    .university-name {
+        font-size:24px;
+    }
+    
+    .university-subtitle {
+        font-size:13px;
+    }
+    
+    .form-title {
+        font-size:20px;
+        margin-bottom:25px;
+    }
+    
+    .input-group {
+        margin-bottom:20px;
+    }
+    
+    .input-group input,
+    .input-group select,
+    .input-group textarea {
+        padding:14px 45px 14px 15px;
+        font-size:15px;
+    }
+    
+    .submit-btn {
+        padding:16px;
+        font-size:16px;
+    }
+    
+    /* Language & Theme Selectors */
+    .language-selector-dropdown,
+    .theme-selector-dropdown {
+        top:15px;
+        right:15px;
+        left:auto;
+    }
+    
+    .language-toggle-btn,
+    .theme-toggle-btn {
+        padding:10px 16px;
+        font-size:13px;
+    }
+    
+    .language-toggle-btn i,
+    .theme-toggle-btn i {
+        font-size:16px;
+    }
+    
+    .language-menu,
+    .theme-menu {
+        top:70px;
+        right:15px;
+        left:auto;
+        width:280px;
+        padding:15px;
+        border-radius:16px;
+    }
+    
+    .language-options {
+        gap:8px;
+    }
+    
+    .language-option {
+        padding:12px 14px;
+        font-size:14px;
+    }
+    
+    .theme-options {
+        grid-template-columns:1fr;
+        gap:8px;
+    }
+    
+    .theme-option {
+        padding:12px 14px;
+        font-size:13px;
+    }
+    
+    /* Role Selector */
+    .role-selector {
+        flex-direction:column;
+        gap:10px;
+    }
+    
+    .role-selector label {
+        padding:14px;
+    }
+    
+    /* Switch Form */
+    .switch-form {
+        font-size:13px;
+        margin-top:20px;
+    }
+}
+
+@media (max-width:480px) {
+    html {font-size:13px}
+    
+    .container {
+        padding:10px;
+    }
+    
+    .auth-card {
+        padding:25px 15px;
+        border-radius:16px;
+    }
+    
+    .logo-circle {
+        width:70px;
+        height:70px;
+    }
+    
+    .logo-circle i {
+        font-size:35px;
+    }
+    
+    .university-name {
+        font-size:20px;
+    }
+    
+    .university-subtitle {
+        font-size:12px;
+    }
+    
+    .form-title {
+        font-size:18px;
+        margin-bottom:20px;
+    }
+    
+    .input-group {
+        margin-bottom:18px;
+    }
+    
+    .input-group input,
+    .input-group select,
+    .input-group textarea {
+        padding:12px 40px 12px 12px;
+        font-size:14px;
+    }
+    
+    .input-group i {
+        right:12px;
+        font-size:16px;
+    }
+    
+    .submit-btn {
+        padding:14px;
+        font-size:15px;
+    }
+    
+    /* Language & Theme Selectors */
+    .language-selector-dropdown,
+    .theme-selector-dropdown {
+        top:10px;
+        right:10px;
+        left:auto;
+    }
+    
+    .language-toggle-btn,
+    .theme-toggle-btn {
+        padding:8px 12px;
+        font-size:12px;
+        gap:8px;
+    }
+    
+    .language-toggle-btn i,
+    .theme-toggle-btn i {
+        font-size:14px;
+    }
+    
+    .language-menu,
+    .theme-menu {
+        top:60px;
+        right:10px;
+        left:auto;
+        width:260px;
+        padding:12px;
+        border-radius:14px;
+    }
+    
+    .language-menu-header,
+    .theme-menu-header {
+        font-size:13px;
+        margin-bottom:12px;
+        padding-bottom:10px;
+    }
+    
+    .language-option {
+        padding:10px 12px;
+        font-size:13px;
+    }
+    
+    .language-flag {
+        font-size:22px;
+    }
+    
+    .theme-option {
+        padding:10px 12px;
+        font-size:12px;
+    }
+    
+    .theme-color {
+        width:24px;
+        height:24px;
+    }
+}
+
+/* Tablet Responsive Design */
+@media (min-width:769px) and (max-width:1023px) {
+    .auth-card {
+        padding:45px 35px;
+        max-width:480px;
+    }
+    
+    .logo-circle {
+        width:95px;
+        height:95px;
+    }
+    
+    .logo-circle i {
+        font-size:48px;
+    }
+    
+    .university-name {
+        font-size:28px;
+    }
+    
+    .language-menu,
+    .theme-menu {
+        width:300px;
+    }
+}
