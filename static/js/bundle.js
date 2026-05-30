@@ -1,1 +1,1 @@
-// Bundle file - individual JS files are loaded separately
+{{concatenated_js}}

@@ -363,53 +363,20 @@ function closeStudentChatInterface() {
     document.getElementById('studentChatInterfaceModal').style.display = 'none';
 }
 
-async function initializeStudentChat() {
+function initializeStudentChat() {
     if (!studentCurrentRoom) {
-        showNotification('لم يتم تحديد الكروب', 'error');
-        return;
+        studentCurrentRoom = {
+            id: 1,
+            name: 'كروب الطلاب العام',
+            members: 45
+        };
     }
     
-    // Load real messages from API
-    try {
-        const result = await apiGetChatMessages(studentCurrentRoom.id);
-        if (result.success && result.messages) {
-            studentMessages = result.messages.map(msg => ({
-                id: msg.id,
-                sender: msg.sender?.fullName || 'مستخدم',
-                senderId: msg.sender?.id,
-                content: msg.content,
-                timestamp: msg.createdAt,
-                isOwn: msg.sender?.id === getCurrentUserId(),
-                messageType: msg.messageType,
-                fileUrl: msg.fileUrl,
-                fileName: msg.fileName
-            }));
-        } else {
-            studentMessages = [];
-        }
-    } catch (error) {
-        console.error('[STUDENT CHAT] Error loading messages:', error);
-        studentMessages = [];
-    }
+    // Load mock online members
+    studentOnlineMembers = [];
     
-    // Load room members
-    try {
-        const membersResult = await apiGetChatRoomMembers(studentCurrentRoom.id);
-        if (membersResult.success && membersResult.members) {
-            studentOnlineMembers = membersResult.members.map(member => ({
-                id: member.userId,
-                name: member.fullName,
-                avatar: member.avatar || '/static/images/default-avatar.png',
-                status: member.status === 'نشط' ? 'online' : 'offline',
-                role: member.role
-            }));
-        } else {
-            studentOnlineMembers = [];
-        }
-    } catch (error) {
-        console.error('[STUDENT CHAT] Error loading members:', error);
-        studentOnlineMembers = [];
-    }
+    // Load mock messages
+    studentMessages = [];
     
     updateStudentRoomInfo();
     displayStudentOnlineMembers();
@@ -456,48 +423,22 @@ function displayStudentMessages() {
     container.scrollTop = container.scrollHeight;
 }
 
-async function sendStudentMessage() {
+function sendStudentMessage() {
     const input = document.getElementById('studentMessageInput');
     const content = input.value.trim();
     
-    if (!content) {
-        showNotification('يرجى كتابة رسالة', 'error');
-        return;
-    }
-    
-    if (!studentCurrentRoom) {
-        showNotification('لم يتم تحديد الكروب', 'error');
-        return;
-    }
-    
-    try {
-        const result = await apiSendChatMessage(studentCurrentRoom.id, {
+    if (content) {
+        const newMessage = {
+            id: studentMessages.length + 1,
+            sender: 'أنت',
             content: content,
-            messageType: 'text'
-        });
+            timestamp: new Date().toISOString(),
+            isOwn: true
+        };
         
-        if (result.success) {
-            // Add message to local list
-            const user = apiGetCurrentUser();
-            const newMessage = {
-                id: result.message?.id || studentMessages.length + 1,
-                sender: user.fullName,
-                senderId: user.id,
-                content: content,
-                timestamp: new Date().toISOString(),
-                isOwn: true,
-                messageType: 'text'
-            };
-            
-            studentMessages.push(newMessage);
-            displayStudentMessages();
-            input.value = '';
-        } else {
-            showNotification(result.message || 'فشل إرسال الرسالة', 'error');
-        }
-    } catch (error) {
-        console.error('[STUDENT CHAT] Error sending message:', error);
-        showNotification('حدث خطأ أثناء إرسال الرسالة', 'error');
+        studentMessages.push(newMessage);
+        displayStudentMessages();
+        input.value = '';
     }
 }
 
@@ -517,168 +458,6 @@ function handleStudentMessageInput() {
     window.studentTypingTimeout = setTimeout(() => {
         indicator.style.display = 'none';
     }, 1000);
-}
-
-// Search messages in chat room
-async function searchStudentChatMessages() {
-    const query = document.getElementById('studentChatSearchInput')?.value?.trim();
-    if (!query || query.length < 2) {
-        showNotification('يجب إدخال كلمة بحث بطول حرفين على الأقل', 'error');
-        return;
-    }
-    
-    if (!studentCurrentRoom) {
-        showNotification('لم يتم تحديد الكروب', 'error');
-        return;
-    }
-    
-    try {
-        const result = await apiSearchChatMessages(studentCurrentRoom.id, query);
-        if (result.success && result.results) {
-            displaySearchResults(result.results, query);
-        } else {
-            showNotification(result.message || 'لم يتم العثور على نتائج', 'info');
-        }
-    } catch (error) {
-        console.error('[STUDENT CHAT] Error searching messages:', error);
-        showNotification('حدث خطأ أثناء البحث', 'error');
-    }
-}
-
-function displaySearchResults(results, query) {
-    const container = document.getElementById('studentChatMessages');
-    
-    if (results.length === 0) {
-        container.innerHTML = `
-            <div class="no-search-results">
-                <i class="fas fa-search"></i>
-                <p>لم يتم العثور على نتائج لـ "${query}"</p>
-            </div>
-        `;
-        return;
-    }
-    
-    container.innerHTML = `
-        <div class="search-results-header">
-            <i class="fas fa-search"></i>
-            <span>نتائج البحث عن "${query}" (${results.length})</span>
-            <button class="clear-search-btn" onclick="initializeStudentChat()">
-                <i class="fas fa-times"></i> مسح
-            </button>
-        </div>
-    ` + results.map(msg => `
-        <div class="message search-result ${msg.sender?.id === getCurrentUserId() ? 'user-message' : 'other-message'}">
-            <div class="message-header">
-                <span class="sender-name">${msg.sender?.name || 'مستخدم'}</span>
-                <span class="message-time">${formatTime(msg.createdAt)}</span>
-            </div>
-            <div class="message-content">${highlightSearchTerm(msg.content, query)}</div>
-        </div>
-    `).join('');
-    
-    container.scrollTop = 0;
-}
-
-function highlightSearchTerm(text, query) {
-    const regex = new RegExp(`(${query})`, 'gi');
-    return text.replace(regex, '<mark>$1</mark>');
-}
-
-// View room statistics
-async function viewStudentRoomStats() {
-    if (!studentCurrentRoom) {
-        showNotification('لم يتم تحديد الكروب', 'error');
-        return;
-    }
-    
-    try {
-        const result = await apiGetChatRoomStats(studentCurrentRoom.id);
-        if (result.success && result.statistics) {
-            displayRoomStats(result.statistics);
-        } else {
-            showNotification(result.message || 'فشل تحميل الإحصائيات', 'error');
-        }
-    } catch (error) {
-        console.error('[STUDENT CHAT] Error loading stats:', error);
-        showNotification('حدث خطأ أثناء تحميل الإحصائيات', 'error');
-    }
-}
-
-function displayRoomStats(stats) {
-    const modal = document.createElement('div');
-    modal.className = 'modal stats-modal';
-    modal.style.display = 'flex';
-    modal.innerHTML = `
-        <div class="modal-content stats-content">
-            <div class="modal-header">
-                <h2>إحصائيات الكروب</h2>
-                <button class="close-btn" onclick="this.closest('.modal').remove()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <i class="fas fa-users"></i>
-                    <div class="stat-value">${stats.members?.total || 0}</div>
-                    <div class="stat-label">إجمالي الأعضاء</div>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-user-shield"></i>
-                    <div class="stat-value">${stats.members?.admins || 0}</div>
-                    <div class="stat-label">المديرون</div>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-comments"></i>
-                    <div class="stat-value">${stats.messages?.total || 0}</div>
-                    <div class="stat-label">إجمالي الرسائل</div>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-calendar-day"></i>
-                    <div class="stat-value">${stats.messages?.today || 0}</div>
-                    <div class="stat-label">رسائل اليوم</div>
-                </div>
-            </div>
-            <div class="top-contributors">
-                <h3>أكثر المساهمين</h3>
-                ${stats.top_contributors?.length > 0 ? 
-                    stats.top_contributors.map(user => `
-                        <div class="contributor-item">
-                            <span class="contributor-name">${user.name}</span>
-                            <span class="contributor-count">${user.messages} رسالة</span>
-                        </div>
-                    `).join('') : 
-                    '<p class="no-contributors">لا توجد بيانات</p>'
-                }
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-}
-
-// Helper function to get current user ID
-function getCurrentUserId() {
-    const user = apiGetCurrentUser();
-    return user?.id;
-}
-
-// Helper function to format time
-function formatTime(timestamp) {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now - date;
-    
-    if (diff < 60000) return 'الآن';
-    if (diff < 3600000) return `منذ ${Math.floor(diff / 60000)} دقيقة`;
-    if (diff < 86400000) return `منذ ${Math.floor(diff / 3600000)} ساعة`;
-    
-    return date.toLocaleDateString('ar-IQ', { 
-        month: 'short', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
 }
 
 function addStudentEmoji() {
